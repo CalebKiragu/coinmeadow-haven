@@ -2,6 +2,7 @@ import BalanceCard from "@/components/dashboard/BalanceCard";
 import TransactionButtons from "@/components/dashboard/TransactionButtons";
 import TransactionHistory from "@/components/dashboard/TransactionHistory";
 import NotificationBell from "@/components/shared/NotificationBell";
+import NotificationsPanel from "@/components/dashboard/NotificationsPanel";
 
 const Dashboard = () => {
   return (
@@ -12,10 +13,15 @@ const Dashboard = () => {
           <NotificationBell />
         </div>
         
-        <div className="space-y-8">
-          <BalanceCard />
-          <TransactionButtons />
-          <TransactionHistory />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            <BalanceCard />
+            <TransactionButtons />
+            <TransactionHistory />
+          </div>
+          <div className="lg:col-span-1">
+            <NotificationsPanel />
+          </div>
         </div>
       </div>
     </div>

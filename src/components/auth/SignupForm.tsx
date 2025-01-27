@@ -4,25 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import GlassCard from "../ui/GlassCard";
-
-const countries = [
-  { code: "KE", name: "Kenya" },
-  { code: "NG", name: "Nigeria" },
-  { code: "ZA", name: "South Africa" },
-  { code: "UG", name: "Uganda" },
-  { code: "TZ", name: "Tanzania" },
-  { code: "GH", name: "Ghana" },
-  { code: "US", name: "United States" },
-  { code: "GB", name: "United Kingdom" },
-];
+import SignupFormFields from "./SignupFormFields";
+import ThirdPartyAuth from "./ThirdPartyAuth";
 
 const SignupForm = () => {
   const { toast } = useToast();
@@ -33,7 +17,6 @@ const SignupForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate signup - replace with actual registration
     setTimeout(() => {
       setIsLoading(false);
       toast({
@@ -42,13 +25,6 @@ const SignupForm = () => {
       });
       navigate("/dashboard");
     }, 1500);
-  };
-
-  const handleThirdPartySignup = (provider: string) => {
-    toast({
-      title: `${provider} sign up`,
-      description: "This feature is coming soon!",
-    });
   };
 
   return (
@@ -60,20 +36,6 @@ const SignupForm = () => {
           <TabsTrigger value="phone">Phone</TabsTrigger>
         </TabsList>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              type="text"
-              placeholder="First Name"
-              className="bg-white/50"
-              required
-            />
-            <Input
-              type="text"
-              placeholder="Last Name"
-              className="bg-white/50"
-              required
-            />
-          </div>
           <TabsContent value="email">
             <Input
               type="email"
@@ -90,30 +52,7 @@ const SignupForm = () => {
               required
             />
           </TabsContent>
-          <Select value={country} onValueChange={setCountry}>
-            <SelectTrigger className="w-full bg-white/50">
-              <SelectValue placeholder="Select Country" />
-            </SelectTrigger>
-            <SelectContent>
-              {countries.map((country) => (
-                <SelectItem key={country.code} value={country.code}>
-                  {country.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Input
-            type="password"
-            placeholder="Password"
-            className="w-full bg-white/50"
-            required
-          />
-          <Input
-            type="password"
-            placeholder="Confirm Password"
-            className="w-full bg-white/50"
-            required
-          />
+          <SignupFormFields country={country} setCountry={setCountry} />
           <Button
             type="submit"
             className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600"
@@ -123,36 +62,7 @@ const SignupForm = () => {
           </Button>
         </form>
       </Tabs>
-      <div className="mt-4 space-y-2">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
-            </span>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleThirdPartySignup("Google")}
-            className="bg-white/50"
-          >
-            Google
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleThirdPartySignup("Twitter")}
-            className="bg-white/50"
-          >
-            Twitter
-          </Button>
-        </div>
-      </div>
+      <ThirdPartyAuth />
     </GlassCard>
   );
 };
