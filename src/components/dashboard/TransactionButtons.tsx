@@ -1,0 +1,31 @@
+import { Send, Wallet, CreditCard, ArrowDownToLine } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const TransactionButtons = () => {
+  const buttons = [
+    { icon: Send, label: "Send/Pay", color: "from-blue-500 to-blue-600" },
+    { icon: Wallet, label: "Receive", color: "from-green-500 to-green-600" },
+    { icon: CreditCard, label: "Deposit", color: "from-purple-500 to-purple-600" },
+    {
+      icon: ArrowDownToLine,
+      label: "Withdraw",
+      color: "from-orange-500 to-orange-600",
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in">
+      {buttons.map(({ icon: Icon, label, color }) => (
+        <Button
+          key={label}
+          className={`h-24 flex flex-col items-center justify-center space-y-2 bg-gradient-to-r ${color} hover:opacity-90 transition-opacity`}
+        >
+          <Icon size={24} />
+          <span>{label}</span>
+        </Button>
+      ))}
+    </div>
+  );
+};
+
+export default TransactionButtons;
