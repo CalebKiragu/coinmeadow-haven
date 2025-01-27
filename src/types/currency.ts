@@ -10,6 +10,11 @@ export type FiatCurrency = {
   name: string;
 };
 
+export type Country = {
+  code: string;
+  name: string;
+};
+
 export const cryptoCurrencies: CryptoCurrency[] = [
   { symbol: 'ETH', name: 'Ethereum', price: 3450.20 },
   { symbol: 'BTC', name: 'Bitcoin', price: 65750.80 },
@@ -26,4 +31,17 @@ export const fiatCurrencies: FiatCurrency[] = [
   { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' },
   { code: 'KES', symbol: 'KSh', name: 'Kenyan Shilling' },
   { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+];
+
+export const countries: Country[] = [
+  { code: 'US', name: 'United States' },
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'NG', name: 'Nigeria' },
+  { code: 'KE', name: 'Kenya' },
+  { code: 'ZA', name: 'South Africa' },
+  { code: 'GH', name: 'Ghana' },
+  { code: 'UG', name: 'Uganda' },
+  { code: 'TZ', name: 'Tanzania' },
+  { code: 'RW', name: 'Rwanda' },
+  { code: 'ET', name: 'Ethiopia' }
 ];
