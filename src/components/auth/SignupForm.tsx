@@ -4,11 +4,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import GlassCard from "../ui/GlassCard";
+
+const countries = [
+  { code: "KE", name: "Kenya" },
+  { code: "NG", name: "Nigeria" },
+  { code: "ZA", name: "South Africa" },
+  { code: "UG", name: "Uganda" },
+  { code: "TZ", name: "Tanzania" },
+  { code: "GH", name: "Ghana" },
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+];
 
 const SignupForm = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [country, setCountry] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,12 +90,18 @@ const SignupForm = () => {
               required
             />
           </TabsContent>
-          <Input
-            type="text"
-            placeholder="Country"
-            className="w-full bg-white/50"
-            required
-          />
+          <Select value={country} onValueChange={setCountry}>
+            <SelectTrigger className="w-full bg-white/50">
+              <SelectValue placeholder="Select Country" />
+            </SelectTrigger>
+            <SelectContent>
+              {countries.map((country) => (
+                <SelectItem key={country.code} value={country.code}>
+                  {country.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input
             type="password"
             placeholder="Password"
