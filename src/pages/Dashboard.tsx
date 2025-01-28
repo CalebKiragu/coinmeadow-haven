@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, User, ShieldCheck, Settings, LogOut } from "lucide-react";
+import { Menu, User, ShieldCheck, Settings, LogOut, History } from "lucide-react";
 import BalanceCard from "@/components/dashboard/BalanceCard";
 import TransactionButtons from "@/components/dashboard/TransactionButtons";
 import TransactionHistory from "@/components/dashboard/TransactionHistory";
@@ -63,9 +63,9 @@ const Dashboard = () => {
                     <User className="h-5 w-5" />
                     <span>Account</span>
                   </Link>
-                  <Link to="/profile" className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors">
-                    <User className="h-5 w-5" />
-                    <span>Profile</span>
+                  <Link to="/history" className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors">
+                    <History className="h-5 w-5" />
+                    <span>History</span>
                   </Link>
                   <Link to="/verification" className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors">
                     <ShieldCheck className="h-5 w-5" />
@@ -85,6 +85,11 @@ const Dashboard = () => {
           </div>
         </div>
         
+        <h3 className="text-lg text-white/80 text-center mt-8 mb-4">What would you like to do today?</h3>
+        <div className="transform-gpu transition-all duration-300 hover:scale-105">
+          <TransactionButtons />
+        </div>
+
         <Tabs 
           defaultValue="overview" 
           className="w-full" 
