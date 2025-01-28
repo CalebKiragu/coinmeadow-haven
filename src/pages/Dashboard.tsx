@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu, User, ShieldCheck, Settings, LogOut } from "lucide-react";
 import BalanceCard from "@/components/dashboard/BalanceCard";
 import TransactionButtons from "@/components/dashboard/TransactionButtons";
 import TransactionHistory from "@/components/dashboard/TransactionHistory";
@@ -42,10 +44,44 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-white">CoinDuka</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col items-start">
+            <h1 className="text-2xl font-bold text-white">CoinDuka</h1>
+            <span className="text-sm text-white/70">Your trusted crypto partner</span>
+          </div>
+          <div className="flex items-center gap-4">
             <ThemeToggle />
             <NotificationBell />
+            <Sheet>
+              <SheetTrigger asChild>
+                <button className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                  <Menu className="h-6 w-6 text-white" />
+                </button>
+              </SheetTrigger>
+              <SheetContent className="bg-white/95 dark:bg-black/95 backdrop-blur-xl border-l border-white/20">
+                <nav className="flex flex-col gap-4 mt-8">
+                  <Link to="/account" className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors">
+                    <User className="h-5 w-5" />
+                    <span>Account</span>
+                  </Link>
+                  <Link to="/profile" className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors">
+                    <User className="h-5 w-5" />
+                    <span>Profile</span>
+                  </Link>
+                  <Link to="/verification" className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors">
+                    <ShieldCheck className="h-5 w-5" />
+                    <span>Verification</span>
+                  </Link>
+                  <Link to="/settings" className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors">
+                    <Settings className="h-5 w-5" />
+                    <span>Settings</span>
+                  </Link>
+                  <button className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors text-red-500">
+                    <LogOut className="h-5 w-5" />
+                    <span>Logout</span>
+                  </button>
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
         
@@ -73,6 +109,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-8">
                 <BalanceCard />
+                <h3 className="text-lg text-white/80 text-center">What would you like to do today?</h3>
                 <TransactionButtons />
                 <TransactionHistory />
               </div>
