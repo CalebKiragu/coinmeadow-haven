@@ -52,6 +52,16 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        coffee: {
+          light: "#8B7355",
+          DEFAULT: "#6F4E37",
+          dark: "#483C32",
+        },
+        dollar: {
+          light: "#85BB65",
+          DEFAULT: "#85BB65",
+          dark: "#2E8B57",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

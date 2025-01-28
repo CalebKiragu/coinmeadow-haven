@@ -5,6 +5,7 @@ import BalanceCard from "@/components/dashboard/BalanceCard";
 import TransactionButtons from "@/components/dashboard/TransactionButtons";
 import TransactionHistory from "@/components/dashboard/TransactionHistory";
 import NotificationBell from "@/components/shared/NotificationBell";
+import ThemeToggle from "@/components/shared/ThemeToggle";
 import NotificationsPanel from "@/components/dashboard/NotificationsPanel";
 import MarketplaceOfferCard, { Offer } from "@/components/marketplace/MarketplaceOfferCard";
 
@@ -38,17 +39,34 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold text-white">CoinDuka</h1>
-          <NotificationBell />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <NotificationBell />
+          </div>
         </div>
         
-        <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
-          <TabsList className="w-full mb-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
+        <Tabs 
+          defaultValue="overview" 
+          className="w-full" 
+          onValueChange={setActiveTab}
+        >
+          <TabsList className="w-full mb-6 bg-transparent border border-white/10">
+            <TabsTrigger 
+              value="overview"
+              className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/70"
+            >
+              Overview
+            </TabsTrigger>
+            <TabsTrigger 
+              value="marketplace"
+              className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/70"
+            >
+              Marketplace
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -70,7 +88,7 @@ const Dashboard = () => {
                 <h2 className="text-xl font-semibold text-white">Trending Offers</h2>
                 <Link 
                   to="/marketplace"
-                  className="text-white hover:text-gray-200 underline"
+                  className="text-dollar-light hover:text-dollar-dark transition-colors"
                 >
                   View All Offers
                 </Link>
