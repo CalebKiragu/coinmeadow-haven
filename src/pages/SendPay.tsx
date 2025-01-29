@@ -2,8 +2,15 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Phone, CreditCard, ArrowRight, CheckCircle, XCircle } from "lucide-react";
-import confetti from 'canvas-confetti';
+import {
+  Search,
+  Phone,
+  CreditCard,
+  ArrowRight,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
+import confetti from "canvas-confetti";
 
 type Step = 1 | 2 | 3;
 
@@ -13,7 +20,9 @@ const SendPay = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [pin, setPin] = useState("");
-  const [transactionStatus, setTransactionStatus] = useState<"success" | "error" | null>(null);
+  const [transactionStatus, setTransactionStatus] = useState<
+    "success" | "error" | null
+  >(null);
 
   const handleNextStep = () => {
     if (currentStep < 3) {
@@ -26,7 +35,7 @@ const SendPay = () => {
         confetti({
           particleCount: 100,
           spread: 70,
-          origin: { y: 0.6 }
+          origin: { y: 0.6 },
         });
       }
     }
@@ -63,7 +72,9 @@ const SendPay = () => {
                   </div>
                   <div>
                     <div className="font-medium">Contact {i + 1}</div>
-                    <div className="text-sm text-gray-500">+254 7XX XXX XXX</div>
+                    <div className="text-sm text-gray-500">
+                      +254 7XX XXX XXX
+                    </div>
                   </div>
                 </div>
               ))}
@@ -106,13 +117,17 @@ const SendPay = () => {
           <>
             <CheckCircle className="w-24 h-24 mx-auto text-green-500" />
             <h3 className="text-2xl font-bold">Transaction Successful!</h3>
-            <p className="text-gray-500">Your payment has been processed successfully.</p>
+            <p className="text-gray-500">
+              Your payment has been processed successfully.
+            </p>
           </>
         ) : (
           <>
             <XCircle className="w-24 h-24 mx-auto text-red-500" />
             <h3 className="text-2xl font-bold">Transaction Failed</h3>
-            <p className="text-red-500">Insufficient funds. Please try again with a different amount.</p>
+            <p className="text-red-500">
+              Insufficient funds. Please try again with a different amount.
+            </p>
           </>
         )}
       </div>
@@ -156,8 +171,8 @@ const SendPay = () => {
                       <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center ${
                           step <= currentStep
-                            ? "bg-primary text-white"
-                            : "bg-gray-200 text-gray-500"
+                            ? "bg-primary text-black"
+                            : "bg-gray-500 text-black"
                         }`}
                       >
                         {step}
@@ -175,10 +190,7 @@ const SendPay = () => {
 
                 {renderStep()}
 
-                <Button
-                  className="w-full mt-4"
-                  onClick={handleNextStep}
-                >
+                <Button className="w-full mt-4" onClick={handleNextStep}>
                   {currentStep === 3 ? "Complete Transaction" : "Next"}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>

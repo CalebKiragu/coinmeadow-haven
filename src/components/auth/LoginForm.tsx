@@ -23,7 +23,7 @@ const LoginForm = () => {
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     }, 1500);
   };
 
@@ -83,33 +83,31 @@ const LoginForm = () => {
           </Button>
         </form>
       </Tabs>
-      <div className="mt-4 space-y-2">
-        <div className="relative">
+      <div className="mt-2 space-y-2">
+        <div className="relative mb-2">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">
-              Or continue with
-            </span>
+            <span className="bg-background px-2 text-muted-foreground">Or</span>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleThirdPartyLogin("Google")}
-            className="bg-white/50"
-          >
-            Google
-          </Button>
+        <div className="grid grid-cols-1 gap-3">
           <Button
             type="button"
             variant="outline"
             onClick={() => handleThirdPartyLogin("Twitter")}
             className="bg-white/50"
           >
-            Twitter
+            Continue with Twitter
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleThirdPartyLogin("Google")}
+            className="bg-white/50"
+          >
+            Continue with Google
           </Button>
         </div>
       </div>

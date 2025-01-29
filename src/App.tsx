@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
 import Marketplace from "./pages/Marketplace";
+import SendPay from "./pages/SendPay";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/history" element={<History />} />
             <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/send" element={<SendPay />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

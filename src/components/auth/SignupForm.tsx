@@ -23,7 +23,7 @@ const SignupForm = () => {
         title: "Account created!",
         description: "Welcome to CoinDuka.",
       });
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true });
     }, 1500);
   };
 

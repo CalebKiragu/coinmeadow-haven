@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MarketplaceFilters from "@/components/marketplace/MarketplaceFilters";
-import MarketplaceOfferCard, { Offer } from "@/components/marketplace/MarketplaceOfferCard";
+import MarketplaceOfferCard, {
+  Offer,
+} from "@/components/marketplace/MarketplaceOfferCard";
 
 // Mock data - replace with real API calls later
 const mockOffers: Offer[] = [
   {
     id: "1",
     type: "buy",
-    price: 65750.80,
+    price: 65750.8,
     amount: 0.5,
     currency: "BTC",
     traderName: "CryptoMaster",
@@ -19,7 +21,7 @@ const mockOffers: Offer[] = [
   {
     id: "2",
     type: "sell",
-    price: 65800.20,
+    price: 65800.2,
     amount: 0.75,
     currency: "BTC",
     traderName: "BitTrader",
@@ -49,7 +51,9 @@ const Marketplace = () => {
         case "rating_desc":
           return b.traderRating - a.traderRating;
         case "newest":
-          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+          return (
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          );
         default:
           return 0;
       }
@@ -59,11 +63,19 @@ const Marketplace = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-white mb-8">Marketplace</h1>
-        
-        <Tabs defaultValue="buy" className="w-full" onValueChange={setActiveTab}>
+
+        <Tabs
+          defaultValue="buy"
+          className="w-full"
+          onValueChange={setActiveTab}
+        >
           <TabsList className="w-full mb-6">
-            <TabsTrigger value="buy" className="flex-1">Buy Offers</TabsTrigger>
-            <TabsTrigger value="sell" className="flex-1">Sell Offers</TabsTrigger>
+            <TabsTrigger value="buy" className="flex-1">
+              Buy
+            </TabsTrigger>
+            <TabsTrigger value="sell" className="flex-1">
+              Sell
+            </TabsTrigger>
           </TabsList>
 
           <MarketplaceFilters
