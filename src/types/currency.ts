@@ -16,32 +16,36 @@ export type Country = {
 };
 
 export const cryptoCurrencies: CryptoCurrency[] = [
-  { symbol: 'ETH', name: 'Ethereum', price: 3450.20 },
-  { symbol: 'BTC', name: 'Bitcoin', price: 65750.80 },
-  { symbol: 'USDT', name: 'Tether', price: 1.00 },
-  { symbol: 'USDC', name: 'USD Coin', price: 1.00 },
-  { symbol: 'LTC', name: 'Litecoin', price: 80.45 },
-  { symbol: 'BASE', name: 'Base', price: 0.95 },
+  { symbol: "ETH", name: "Ethereum", price: 3450.2 },
+  { symbol: "BTC", name: "Bitcoin", price: 65750.8 },
+  { symbol: "USDT", name: "Tether", price: 1.0 },
+  { symbol: "USDC", name: "USD Coin", price: 1.0 },
+  { symbol: "LTC", name: "Litecoin", price: 80.45 },
+  { symbol: "BASE", name: "Base", price: 0.95 },
 ];
 
 export const fiatCurrencies: FiatCurrency[] = [
-  { code: 'USD', symbol: '$', name: 'US Dollar' },
-  { code: 'EUR', symbol: '€', name: 'Euro' },
-  { code: 'GBP', symbol: '£', name: 'British Pound' },
-  { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' },
-  { code: 'KES', symbol: 'KSh', name: 'Kenyan Shilling' },
-  { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+  { code: "USD", symbol: "$", name: "US Dollar" },
+  { code: "EUR", symbol: "€", name: "Euro" },
+  { code: "GBP", symbol: "£", name: "British Pound" },
+  { code: "NGN", symbol: "₦", name: "Nigerian Naira" },
+  { code: "KES", symbol: "KSh", name: "Kenyan Shilling" },
+  { code: "ZAR", symbol: "R", name: "South African Rand" },
+  { code: "UGX", symbol: "USh", name: "Ugandan Shilling" },
+  { code: "TSH", symbol: "TSh", name: "Tanzanian Shilling" },
+  { code: "RWF", symbol: "R₣", name: "Rwandan Franc" },
+  { code: "ETB", symbol: "Br", name: "Ethiopian Birr" },
 ];
 
 export const countries: Country[] = [
-  { code: 'US', name: 'United States' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'NG', name: 'Nigeria' },
-  { code: 'KE', name: 'Kenya' },
-  { code: 'ZA', name: 'South Africa' },
-  { code: 'GH', name: 'Ghana' },
-  { code: 'UG', name: 'Uganda' },
-  { code: 'TZ', name: 'Tanzania' },
-  { code: 'RW', name: 'Rwanda' },
-  { code: 'ET', name: 'Ethiopia' }
+  { code: "US", name: "United States" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "NG", name: "Nigeria" },
+  { code: "KE", name: "Kenya" },
+  { code: "ZA", name: "South Africa" },
+  { code: "GH", name: "Ghana" },
+  { code: "UG", name: "Uganda" },
+  { code: "TZ", name: "Tanzania" },
+  { code: "RW", name: "Rwanda" },
+  { code: "ET", name: "Ethiopia" },
 ];
