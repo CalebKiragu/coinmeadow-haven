@@ -10,6 +10,9 @@ import History from "./pages/History";
 import Marketplace from "./pages/Marketplace";
 import SendPay from "./pages/SendPay";
 import Verification from "./pages/Verification";
+import Deposit from "./pages/Deposit";
+import Withdraw from "./pages/Withdraw";
+import Receive from "./pages/Receive";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +30,9 @@ const App = () => (
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/send" element={<SendPay />} />
             <Route path="/verification" element={<Verification />} />
+            <Route path="/deposit" element={<Deposit />} />
+            <Route path="/withdraw" element={<Withdraw />} />
+            <Route path="/receive" element={<Receive />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

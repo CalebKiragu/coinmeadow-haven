@@ -12,16 +12,23 @@ const TransactionButtons = () => {
       color: "from-blue-500 to-blue-600",
       onClick: () => navigate("/send"),
     },
-    { icon: Wallet, label: "Receive", color: "from-green-500 to-green-600" },
+    {
+      icon: Wallet,
+      label: "Receive",
+      color: "from-green-500 to-green-600",
+      onClick: () => navigate("/receive"),
+    },
     {
       icon: CreditCard,
       label: "Deposit",
       color: "from-purple-500 to-purple-600",
+      onClick: () => navigate("/deposit"),
     },
     {
       icon: ArrowDownToLine,
       label: "Withdraw",
       color: "from-orange-500 to-orange-600",
+      onClick: () => navigate("/withdraw"),
     },
   ];
 
