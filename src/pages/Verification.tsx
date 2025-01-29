@@ -1,0 +1,73 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Shield, ShieldCheck, ShieldX, Camera, Upload, Headset } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import VerificationForm from "@/components/verification/VerificationForm";
+import VerificationPreview from "@/components/verification/VerificationPreview";
+import VerificationStatus from "@/components/verification/VerificationStatus";
+import { toast } from "sonner";
+
+export type VerificationStep = "form" | "preview" | "status";
+
+const Verification = () => {
+  const [currentStep, setCurrentStep] = useState<VerificationStep>("form");
+  const [formData, setFormData] = useState<any>(null);
+  const navigate = useNavigate();
+
+  const handleFormSubmit = (data: any) => {
+    setFormData(data);
+    setCurrentStep("preview");
+  };
+
+  const handlePreviewSubmit = () => {
+    toast.success("Verification submitted successfully!");
+    setCurrentStep("status");
+  };
+
+  const handleContactSupport = () => {
+    window.open("https://wa.me/YOUR_WHATSAPP_NUMBER", "_blank");
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-white">Account Verification</h1>
+          <Button 
+            variant="outline" 
+            onClick={handleContactSupport}
+            className="flex items-center gap-2"
+          >
+            <Headset className="h-4 w-4" />
+            Contact Support
+          </Button>
+        </div>
+
+        <div className="glass-effect p-6 rounded-lg animate-fade-in">
+          {currentStep === "form" && (
+            <VerificationForm onSubmit={handleFormSubmit} />
+          )}
+          {currentStep === "preview" && (
+            <VerificationPreview 
+              data={formData} 
+              onEdit={() => setCurrentStep("form")}
+              onSubmit={handlePreviewSubmit}
+            />
+          )}
+          {currentStep === "status" && (
+            <VerificationStatus />
+          )}
+        </div>
+
+        <p className="text-xs text-white/60 text-center">
+          Security Advisory: All information provided during verification is encrypted and stored securely. 
+          By proceeding with verification, you consent to our verification process and data handling practices.
+          Your information may be shared with relevant authorities for verification purposes.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default Verification;

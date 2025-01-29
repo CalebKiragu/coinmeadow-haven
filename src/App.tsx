@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
 import Marketplace from "./pages/Marketplace";
 import SendPay from "./pages/SendPay";
+import Verification from "./pages/Verification";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/history" element={<History />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/send" element={<SendPay />} />
+            <Route path="/verification" element={<Verification />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

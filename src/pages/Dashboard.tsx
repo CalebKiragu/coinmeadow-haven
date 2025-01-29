@@ -19,6 +19,8 @@ import NotificationsPanel from "@/components/dashboard/NotificationsPanel";
 import MarketplaceOfferCard, {
   Offer,
 } from "@/components/marketplace/MarketplaceOfferCard";
+import { Button } from "@/components/ui/button";
+import { Headset } from "lucide-react";
 
 // Mock data for trending offers
 const trendingOffers: Offer[] = [
@@ -169,6 +171,15 @@ const Dashboard = () => {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Floating Contact Support Button */}
+        <Button
+          onClick={() => window.open("https://wa.me/YOUR_WHATSAPP_NUMBER", "_blank")}
+          className="fixed bottom-8 right-8 rounded-full p-4 bg-green-500 hover:bg-green-600 text-white shadow-lg flex items-center gap-2 animate-fade-in"
+        >
+          <Headset className="h-5 w-5" />
+          <span>Contact Support</span>
+        </Button>
       </div>
     </div>
   );
