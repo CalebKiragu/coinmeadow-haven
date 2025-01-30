@@ -11,8 +11,7 @@ import GlassCard from "../ui/GlassCard";
 import { Badge } from "../ui/badge";
 import { cryptoCurrencies, fiatCurrencies } from "@/types/currency";
 
-const BalanceCard = () => {
-  const [showBalance, setShowBalance] = useState(false);
+const BalanceCard = ({ showBalance, setShowBalance }) => {
   const [selectedCrypto, setSelectedCrypto] = useState("ALL");
   const [selectedFiat, setSelectedFiat] = useState("USD");
 

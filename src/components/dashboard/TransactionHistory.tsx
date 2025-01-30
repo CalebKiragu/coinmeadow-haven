@@ -41,7 +41,7 @@ const transactions: Transaction[] = [
   },
 ];
 
-const TransactionHistory = () => {
+const TransactionHistory = ({ showBalance, setShowBalance }) => {
   const [sortBy, setSortBy] = useState("date");
   const [filterCurrency, setFilterCurrency] = useState("all");
 
@@ -106,10 +106,17 @@ const TransactionHistory = () => {
                 </div>
               </div>
             </div>
+
             <div className="text-right">
-              <div className="font-medium">{tx.amount}</div>
-              <div className="text-sm text-gray-600">{tx.value}</div>
-              <div className="text-xs text-gray-500">{tx.date}</div>
+              <div
+                className={`font-bold mb-2 ${
+                  !showBalance ? "blur-content" : ""
+                }`}
+              >
+                <div className="font-medium">{tx.amount}</div>
+                <div className="text-sm text-gray-600">{tx.value}</div>
+                <div className="text-xs text-gray-500">{tx.date}</div>
+              </div>
             </div>
           </div>
         ))}

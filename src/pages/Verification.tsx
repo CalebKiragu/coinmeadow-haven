@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, ShieldCheck, ShieldX, Camera, Upload, Headset } from "lucide-react";
+import { Headset } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import VerificationForm from "@/components/verification/VerificationForm";
 import VerificationPreview from "@/components/verification/VerificationPreview";
 import VerificationStatus from "@/components/verification/VerificationStatus";
 import { toast } from "sonner";
+import { NavigationHeader } from "@/components/shared/NavigationHeader";
 
 export type VerificationStep = "form" | "preview" | "status";
 
@@ -26,16 +26,20 @@ const Verification = () => {
   };
 
   const handleContactSupport = () => {
-    window.open("https://wa.me/YOUR_WHATSAPP_NUMBER", "_blank");
+    window.open("https://wa.me/+254713278107", "_blank");
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-8">
+        <NavigationHeader title="Account Verification" />
+
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-white">Account Verification</h1>
-          <Button 
-            variant="outline" 
+          <h1 className="text-base font-bold text-white">
+            Provide your details to continue
+          </h1>
+          <Button
+            variant="outline"
             onClick={handleContactSupport}
             className="flex items-center gap-2"
           >
@@ -49,21 +53,21 @@ const Verification = () => {
             <VerificationForm onSubmit={handleFormSubmit} />
           )}
           {currentStep === "preview" && (
-            <VerificationPreview 
-              data={formData} 
+            <VerificationPreview
+              data={formData}
               onEdit={() => setCurrentStep("form")}
               onSubmit={handlePreviewSubmit}
             />
           )}
-          {currentStep === "status" && (
-            <VerificationStatus />
-          )}
+          {currentStep === "status" && <VerificationStatus />}
         </div>
 
         <p className="text-xs text-white/60 text-center">
-          Security Advisory: All information provided during verification is encrypted and stored securely. 
-          By proceeding with verification, you consent to our verification process and data handling practices.
-          Your information may be shared with relevant authorities for verification purposes.
+          Security Advisory: All information provided during verification is
+          encrypted and stored securely. By proceeding with verification, you
+          consent to our verification process and data handling practices. Your
+          information may be shared with relevant authorities for verification
+          purposes.
         </p>
       </div>
     </div>

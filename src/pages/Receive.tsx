@@ -1,12 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  Home,
-  Copy,
-  QrCode,
-  RefreshCw,
-} from "lucide-react";
+import { ArrowLeft, Home, Copy, QrCode, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -17,12 +11,17 @@ import {
 } from "@/components/ui/select";
 import { cryptoCurrencies } from "@/types/currency";
 import { useToast } from "@/components/ui/use-toast";
+import { NavigationHeader } from "@/components/shared/NavigationHeader";
 
 const Receive = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [selectedCrypto, setSelectedCrypto] = useState(cryptoCurrencies[0].symbol);
-  const [depositAddress, setDepositAddress] = useState("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
+  const [selectedCrypto, setSelectedCrypto] = useState(
+    cryptoCurrencies[0].symbol
+  );
+  const [depositAddress, setDepositAddress] = useState(
+    "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"
+  );
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(depositAddress);
@@ -50,38 +49,14 @@ const Receive = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="text-white"
-          >
-            <ArrowLeft className="h-6 w-6" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/dashboard")}
-            className="text-white"
-          >
-            <Home className="h-6 w-6" />
-          </Button>
-        </div>
-        <h1 className="text-2xl font-bold text-white">Receive</h1>
-        <div className="w-12" /> {/* Spacer for alignment */}
-      </div>
+      <NavigationHeader title="Receive" />
 
       <div className="max-w-md mx-auto glass-effect p-6 rounded-lg space-y-6">
         <div className="space-y-4">
           <label className="block text-sm font-medium text-gray-200">
             Select Cryptocurrency
           </label>
-          <Select
-            value={selectedCrypto}
-            onValueChange={setSelectedCrypto}
-          >
+          <Select value={selectedCrypto} onValueChange={setSelectedCrypto}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select cryptocurrency" />
             </SelectTrigger>

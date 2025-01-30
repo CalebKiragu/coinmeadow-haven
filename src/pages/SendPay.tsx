@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Home, ArrowRight, CheckCircle, XCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Home,
+  ArrowRight,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,6 +14,7 @@ import { Search } from "lucide-react";
 import confetti from "canvas-confetti";
 import { StepIndicator } from "@/components/send/StepIndicator";
 import { MerchantPayment } from "@/components/send/MerchantPayment";
+import { NavigationHeader } from "@/components/shared/NavigationHeader";
 
 const SendPay = () => {
   const navigate = useNavigate();
@@ -47,28 +54,7 @@ const SendPay = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="text-white"
-          >
-            <ArrowLeft className="h-6 w-6" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/dashboard")}
-            className="text-white"
-          >
-            <Home className="h-6 w-6" />
-          </Button>
-        </div>
-        <h1 className="text-2xl font-bold text-white">Send/Pay</h1>
-        <div className="w-12" />
-      </div>
+      <NavigationHeader title={"Send/Pay"} />
 
       <div className="max-w-2xl mx-auto">
         <Tabs
@@ -130,7 +116,9 @@ const SendPay = () => {
                                 {String.fromCharCode(65 + i)}
                               </div>
                               <div>
-                                <div className="font-medium">Contact {i + 1}</div>
+                                <div className="font-medium">
+                                  Contact {i + 1}
+                                </div>
                                 <div className="text-sm text-gray-500">
                                   +254 7XX XXX XXX
                                 </div>

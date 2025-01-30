@@ -51,6 +51,7 @@ const trendingOffers: Offer[] = [
 const Dashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("wallet");
+  const [showBalance, setShowBalance] = useState(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
@@ -137,12 +138,18 @@ const Dashboard = () => {
           <TabsContent value="wallet">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-8">
-                <BalanceCard />
+                <BalanceCard
+                  showBalance={showBalance}
+                  setShowBalance={setShowBalance}
+                />
                 <h3 className="text-lg text-white/80 text-center">
                   What would you like to do today?
                 </h3>
                 <TransactionButtons />
-                <TransactionHistory />
+                <TransactionHistory
+                  showBalance={showBalance}
+                  setShowBalance={setShowBalance}
+                />
               </div>
               <div className="lg:col-span-1">
                 <NotificationsPanel />
@@ -174,7 +181,7 @@ const Dashboard = () => {
 
         {/* Floating Contact Support Button */}
         <Button
-          onClick={() => window.open("https://wa.me/YOUR_WHATSAPP_NUMBER", "_blank")}
+          onClick={() => window.open("https://wa.me/+254713278107", "_blank")}
           className="fixed bottom-8 right-8 rounded-full p-4 bg-green-500 hover:bg-green-600 text-white shadow-lg flex items-center gap-2 animate-fade-in"
         >
           <Headset className="h-5 w-5" />

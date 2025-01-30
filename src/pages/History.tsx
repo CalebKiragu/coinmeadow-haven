@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { ArrowUpRight, ArrowDownLeft, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  ArrowUpRight,
+  ArrowDownLeft,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -7,7 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { NavigationHeader } from "@/components/shared/NavigationHeader";
 
 type Transaction = {
   id: number;
@@ -34,7 +45,7 @@ const transactions: Transaction[] = [
     currency: "BTC",
     status: "completed",
     hash: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
-    fee: "0.0001 BTC"
+    fee: "0.0001 BTC",
   },
   {
     id: 2,
@@ -46,7 +57,7 @@ const transactions: Transaction[] = [
     currency: "ETH",
     status: "completed",
     hash: "0x842d35Cc6634C0532925a3b844Bc454e4438f44f",
-    fee: "0.002 ETH"
+    fee: "0.002 ETH",
   },
 ];
 
@@ -61,8 +72,9 @@ const History = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
+        <NavigationHeader title="Transactions" />
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold text-white">Transaction History</h1>
+          <h5 className="text-2xl font-bold text-white">Recent</h5>
           <div className="flex gap-4">
             <Select value={filterCurrency} onValueChange={setFilterCurrency}>
               <SelectTrigger className="w-[140px] glass-effect">
@@ -126,10 +138,17 @@ const History = () => {
                 <div className="space-y-2 text-white">
                   <div className="flex justify-between">
                     <span className="text-gray-300">Status</span>
-                    <span className={`capitalize ${
-                      tx.status === "completed" ? "text-green-400" : 
-                      tx.status === "pending" ? "text-yellow-400" : "text-red-400"
-                    }`}>{tx.status}</span>
+                    <span
+                      className={`capitalize ${
+                        tx.status === "completed"
+                          ? "text-green-400"
+                          : tx.status === "pending"
+                          ? "text-yellow-400"
+                          : "text-red-400"
+                      }`}
+                    >
+                      {tx.status}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-300">Transaction Hash</span>
