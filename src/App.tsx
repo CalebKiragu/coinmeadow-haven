@@ -13,6 +13,8 @@ import Verification from "./pages/Verification";
 import Deposit from "./pages/Deposit";
 import Withdraw from "./pages/Withdraw";
 import Receive from "./pages/Receive";
+import Account from "./pages/Account";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +35,8 @@ const App = () => (
             <Route path="/deposit" element={<Deposit />} />
             <Route path="/withdraw" element={<Withdraw />} />
             <Route path="/receive" element={<Receive />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
