@@ -70,11 +70,11 @@ const History = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-slate-900 dark:to-zinc-900 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         <NavigationHeader title="Transactions" />
         <div className="flex justify-between items-center mb-8">
-          <h5 className="text-2xl font-bold text-white">Recent</h5>
+          <h5 className="text-2xl font-bold text-gray-800 dark:text-white">Recent</h5>
           <div className="flex gap-4">
             <Select value={filterCurrency} onValueChange={setFilterCurrency}>
               <SelectTrigger className="w-[140px] glass-effect">
@@ -111,8 +111,8 @@ const History = () => {
                     <div
                       className={`p-2 rounded-full ${
                         tx.type === "send"
-                          ? "bg-red-100 text-red-600"
-                          : "bg-green-100 text-green-600"
+                          ? "bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-400"
+                          : "bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-400"
                       }`}
                     >
                       {tx.type === "send" ? (
@@ -122,44 +122,44 @@ const History = () => {
                       )}
                     </div>
                     <div>
-                      <div className="font-medium text-white">
+                      <div className="font-medium text-gray-800 dark:text-white">
                         {tx.type === "send" ? "Sent" : "Received"}
                       </div>
-                      <div className="text-sm text-gray-200">{tx.date}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{tx.date}</div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-medium text-white">{tx.amount}</div>
-                    <div className="text-sm text-gray-200">{tx.value}</div>
+                    <div className="font-medium text-gray-800 dark:text-white">{tx.amount}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{tx.value}</div>
                   </div>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4">
-                <div className="space-y-2 text-white">
+                <div className="space-y-2 text-gray-800 dark:text-white">
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Status</span>
+                    <span className="text-gray-500 dark:text-gray-400">Status</span>
                     <span
                       className={`capitalize ${
                         tx.status === "completed"
-                          ? "text-green-400"
+                          ? "text-green-600 dark:text-green-400"
                           : tx.status === "pending"
-                          ? "text-yellow-400"
-                          : "text-red-400"
+                          ? "text-yellow-600 dark:text-yellow-400"
+                          : "text-red-600 dark:text-red-400"
                       }`}
                     >
                       {tx.status}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Transaction Hash</span>
+                    <span className="text-gray-500 dark:text-gray-400">Transaction Hash</span>
                     <span className="text-sm font-mono">{tx.hash}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Network Fee</span>
+                    <span className="text-gray-500 dark:text-gray-400">Network Fee</span>
                     <span>{tx.fee}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-300">
+                    <span className="text-gray-500 dark:text-gray-400">
                       {tx.type === "send" ? "Recipient" : "Sender"}
                     </span>
                     <span className="text-sm font-mono">
