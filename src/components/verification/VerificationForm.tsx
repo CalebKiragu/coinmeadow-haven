@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Camera, Upload } from "lucide-react";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +10,6 @@ interface VerificationFormProps {
 }
 
 const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     surname: "",
@@ -29,32 +27,13 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.selfie || !formData.idFront || !formData.idBack) {
       toast.error("Please upload all required documents");
       return;
     }
-
-    setIsSubmitting(true);
-    const formDataToSend = new FormData();
-    Object.entries(formData).forEach(([key, value]) => {
-      if (value) formDataToSend.append(key, value);
-    });
-
-    try {
-      // Replace with your actual API endpoint
-      const response = await axios.post('/api/verification', formDataToSend, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      toast.success("Verification submitted successfully");
-      onSubmit(response.data);
-    } catch (error) {
-      toast.error("Failed to submit verification");
-      console.error('Verification submission error:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    onSubmit(formData);
   };
 
   return (
@@ -152,9 +131,7 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
         </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Submitting..." : "Continue to Preview"}
-      </Button>
+      <Button type="submit" className="w-full">Continue to Preview</Button>
     </form>
   );
 };

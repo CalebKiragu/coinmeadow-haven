@@ -1,24 +1,47 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useState } from "react";
-import { Headset } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import Verification from "@/pages/Verification";
-import Portfolio from "@/pages/Portfolio";
-import VerificationStatus from "@/components/verification/VerificationStatus";
-import { toast } from "sonner";
-import { NavigationHeader } from "@/components/shared/NavigationHeader";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "next-themes";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import History from "./pages/History";
+import Marketplace from "./pages/Marketplace";
+import SendPay from "./pages/SendPay";
+import Verification from "./pages/Verification";
+import Deposit from "./pages/Deposit";
+import Withdraw from "./pages/Withdraw";
+import Receive from "./pages/Receive";
+import Account from "./pages/Account";
+import Settings from "./pages/Settings";
 
-export type VerificationStep = "form" | "preview" | "status";
+const queryClient = new QueryClient();
 
-function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/verification" element={<Verification />} />
-        <Route path="/portfolio" element={<Portfolio />} />
-      </Routes>
-    </Router>
-  );
-}
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/send" element={<SendPay />} />
+            <Route path="/verification" element={<Verification />} />
+            <Route path="/deposit" element={<Deposit />} />
+            <Route path="/withdraw" element={<Withdraw />} />
+            <Route path="/receive" element={<Receive />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
+  </QueryClientProvider>
+);
 
 export default App;
