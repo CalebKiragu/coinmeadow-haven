@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import axios from "axios";
 
 interface VerificationFormProps {
   onSubmit: (data: any) => void;
 }
 
 const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     surname: "",
@@ -27,13 +29,35 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.selfie || !formData.idFront || !formData.idBack) {
       toast.error("Please upload all required documents");
       return;
     }
-    onSubmit(formData);
+
+    setIsSubmitting(true);
+    try {
+      const formPayload = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        formPayload.append(key, value);
+      });
+
+      // Replace with your actual API endpoint
+      await axios.post("/api/verification", formPayload, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      toast.success("Verification submitted successfully!");
+      onSubmit(formData);
+    } catch (error) {
+      toast.error("Failed to submit verification. Please try again.");
+      console.error("Verification submission error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -131,7 +155,9 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
         </div>
       </div>
 
-      <Button type="submit" className="w-full">Continue to Preview</Button>
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
+        {isSubmitting ? "Submitting..." : "Continue to Preview"}
+      </Button>
     </form>
   );
 };

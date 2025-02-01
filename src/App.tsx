@@ -15,6 +15,7 @@ import Withdraw from "./pages/Withdraw";
 import Receive from "./pages/Receive";
 import Account from "./pages/Account";
 import Settings from "./pages/Settings";
+import Portfolio from "./pages/Portfolio";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/receive" element={<Receive />} />
             <Route path="/account" element={<Account />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/portfolio" element={<Portfolio />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
