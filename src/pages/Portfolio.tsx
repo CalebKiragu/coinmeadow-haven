@@ -3,6 +3,7 @@ import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import PortfolioMetrics from "@/components/portfolio/PortfolioMetrics";
 import PortfolioChart from "@/components/portfolio/PortfolioChart";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { cryptoCurrencies } from "@/types/currency";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -12,9 +13,13 @@ const Portfolio = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        <NavigationHeader title="Portfolio Analytics" />
+        <NavigationHeader title="Portfolio" />
         
-        <div className="flex justify-end mb-6">
+        <div className="flex flex-wrap items-center gap-4 mb-6">
+          <div className="flex gap-2">
+            <Button variant="secondary">Buy</Button>
+            <Button variant="secondary">Sell</Button>
+          </div>
           <Select value={selectedCrypto} onValueChange={setSelectedCrypto}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select Currency" />
