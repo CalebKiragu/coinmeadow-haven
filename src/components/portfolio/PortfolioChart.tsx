@@ -2,9 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  ChartContainer,
-} from "@/components/ui/chart";
+import { ChartContainer } from "@/components/ui/chart";
 import {
   Area,
   AreaChart,
@@ -23,11 +21,13 @@ const PortfolioChart = ({ selectedCrypto }: ChartProps) => {
   const { data: chartData, isLoading } = useQuery({
     queryKey: ["chart", selectedCrypto],
     queryFn: async () => {
-      // Replace with your actual API endpoint
-      const response = await axios.get(`/api/chart/${selectedCrypto}`);
-      return response.data;
+      // Using mock data for now - replace with actual API endpoint
+      return Array.from({ length: 30 }, (_, i) => ({
+        timestamp: `Day ${i + 1}`,
+        price: Math.random() * 50000 + 30000,
+      }));
     },
-    enabled: !!selectedCrypto,
+    staleTime: 30000, // Cache data for 30 seconds
   });
 
   if (isLoading) {
@@ -37,40 +37,41 @@ const PortfolioChart = ({ selectedCrypto }: ChartProps) => {
   return (
     <Card className="p-6 glass-effect">
       <div className="h-[400px]">
-        <ChartContainer
-          config={{
-            price: {
-              theme: {
-                light: "#6F4E37",
-                dark: "#85BB65",
-              },
-            },
-          }}
-        >
+        <ChartContainer>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-price)" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="var(--color-price)" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#4CAF50" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#4CAF50" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="timestamp" />
-              <YAxis />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              <XAxis 
+                dataKey="timestamp"
+                tick={{ fontSize: 12 }}
+                tickLine={false}
+              />
+              <YAxis 
+                tick={{ fontSize: 12 }}
+                tickLine={false}
+                tickFormatter={(value) => `$${value.toLocaleString()}`}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
                   border: 'none',
                   borderRadius: '8px',
-                  padding: '10px'
+                  padding: '10px',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
                 }}
                 labelStyle={{ color: '#666' }}
+                formatter={(value: number) => [`$${value.toLocaleString()}`, 'Price']}
               />
               <Area
                 type="monotone"
                 dataKey="price"
-                stroke="var(--color-price)"
+                stroke="#4CAF50"
                 fillOpacity={1}
                 fill="url(#colorPrice)"
               />

@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import PortfolioMetrics from "@/components/portfolio/PortfolioMetrics";
 import PortfolioChart from "@/components/portfolio/PortfolioChart";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cryptoCurrencies } from "@/types/currency";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Portfolio = () => {
   const [selectedCrypto, setSelectedCrypto] = useState("BTC");
@@ -28,8 +29,13 @@ const Portfolio = () => {
           </Select>
         </div>
 
-        <PortfolioMetrics selectedCrypto={selectedCrypto} />
-        <PortfolioChart selectedCrypto={selectedCrypto} />
+        <Suspense fallback={<Skeleton className="h-[200px] w-full" />}>
+          <PortfolioMetrics selectedCrypto={selectedCrypto} />
+        </Suspense>
+        
+        <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
+          <PortfolioChart selectedCrypto={selectedCrypto} />
+        </Suspense>
       </div>
     </div>
   );
