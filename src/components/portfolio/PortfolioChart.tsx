@@ -15,16 +15,18 @@ const PortfolioChart = ({ selectedCrypto }: ChartProps) => {
 
     if (!tvScriptLoadingPromise) {
       tvScriptLoadingPromise = new Promise((resolve) => {
-        const script = document.createElement('script');
-        script.id = 'tradingview-widget-loading-script';
-        script.src = 'https://s3.tradingview.com/tv.js';
-        script.type = 'text/javascript';
+        const script = document.createElement("script");
+        script.id = "tradingview-widget-loading-script";
+        script.src = "https://s3.tradingview.com/tv.js";
+        script.type = "text/javascript";
         script.onload = resolve as () => void;
         document.head.appendChild(script);
       });
     }
 
-    tvScriptLoadingPromise.then(() => onLoadScriptRef.current && onLoadScriptRef.current());
+    tvScriptLoadingPromise.then(
+      () => onLoadScriptRef.current && onLoadScriptRef.current()
+    );
 
     return () => {
       onLoadScriptRef.current = null;
@@ -32,7 +34,10 @@ const PortfolioChart = ({ selectedCrypto }: ChartProps) => {
   }, [selectedCrypto]);
 
   const createWidget = () => {
-    if (document.getElementById('tradingview_chart') && 'TradingView' in window) {
+    if (
+      document.getElementById("tradingview_chart") &&
+      "TradingView" in window
+    ) {
       const tw = (window as any).TradingView;
       new tw.widget({
         autosize: true,
@@ -46,19 +51,14 @@ const PortfolioChart = ({ selectedCrypto }: ChartProps) => {
         allow_symbol_change: true,
         container_id: "tradingview_chart",
         hide_side_toolbar: false,
-        studies: [
-          "MASimple@tv-basicstudies",
-          "RSI@tv-basicstudies",
-          "MACD@tv-basicstudies"
-        ],
         overrides: {
           "mainSeriesProperties.candleStyle.upColor": "#4CAF50",
           "mainSeriesProperties.candleStyle.downColor": "#FF5252",
           "mainSeriesProperties.candleStyle.borderUpColor": "#4CAF50",
           "mainSeriesProperties.candleStyle.borderDownColor": "#FF5252",
           "mainSeriesProperties.candleStyle.wickUpColor": "#4CAF50",
-          "mainSeriesProperties.candleStyle.wickDownColor": "#FF5252"
-        }
+          "mainSeriesProperties.candleStyle.wickDownColor": "#FF5252",
+        },
       });
     }
   };
