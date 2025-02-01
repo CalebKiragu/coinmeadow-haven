@@ -4,8 +4,6 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
 import {
   Area,
@@ -14,6 +12,7 @@ import {
   YAxis,
   CartesianGrid,
   ResponsiveContainer,
+  Tooltip,
 } from "recharts";
 
 interface ChartProps {
@@ -59,9 +58,15 @@ const PortfolioChart = ({ selectedCrypto }: ChartProps) => {
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis dataKey="timestamp" />
               <YAxis />
-              <ChartTooltip>
-                <ChartTooltipContent />
-              </ChartTooltip>
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px'
+                }}
+                labelStyle={{ color: '#666' }}
+              />
               <Area
                 type="monotone"
                 dataKey="price"
