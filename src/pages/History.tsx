@@ -73,26 +73,28 @@ const History = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-slate-900 dark:to-zinc-900 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         <NavigationHeader title="Transactions" />
-        <div className="flex justify-between items-center mb-8">
-          <h5 className="text-2xl font-bold text-gray-800 dark:text-white">Recent</h5>
-          <div className="flex gap-4">
+        <div className="flex flex-col gap-4 mb-8">
+          <h5 className="text-2xl font-bold text-gray-800 dark:text-white">
+            Recent
+          </h5>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full sm:w-[140px] glass-effect">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date">Date</SelectItem>
+                <SelectItem value="amount">Amount</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={filterCurrency} onValueChange={setFilterCurrency}>
-              <SelectTrigger className="w-[140px] glass-effect">
+              <SelectTrigger className="w-full sm:w-[140px] glass-effect">
                 <SelectValue placeholder="Filter by" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Currencies</SelectItem>
                 <SelectItem value="BTC">Bitcoin</SelectItem>
                 <SelectItem value="ETH">Ethereum</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[140px] glass-effect">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date">Date</SelectItem>
-                <SelectItem value="amount">Amount</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -106,7 +108,7 @@ const History = () => {
               className="glass-effect rounded-lg overflow-hidden border-none"
             >
               <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                <div className="flex items-center justify-between w-full">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4">
                   <div className="flex items-center space-x-4">
                     <div
                       className={`p-2 rounded-full ${
@@ -125,19 +127,27 @@ const History = () => {
                       <div className="font-medium text-gray-800 dark:text-white">
                         {tx.type === "send" ? "Sent" : "Received"}
                       </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">{tx.date}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {tx.date}
+                      </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-medium text-gray-800 dark:text-white">{tx.amount}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{tx.value}</div>
+                    <div className="font-medium text-gray-800 dark:text-white break-words">
+                      {tx.amount}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400 break-words">
+                      {tx.value}
+                    </div>
                   </div>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-4">
                 <div className="space-y-2 text-gray-800 dark:text-white">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Status</span>
+                  <div className="flex justify-between flex-wrap gap-2">
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Status
+                    </span>
                     <span
                       className={`capitalize ${
                         tx.status === "completed"
@@ -150,19 +160,25 @@ const History = () => {
                       {tx.status}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Transaction Hash</span>
-                    <span className="text-sm font-mono">{tx.hash}</span>
+                  <div className="flex justify-between flex-wrap gap-2">
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Transaction Hash
+                    </span>
+                    <span className="text-sm font-mono break-all">
+                      {tx.hash}
+                    </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Network Fee</span>
+                  <div className="flex justify-between flex-wrap gap-2">
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Network Fee
+                    </span>
                     <span>{tx.fee}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between flex-wrap gap-2">
                     <span className="text-gray-500 dark:text-gray-400">
                       {tx.type === "send" ? "Recipient" : "Sender"}
                     </span>
-                    <span className="text-sm font-mono">
+                    <span className="text-sm font-mono break-all">
                       {tx.type === "send" ? tx.to : tx.from}
                     </span>
                   </div>

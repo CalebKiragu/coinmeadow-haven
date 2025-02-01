@@ -51,11 +51,11 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
 
   return (
     <GlassCard className="animate-fade-in">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col gap-4 mb-6">
         <h2 className="text-xl font-semibold">Transaction History</h2>
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           <Select value={filterCurrency} onValueChange={setFilterCurrency}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-full sm:w-[140px]">
               <Filter className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Filter by" />
             </SelectTrigger>
@@ -66,7 +66,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-full sm:w-[140px]">
               <Calendar className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
@@ -81,7 +81,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
         {filteredTransactions.map((tx) => (
           <div
             key={tx.id}
-            className="flex items-center justify-between p-4 hover:bg-white/50 rounded-lg transition-colors"
+            className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-white/50 rounded-lg transition-colors gap-4"
           >
             <div className="flex items-center space-x-4">
               <div
@@ -101,7 +101,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
                 <div className="font-medium">
                   {tx.type === "send" ? "Sent" : "Received"}
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 break-all">
                   {tx.type === "send" ? `To: ${tx.to}` : `From: ${tx.from}`}
                 </div>
               </div>
@@ -109,9 +109,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
 
             <div className="text-right">
               <div
-                className={`font-bold mb-2 ${
-                  !showBalance ? "blur-content" : ""
-                }`}
+                className={`font-bold ${!showBalance ? "blur-content" : ""}`}
               >
                 <div className="font-medium">{tx.amount}</div>
                 <div className="text-sm text-gray-600">{tx.value}</div>

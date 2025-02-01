@@ -9,6 +9,7 @@ import {
   Settings,
   LogOut,
   History,
+  Headset,
 } from "lucide-react";
 import BalanceCard from "@/components/dashboard/BalanceCard";
 import TransactionButtons from "@/components/dashboard/TransactionButtons";
@@ -20,9 +21,7 @@ import MarketplaceOfferCard, {
   Offer,
 } from "@/components/marketplace/MarketplaceOfferCard";
 import { Button } from "@/components/ui/button";
-import { Headset } from "lucide-react";
 
-// Mock data for trending offers
 const trendingOffers: Offer[] = [
   {
     id: "1",
@@ -56,14 +55,14 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
           <div className="flex flex-col items-start">
             <h1 className="text-2xl font-bold text-white">CoinDuka</h1>
             <span className="text-sm text-white/70">
               Your trusted crypto partner
             </span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <ThemeToggle />
             <NotificationBell />
             <Sheet>
@@ -159,7 +158,7 @@ const Dashboard = () => {
 
           <TabsContent value="trade">
             <div className="space-y-6">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center flex-wrap gap-4">
                 <h2 className="text-xl font-semibold text-white">
                   Trending Offers
                 </h2>
@@ -179,7 +178,6 @@ const Dashboard = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Floating Contact Support Button */}
         <Button
           onClick={() => window.open("https://wa.me/+254713278107", "_blank")}
           className="fixed bottom-8 right-8 rounded-full p-4 bg-green-500 hover:bg-green-600 text-white shadow-lg flex items-center gap-2 animate-fade-in"
