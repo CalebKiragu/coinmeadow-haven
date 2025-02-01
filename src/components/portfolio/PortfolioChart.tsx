@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChartContainer } from "@/components/ui/chart";
@@ -37,7 +36,14 @@ const PortfolioChart = ({ selectedCrypto }: ChartProps) => {
   return (
     <Card className="p-6 glass-effect">
       <div className="h-[400px]">
-        <ChartContainer>
+        <ChartContainer 
+          config={{
+            price: {
+              color: "#4CAF50",
+              label: "Price"
+            }
+          }}
+        >
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData}>
               <defs>
