@@ -1,90 +1,71 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ChartContainer } from "@/components/ui/chart";
-import {
-  Area,
-  AreaChart,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
 
 interface ChartProps {
   selectedCrypto: string;
 }
 
-const PortfolioChart = ({ selectedCrypto }: ChartProps) => {
-  const { data: chartData, isLoading } = useQuery({
-    queryKey: ["chart", selectedCrypto],
-    queryFn: async () => {
-      // Using mock data for now - replace with actual API endpoint
-      return Array.from({ length: 30 }, (_, i) => ({
-        timestamp: `Day ${i + 1}`,
-        price: Math.random() * 50000 + 30000,
-      }));
-    },
-    staleTime: 30000, // Cache data for 30 seconds
-  });
+let tvScriptLoadingPromise: Promise<void>;
 
-  if (isLoading) {
-    return <Skeleton className="h-[400px] w-full" />;
-  }
+const PortfolioChart = ({ selectedCrypto }: ChartProps) => {
+  const onLoadScriptRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    onLoadScriptRef.current = createWidget;
+
+    if (!tvScriptLoadingPromise) {
+      tvScriptLoadingPromise = new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.id = 'tradingview-widget-loading-script';
+        script.src = 'https://s3.tradingview.com/tv.js';
+        script.type = 'text/javascript';
+        script.onload = resolve as () => void;
+        document.head.appendChild(script);
+      });
+    }
+
+    tvScriptLoadingPromise.then(() => onLoadScriptRef.current && onLoadScriptRef.current());
+
+    return () => {
+      onLoadScriptRef.current = null;
+    };
+  }, [selectedCrypto]);
+
+  const createWidget = () => {
+    if (document.getElementById('tradingview_chart') && 'TradingView' in window) {
+      const tw = (window as any).TradingView;
+      new tw.widget({
+        autosize: true,
+        symbol: `BINANCE:${selectedCrypto}USD`,
+        interval: "D",
+        timezone: "Etc/UTC",
+        theme: "dark",
+        style: "1",
+        locale: "en",
+        enable_publishing: false,
+        allow_symbol_change: true,
+        container_id: "tradingview_chart",
+        hide_side_toolbar: false,
+        studies: [
+          "MASimple@tv-basicstudies",
+          "RSI@tv-basicstudies",
+          "MACD@tv-basicstudies"
+        ],
+        overrides: {
+          "mainSeriesProperties.candleStyle.upColor": "#4CAF50",
+          "mainSeriesProperties.candleStyle.downColor": "#FF5252",
+          "mainSeriesProperties.candleStyle.borderUpColor": "#4CAF50",
+          "mainSeriesProperties.candleStyle.borderDownColor": "#FF5252",
+          "mainSeriesProperties.candleStyle.wickUpColor": "#4CAF50",
+          "mainSeriesProperties.candleStyle.wickDownColor": "#FF5252"
+        }
+      });
+    }
+  };
 
   return (
     <Card className="p-6 glass-effect">
-      <div className="h-[400px]">
-        <ChartContainer 
-          config={{
-            price: {
-              color: "#4CAF50",
-              label: "Price"
-            }
-          }}
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#4CAF50" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#4CAF50" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis 
-                dataKey="timestamp"
-                tick={{ fontSize: 12 }}
-                tickLine={false}
-              />
-              <YAxis 
-                tick={{ fontSize: 12 }}
-                tickLine={false}
-                tickFormatter={(value) => `$${value.toLocaleString()}`}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '10px',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
-                }}
-                labelStyle={{ color: '#666' }}
-                formatter={(value: number) => [`$${value.toLocaleString()}`, 'Price']}
-              />
-              <Area
-                type="monotone"
-                dataKey="price"
-                stroke="#4CAF50"
-                fillOpacity={1}
-                fill="url(#colorPrice)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </ChartContainer>
-      </div>
+      <div className="h-[600px]" id="tradingview_chart" />
     </Card>
   );
 };
