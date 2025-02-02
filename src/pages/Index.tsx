@@ -11,14 +11,14 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-purple-600 via-pink-500 to-red-500">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-coffee-light via-coffee to-dollar-dark">
       <div className="w-full max-w-md">
         {showLogin ? <LoginForm /> : <SignupForm />}
         <p className="text-center mt-4 text-white">
           {showLogin ? "Don't have an account? " : "Already have an account? "}
           <button
             onClick={() => setShowLogin(!showLogin)}
-            className="text-white underline hover:text-purple-200"
+            className="text-white underline hover:text-coffee-light"
           >
             {showLogin ? "Sign up" : "Login"}
           </button>

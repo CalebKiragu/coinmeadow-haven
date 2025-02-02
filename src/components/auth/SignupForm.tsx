@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import axios from "axios";
 import GlassCard from "../ui/GlassCard";
 import SignupFormFields from "./SignupFormFields";
 import ThirdPartyAuth from "./ThirdPartyAuth";
@@ -24,31 +25,97 @@ const SignupForm = () => {
   const navigate = useNavigate();
   const refId = searchParams.get("refId") || "";
 
-  const handleNext = (type: "email" | "phone") => {
-    if ((type === "email" && emailStep === 1) || (type === "phone" && phoneStep === 1)) {
+  const handleNext = async (type: "email" | "phone") => {
+    const identifier = type === "email" ? email : phone;
+    if (!identifier) {
+      toast({
+        title: "Error",
+        description: `Please enter your ${type} to continue.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await axios.post("/api/auth/send-otp", {
+        type,
+        identifier,
+        refId,
+      });
+
       toast({
         title: "OTP Sent!",
         description: `Check your ${type} for the verification code.`,
       });
+
+      if (type === "email") {
+        setEmailStep((prev) => prev + 1);
+      } else {
+        setPhoneStep((prev) => prev + 1);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send verification code. Please try again.",
+        variant: "destructive",
+      });
     }
-    if (type === "email") {
-      setEmailStep((prev) => prev + 1);
-    } else {
-      setPhoneStep((prev) => prev + 1);
+    setIsLoading(false);
+  };
+
+  const handleVerifyOtp = async (type: "email" | "phone") => {
+    const otp = type === "email" ? emailOtp : phoneOtp;
+    const identifier = type === "email" ? email : phone;
+
+    setIsLoading(true);
+    try {
+      await axios.post("/api/auth/verify-otp", {
+        type,
+        identifier,
+        otp,
+        refId,
+      });
+
+      if (type === "email") {
+        setEmailStep((prev) => prev + 1);
+      } else {
+        setPhoneStep((prev) => prev + 1);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Invalid verification code. Please try again.",
+        variant: "destructive",
+      });
     }
+    setIsLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await axios.post("/api/auth/signup", {
+        email,
+        phone,
+        country,
+        refId,
+      });
+
       toast({
         title: "Account created!",
         description: "Welcome to CoinDuka.",
       });
       navigate("/dashboard", { replace: true });
-    }, 1500);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create account. Please try again.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
   };
 
   const renderStepContent = (activeTab: "email" | "phone") => {
@@ -83,9 +150,10 @@ const SignupForm = () => {
             <Button
               type="button"
               onClick={() => handleNext(activeTab)}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600"
+              className="w-full bg-gradient-to-r from-coffee to-coffee-dark hover:from-coffee-dark hover:to-coffee"
+              disabled={isLoading}
             >
-              Next
+              {isLoading ? "Sending..." : "Next"}
             </Button>
           </div>
         );
@@ -99,11 +167,11 @@ const SignupForm = () => {
             />
             <Button
               type="button"
-              onClick={() => handleNext(activeTab)}
-              disabled={otp.length !== 4}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600"
+              onClick={() => handleVerifyOtp(activeTab)}
+              disabled={otp.length !== 4 || isLoading}
+              className="w-full bg-gradient-to-r from-coffee to-coffee-dark hover:from-coffee-dark hover:to-coffee"
             >
-              Verify
+              {isLoading ? "Verifying..." : "Verify"}
             </Button>
           </div>
         );
@@ -117,7 +185,7 @@ const SignupForm = () => {
             />
             <Button
               type="submit"
-              className="w-full mt-4 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600"
+              className="w-full mt-4 bg-gradient-to-r from-coffee to-coffee-dark hover:from-coffee-dark hover:to-coffee"
               disabled={isLoading}
             >
               {isLoading ? "Creating account..." : "Complete"}
@@ -130,29 +198,31 @@ const SignupForm = () => {
   };
 
   return (
-    <GlassCard className="w-full max-w-md mx-auto animate-fade-in">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">Create Account</h2>
-        <span className="text-sm text-muted-foreground">
-          Step {activeTab === "email" ? emailStep : phoneStep} of 3
-        </span>
-      </div>
-      <Tabs defaultValue="email" className="w-full" onValueChange={(value) => setActiveTab(value as "email" | "phone")}>
-        <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="email">Email</TabsTrigger>
-          <TabsTrigger value="phone">Phone</TabsTrigger>
-        </TabsList>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <TabsContent value="email">
-            {renderStepContent("email")}
-          </TabsContent>
-          <TabsContent value="phone">
-            {renderStepContent("phone")}
-          </TabsContent>
-        </form>
-      </Tabs>
-      {(emailStep === 1 && phoneStep === 1) && <ThirdPartyAuth />}
-    </GlassCard>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-coffee-light via-coffee to-dollar-dark">
+      <GlassCard className="w-full max-w-md mx-auto animate-fade-in">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">Create Account</h2>
+          <span className="text-sm text-muted-foreground">
+            Step {activeTab === "email" ? emailStep : phoneStep} of 3
+          </span>
+        </div>
+        <Tabs defaultValue="email" className="w-full" onValueChange={(value) => setActiveTab(value as "email" | "phone")}>
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="email">Email</TabsTrigger>
+            <TabsTrigger value="phone">Phone</TabsTrigger>
+          </TabsList>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <TabsContent value="email">
+              {renderStepContent("email")}
+            </TabsContent>
+            <TabsContent value="phone">
+              {renderStepContent("phone")}
+            </TabsContent>
+          </form>
+        </Tabs>
+        {(emailStep === 1 && phoneStep === 1) && <ThirdPartyAuth />}
+      </GlassCard>
+    </div>
   );
 };
 

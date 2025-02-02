@@ -24,7 +24,11 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
           render={({ slots }) => (
             <InputOTPGroup className="gap-2">
               {slots.map((slot, index) => (
-                <InputOTPSlot key={index} {...slot} index={index} />
+                <InputOTPSlot 
+                  key={index} 
+                  {...slot} 
+                  className="w-10 h-10 text-lg border-2 focus:border-coffee"
+                />
               ))}
             </InputOTPGroup>
           )}
