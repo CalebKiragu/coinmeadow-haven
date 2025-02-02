@@ -28,7 +28,7 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
                   key={index}
                   {...slot}
                   index={index}
-                  className="w-10 h-10 text-lg border-2 focus:border-coffee bg-white/80 dark:bg-black/50 text-foreground"
+                  className="w-10 h-10 text-lg border-2 focus:border-coffee bg-white dark:bg-black/80 text-foreground z-50 relative"
                 />
               ))}
             </InputOTPGroup>
