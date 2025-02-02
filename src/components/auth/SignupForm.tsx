@@ -20,6 +20,7 @@ const SignupForm = () => {
   const [phone, setPhone] = useState("");
   const [emailOtp, setEmailOtp] = useState("");
   const [phoneOtp, setPhoneOtp] = useState("");
+  const [activeTab, setActiveTab] = useState<"email" | "phone">("email");
   const navigate = useNavigate();
   const refId = searchParams.get("refId") || "";
 
@@ -136,7 +137,7 @@ const SignupForm = () => {
           Step {activeTab === "email" ? emailStep : phoneStep} of 3
         </span>
       </div>
-      <Tabs defaultValue="email" className="w-full">
+      <Tabs defaultValue="email" className="w-full" onValueChange={(value) => setActiveTab(value as "email" | "phone")}>
         <TabsList className="grid w-full grid-cols-2 mb-4">
           <TabsTrigger value="email">Email</TabsTrigger>
           <TabsTrigger value="phone">Phone</TabsTrigger>
