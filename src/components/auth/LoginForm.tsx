@@ -77,7 +77,7 @@ const LoginForm = () => {
           </div>
           <Button
             type="submit"
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600"
+            className="w-full bg-gradient-to-r from-coffee to-coffee-dark hover:from-coffee-dark hover:to-coffee"
             disabled={isLoading}
           >
             {isLoading ? "Logging in..." : "Login"}
@@ -113,7 +113,7 @@ const LoginForm = () => {
         </div>
       </div>
       <div className="text-center text-sm mt-4">
-        <a href="#" className="text-purple-600 hover:text-purple-700">
+        <a href="#" className="text-coffee hover:text-coffee-dark">
           Forgot PIN?
         </a>
       </div>

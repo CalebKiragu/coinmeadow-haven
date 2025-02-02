@@ -38,11 +38,11 @@ const SignupForm = () => {
 
     setIsLoading(true);
     try {
-      await axios.post("/api/auth/send-otp", {
-        type,
-        identifier,
-        refId,
-      });
+      // await axios.post("/api/auth/send-otp", {
+      //   type,
+      //   identifier,
+      //   refId,
+      // });
 
       toast({
         title: "OTP Sent!",
@@ -70,12 +70,12 @@ const SignupForm = () => {
 
     setIsLoading(true);
     try {
-      await axios.post("/api/auth/verify-otp", {
-        type,
-        identifier,
-        otp,
-        refId,
-      });
+      // await axios.post("/api/auth/verify-otp", {
+      //   type,
+      //   identifier,
+      //   otp,
+      //   refId,
+      // });
 
       if (type === "email") {
         setEmailStep((prev) => prev + 1);
@@ -96,12 +96,12 @@ const SignupForm = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await axios.post("/api/auth/signup", {
-        email,
-        phone,
-        country,
-        refId,
-      });
+      // await axios.post("/api/auth/signup", {
+      //   email,
+      //   phone,
+      //   country,
+      //   refId,
+      // });
 
       toast({
         title: "Account created!",
@@ -160,11 +160,7 @@ const SignupForm = () => {
       case 2:
         return (
           <div className="space-y-4 animate-fade-in">
-            <OTPInput
-              value={otp}
-              onChange={setOtp}
-              identifier={identifier}
-            />
+            <OTPInput value={otp} onChange={setOtp} identifier={identifier} />
             <Button
               type="button"
               onClick={() => handleVerifyOtp(activeTab)}
@@ -198,31 +194,29 @@ const SignupForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-coffee-light via-coffee to-dollar-dark">
-      <GlassCard className="w-full max-w-md mx-auto animate-fade-in">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">Create Account</h2>
-          <span className="text-sm text-muted-foreground">
-            Step {activeTab === "email" ? emailStep : phoneStep} of 3
-          </span>
-        </div>
-        <Tabs defaultValue="email" className="w-full" onValueChange={(value) => setActiveTab(value as "email" | "phone")}>
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="email">Email</TabsTrigger>
-            <TabsTrigger value="phone">Phone</TabsTrigger>
-          </TabsList>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <TabsContent value="email">
-              {renderStepContent("email")}
-            </TabsContent>
-            <TabsContent value="phone">
-              {renderStepContent("phone")}
-            </TabsContent>
-          </form>
-        </Tabs>
-        {(emailStep === 1 && phoneStep === 1) && <ThirdPartyAuth />}
-      </GlassCard>
-    </div>
+    <GlassCard className="w-full max-w-md mx-auto animate-fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold">Create Account</h2>
+        <span className="text-sm text-muted-foreground">
+          Step {activeTab === "email" ? emailStep : phoneStep} of 3
+        </span>
+      </div>
+      <Tabs
+        defaultValue="email"
+        className="w-full"
+        onValueChange={(value) => setActiveTab(value as "email" | "phone")}
+      >
+        <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsTrigger value="email">Email</TabsTrigger>
+          <TabsTrigger value="phone">Phone</TabsTrigger>
+        </TabsList>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <TabsContent value="email">{renderStepContent("email")}</TabsContent>
+          <TabsContent value="phone">{renderStepContent("phone")}</TabsContent>
+        </form>
+      </Tabs>
+      {emailStep === 1 && phoneStep === 1 && <ThirdPartyAuth />}
+    </GlassCard>
   );
 };
 
