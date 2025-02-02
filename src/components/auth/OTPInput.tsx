@@ -16,9 +16,9 @@ const OTPInput = ({ value, onChange }: OTPInputProps) => {
         Enter the 4-digit code sent to your {value.includes("@") ? "email" : "phone"}
       </p>
       <InputOTP
+        maxLength={4}
         value={value}
         onChange={onChange}
-        maxLength={4}
         render={({ slots }) => (
           <InputOTPGroup className="gap-2 justify-center">
             {slots.map((slot, index) => (
