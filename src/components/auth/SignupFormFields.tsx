@@ -11,9 +11,10 @@ import { countries } from "@/types/currency";
 type SignupFormFieldsProps = {
   country: string;
   setCountry: (value: string) => void;
+  refId: string;
 };
 
-const SignupFormFields = ({ country, setCountry }: SignupFormFieldsProps) => {
+const SignupFormFields = ({ country, setCountry, refId }: SignupFormFieldsProps) => {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
@@ -44,16 +45,24 @@ const SignupFormFields = ({ country, setCountry }: SignupFormFieldsProps) => {
       </Select>
       <Input
         type="password"
-        placeholder="Password"
+        placeholder="PIN"
         className="w-full bg-white/50"
         required
       />
       <Input
         type="password"
-        placeholder="Confirm Password"
+        placeholder="Confirm PIN"
         className="w-full bg-white/50"
         required
       />
+      {refId && (
+        <Input
+          type="text"
+          value={refId}
+          readOnly
+          className="w-full bg-gray-100"
+        />
+      )}
     </div>
   );
 };

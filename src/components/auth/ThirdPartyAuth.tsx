@@ -26,7 +26,7 @@ const ThirdPartyAuth = () => {
           type="button"
           variant="outline"
           onClick={() => handleThirdPartySignup("Google")}
-          className="bg-white/50"
+          className="bg-[#4285F4] hover:bg-[#357ABD] text-white border-none"
         >
           Continue with Google
         </Button>
@@ -34,7 +34,7 @@ const ThirdPartyAuth = () => {
           type="button"
           variant="outline"
           onClick={() => handleThirdPartySignup("Twitter")}
-          className="bg-white/50"
+          className="bg-[#1DA1F2] hover:bg-[#1A8CD8] text-white border-none"
         >
           Continue with Twitter
         </Button>
