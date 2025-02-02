@@ -13,7 +13,7 @@ type OTPInputProps = {
 const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground text-center">
+      <p className="text-sm text-foreground/80 text-center font-medium">
         Enter the 4-digit code sent to {identifier || "your contact"}
       </p>
       <div className="flex justify-center">
@@ -28,7 +28,7 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
                   key={index}
                   {...slot}
                   index={index}
-                  className="w-10 h-10 text-white text-lg border-2 focus:border-coffee"
+                  className="w-10 h-10 text-lg border-2 focus:border-coffee bg-white/80 dark:bg-black/50 text-foreground"
                 />
               ))}
             </InputOTPGroup>
