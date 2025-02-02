@@ -27,6 +27,7 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
                 <InputOTPSlot 
                   key={index} 
                   {...slot} 
+                  index={index}
                   className="w-10 h-10 text-lg border-2 focus:border-coffee"
                 />
               ))}
