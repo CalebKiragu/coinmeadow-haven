@@ -6,19 +6,19 @@ const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [showLogin, setShowLogin] = useState(true);
 
-  // skip login if already authenticated
   if (isAuthenticated) {
+    // skip login if already authenticated
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-slate-900 dark:to-zinc-900">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-purple-600 via-pink-500 to-red-500">
       <div className="w-full max-w-md">
         {showLogin ? <LoginForm /> : <SignupForm />}
-        <p className="text-center mt-4 text-gray-600 dark:text-gray-300">
+        <p className="text-center mt-4 text-white">
           {showLogin ? "Don't have an account? " : "Already have an account? "}
           <button
             onClick={() => setShowLogin(!showLogin)}
-            className="text-purple-600 dark:text-purple-400 underline hover:text-purple-700 dark:hover:text-purple-300"
+            className="text-white underline hover:text-purple-200"
           >
             {showLogin ? "Sign up" : "Login"}
           </button>

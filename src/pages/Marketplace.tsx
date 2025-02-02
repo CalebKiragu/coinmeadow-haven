@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MarketplaceFilters from "@/components/marketplace/MarketplaceFilters";
-import MarketplaceOfferCard, {
-  Offer,
-} from "@/components/marketplace/MarketplaceOfferCard";
+import MarketplaceOfferCard, { Offer } from "@/components/marketplace/MarketplaceOfferCard";
+import { NavigationHeader } from "@/components/shared/NavigationHeader";
 
-// Mock data - replace with real API calls later
 const mockOffers: Offer[] = [
   {
     id: "1",
@@ -62,7 +60,7 @@ const Marketplace = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-8">Marketplace</h1>
+        <NavigationHeader title="Marketplace" />
 
         <Tabs
           defaultValue="buy"

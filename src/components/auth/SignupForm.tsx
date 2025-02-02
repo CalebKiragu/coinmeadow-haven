@@ -14,22 +14,27 @@ const SignupForm = () => {
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [country, setCountry] = useState("");
-  const [step, setStep] = useState(1);
+  const [emailStep, setEmailStep] = useState(1);
+  const [phoneStep, setPhoneStep] = useState(1);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
+  const [emailOtp, setEmailOtp] = useState("");
+  const [phoneOtp, setPhoneOtp] = useState("");
   const navigate = useNavigate();
   const refId = searchParams.get("refId") || "";
 
-  const handleNext = () => {
-    if (step === 1) {
-      // Simulate OTP sending
+  const handleNext = (type: "email" | "phone") => {
+    if ((type === "email" && emailStep === 1) || (type === "phone" && phoneStep === 1)) {
       toast({
         title: "OTP Sent!",
-        description: `Check your ${email ? "email" : "phone"} for the verification code.`,
+        description: `Check your ${type} for the verification code.`,
       });
     }
-    setStep((prev) => prev + 1);
+    if (type === "email") {
+      setEmailStep((prev) => prev + 1);
+    } else {
+      setPhoneStep((prev) => prev + 1);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,6 +51,11 @@ const SignupForm = () => {
   };
 
   const renderStepContent = (activeTab: "email" | "phone") => {
+    const step = activeTab === "email" ? emailStep : phoneStep;
+    const otp = activeTab === "email" ? emailOtp : phoneOtp;
+    const setOtp = activeTab === "email" ? setEmailOtp : setPhoneOtp;
+    const identifier = activeTab === "email" ? email : phone;
+
     switch (step) {
       case 1:
         return (
@@ -71,7 +81,7 @@ const SignupForm = () => {
             )}
             <Button
               type="button"
-              onClick={handleNext}
+              onClick={() => handleNext(activeTab)}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600"
             >
               Next
@@ -84,10 +94,11 @@ const SignupForm = () => {
             <OTPInput
               value={otp}
               onChange={setOtp}
+              identifier={identifier}
             />
             <Button
               type="button"
-              onClick={handleNext}
+              onClick={() => handleNext(activeTab)}
               disabled={otp.length !== 4}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600"
             >
@@ -121,7 +132,9 @@ const SignupForm = () => {
     <GlassCard className="w-full max-w-md mx-auto animate-fade-in">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Create Account</h2>
-        <span className="text-sm text-muted-foreground">Step {step} of 3</span>
+        <span className="text-sm text-muted-foreground">
+          Step {activeTab === "email" ? emailStep : phoneStep} of 3
+        </span>
       </div>
       <Tabs defaultValue="email" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-4">
@@ -137,7 +150,7 @@ const SignupForm = () => {
           </TabsContent>
         </form>
       </Tabs>
-      {step === 1 && <ThirdPartyAuth />}
+      {(emailStep === 1 && phoneStep === 1) && <ThirdPartyAuth />}
     </GlassCard>
   );
 };

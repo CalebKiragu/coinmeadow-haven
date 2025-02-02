@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GlassCard from "../ui/GlassCard";
 
 const LoginForm = () => {
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPin, setShowPin] = useState(false);
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -16,7 +16,6 @@ const LoginForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate login - replace with actual authentication
     setTimeout(() => {
       setIsLoading(false);
       toast({
@@ -61,17 +60,19 @@ const LoginForm = () => {
           </TabsContent>
           <div className="space-y-2 relative">
             <Input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
+              type={showPin ? "text" : "password"}
+              placeholder="4-digit PIN"
+              maxLength={4}
+              pattern="\d{4}"
               className="w-full bg-white/50 pr-10"
               required
             />
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() => setShowPin(!showPin)}
               className="absolute right-3 top-2.5 text-gray-500"
             >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              {showPin ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
           <Button
@@ -97,7 +98,7 @@ const LoginForm = () => {
             type="button"
             variant="outline"
             onClick={() => handleThirdPartyLogin("Twitter")}
-            className="bg-white/50"
+            className="bg-[#1DA1F2] text-white hover:bg-[#1a8cd8]"
           >
             Continue with Twitter
           </Button>
@@ -105,7 +106,7 @@ const LoginForm = () => {
             type="button"
             variant="outline"
             onClick={() => handleThirdPartyLogin("Google")}
-            className="bg-white/50"
+            className="bg-[#4285F4] text-white hover:bg-[#3367D6]"
           >
             Continue with Google
           </Button>
@@ -113,7 +114,7 @@ const LoginForm = () => {
       </div>
       <div className="text-center text-sm mt-4">
         <a href="#" className="text-purple-600 hover:text-purple-700">
-          Forgot password?
+          Forgot PIN?
         </a>
       </div>
     </GlassCard>
