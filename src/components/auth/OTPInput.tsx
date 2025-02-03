@@ -27,6 +27,7 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
     }
   };
 
+  // Updated the event type to React.KeyboardEvent<HTMLInputElement>
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace' && !value[index] && index > 0) {
       inputRefs[index - 1].current?.focus();
@@ -50,7 +51,7 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
             variant="outlined"
             value={value[index] || ''}
             onChange={(e) => handleChange(index, e.target.value)}
-            onKeyDown={(e) => handleKeyDown(index, e)}
+            onKeyDown={(e) => handleKeyDown(index, e as React.KeyboardEvent<HTMLInputElement>)}
             inputProps={{
               maxLength: 1,
               style: { 
