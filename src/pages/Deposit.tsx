@@ -14,6 +14,7 @@ import { NavigationHeader } from "@/components/shared/NavigationHeader";
 
 const Deposit = () => {
   const navigate = useNavigate();
+  const [payerInfo, setPayerInfo] = useState("");
   const [amount, setAmount] = useState("");
   const [pin, setPin] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
@@ -22,7 +23,7 @@ const Deposit = () => {
   >(null);
 
   const handleNextStep = () => {
-    if (currentStep < 2) {
+    if (currentStep < 3) {
       setCurrentStep((prev) => prev + 1);
     } else {
       // Simulate transaction processing
@@ -46,10 +47,10 @@ const Deposit = () => {
         {!transactionStatus ? (
           <div className="space-y-6">
             <div className="flex justify-between mb-8">
-              {[1, 2].map((step) => (
+              {[1, 2, 3].map((step) => (
                 <div
                   key={step}
-                  className={`flex items-center ${step !== 2 ? "flex-1" : ""}`}
+                  className={`flex items-center ${step !== 3 ? "flex-1" : ""}`}
                 >
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -60,7 +61,7 @@ const Deposit = () => {
                   >
                     {step}
                   </div>
-                  {step !== 2 && (
+                  {step !== 3 && (
                     <div
                       className={`flex-1 h-1 mx-2 ${
                         step < currentStep ? "bg-primary" : "bg-gray-200"
@@ -72,6 +73,15 @@ const Deposit = () => {
             </div>
 
             {currentStep === 1 ? (
+              <div className="space-y-4 animate-fade-in">
+                <Input
+                  type="text"
+                  placeholder="Enter Payer's Address/Phone"
+                  value={payerInfo}
+                  onChange={(e) => setPayerInfo(e.target.value)}
+                />
+              </div>
+            ) : currentStep === 2 ? (
               <div className="space-y-4 animate-fade-in">
                 <Input
                   type="number"
@@ -92,7 +102,7 @@ const Deposit = () => {
             )}
 
             <Button className="w-full" onClick={handleNextStep}>
-              {currentStep === 2 ? "Complete Deposit" : "Next"}
+              {currentStep === 3 ? "Complete Deposit" : "Next"}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>

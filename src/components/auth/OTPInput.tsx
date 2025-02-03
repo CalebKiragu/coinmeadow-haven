@@ -1,8 +1,5 @@
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
+import { TextField } from "@mui/material";
+import { useRef, useEffect } from "react";
 
 type OTPInputProps = {
   value: string;
@@ -11,29 +8,61 @@ type OTPInputProps = {
 };
 
 const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
+  const inputRefs = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+  ];
+
+  const handleChange = (index: number, digit: string) => {
+    if (digit.length <= 1 && /^\d*$/.test(digit)) {
+      const newValue = value.split('');
+      newValue[index] = digit;
+      onChange(newValue.join(''));
+      
+      if (digit && index < 3) {
+        inputRefs[index + 1].current?.focus();
+      }
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !value[index] && index > 0) {
+      inputRefs[index - 1].current?.focus();
+    }
+  };
+
+  useEffect(() => {
+    inputRefs[0].current?.focus();
+  }, []);
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-foreground/80 text-center font-medium">
         Enter the 4-digit code sent to {identifier || "your contact"}
       </p>
-      <div className="flex justify-center">
-        <InputOTP
-          maxLength={4}
-          value={value}
-          onChange={onChange}
-          render={({ slots }) => (
-            <InputOTPGroup className="gap-2">
-              {slots.map((slot, index) => (
-                <InputOTPSlot
-                  key={index}
-                  {...slot}
-                  index={index}
-                  className="w-10 h-10 text-lg border-2 focus:border-coffee bg-white dark:bg-black/80 text-foreground z-50 relative"
-                />
-              ))}
-            </InputOTPGroup>
-          )}
-        />
+      <div className="flex justify-center gap-2">
+        {[0, 1, 2, 3].map((index) => (
+          <TextField
+            key={index}
+            inputRef={inputRefs[index]}
+            variant="outlined"
+            value={value[index] || ''}
+            onChange={(e) => handleChange(index, e.target.value)}
+            onKeyDown={(e) => handleKeyDown(index, e)}
+            inputProps={{
+              maxLength: 1,
+              style: { 
+                width: '40px', 
+                height: '40px',
+                textAlign: 'center',
+                fontSize: '1.25rem',
+                padding: '8px'
+              }
+            }}
+          />
+        ))}
       </div>
     </div>
   );

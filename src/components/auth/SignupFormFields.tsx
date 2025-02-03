@@ -55,14 +55,12 @@ const SignupFormFields = ({ country, setCountry, refId }: SignupFormFieldsProps)
         className="w-full bg-white/50"
         required
       />
-      {refId && (
-        <Input
-          type="text"
-          value={refId}
-          readOnly
-          className="w-full bg-gray-100"
-        />
-      )}
+      <Input
+        type="text"
+        placeholder="Referral ID (Optional)"
+        defaultValue={refId}
+        className="w-full bg-white/50"
+      />
     </div>
   );
 };
