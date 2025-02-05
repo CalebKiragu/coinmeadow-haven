@@ -6,12 +6,20 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GlassCard from "../ui/GlassCard";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import ChangePinForm from "./ChangePinForm";
 
 const LoginForm = () => {
   const [showPin, setShowPin] = useState(false);
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const [showPinReset, setShowPinReset] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,10 +121,22 @@ const LoginForm = () => {
         </div>
       </div>
       <div className="text-center text-sm mt-4">
-        <a href="#" className="text-coffee hover:text-coffee-dark">
+        <button
+          onClick={() => setShowPinReset(true)}
+          className="text-coffee hover:text-coffee-dark"
+        >
           Forgot PIN?
-        </a>
+        </button>
       </div>
+
+      <Dialog open={showPinReset} onOpenChange={setShowPinReset}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reset Wallet PIN</DialogTitle>
+          </DialogHeader>
+          <ChangePinForm isReset onClose={() => setShowPinReset(false)} />
+        </DialogContent>
+      </Dialog>
     </GlassCard>
   );
 };

@@ -19,8 +19,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import ChangePinForm from "@/components/auth/ChangePinForm";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const Settings = () => {
+  const [showPinDialog, setShowPinDialog] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
       <NavigationHeader title="Settings" />
@@ -128,6 +139,22 @@ const Settings = () => {
               </div>
               <Switch />
             </div>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Change Wallet PIN</Label>
+                <p className="text-sm text-muted-foreground">
+                  Update your wallet PIN
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowPinDialog(true)}
+                className="flex items-center gap-2"
+              >
+                <Lock className="h-4 w-4" />
+                Change PIN
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -160,6 +187,15 @@ const Settings = () => {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={showPinDialog} onOpenChange={setShowPinDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change Wallet PIN</DialogTitle>
+          </DialogHeader>
+          <ChangePinForm onClose={() => setShowPinDialog(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
