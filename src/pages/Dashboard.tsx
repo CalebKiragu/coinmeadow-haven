@@ -1,3 +1,4 @@
+```typescript
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +11,7 @@ import {
   LogOut,
   History,
   Headset,
+  Code,
 } from "lucide-react";
 import BalanceCard from "@/components/dashboard/BalanceCard";
 import TransactionButtons from "@/components/dashboard/TransactionButtons";
@@ -103,6 +105,13 @@ const Dashboard = () => {
                     <Settings className="h-5 w-5" />
                     <span>Settings</span>
                   </Link>
+                  <Link
+                    to="/api-docs"
+                    className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    <Code className="h-5 w-5" />
+                    <span>Developers</span>
+                  </Link>
                   <button
                     onClick={() => navigate("/", { replace: true })}
                     className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors text-red-500"
@@ -193,3 +202,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+```

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +17,7 @@ import Receive from "./pages/Receive";
 import Account from "./pages/Account";
 import Settings from "./pages/Settings";
 import Portfolio from "./pages/Portfolio";
+import ApiDocs from "./pages/ApiDocs";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,7 @@ const App = () => (
             <Route path="/account" element={<Account />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/api-docs" element={<ApiDocs />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
