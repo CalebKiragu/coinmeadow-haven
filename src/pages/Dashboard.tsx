@@ -1,4 +1,4 @@
-```typescript
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -202,4 +202,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-```
