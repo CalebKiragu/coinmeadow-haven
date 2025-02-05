@@ -209,7 +209,7 @@ const ApiDocs = () => {
                   </pre>
                 </div>
               </div>
-            </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
