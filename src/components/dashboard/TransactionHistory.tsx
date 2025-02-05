@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowUpRight, ArrowDownLeft, Calendar, Filter } from "lucide-react";
+import { Calendar, Filter } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import GlassCard from "../ui/GlassCard";
+import TransactionHistoryItem from "./TransactionHistoryItem";
 
 type Transaction = {
   id: number;
@@ -77,46 +78,13 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
           </Select>
         </div>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-2">
         {filteredTransactions.map((tx) => (
-          <div
+          <TransactionHistoryItem
             key={tx.id}
-            className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-white/50 rounded-lg transition-colors gap-4"
-          >
-            <div className="flex items-center space-x-4">
-              <div
-                className={`p-2 rounded-full ${
-                  tx.type === "send"
-                    ? "bg-red-100 text-red-600"
-                    : "bg-green-100 text-green-600"
-                }`}
-              >
-                {tx.type === "send" ? (
-                  <ArrowUpRight size={20} />
-                ) : (
-                  <ArrowDownLeft size={20} />
-                )}
-              </div>
-              <div>
-                <div className="font-medium">
-                  {tx.type === "send" ? "Sent" : "Received"}
-                </div>
-                <div className="text-sm text-gray-600 break-all">
-                  {tx.type === "send" ? `To: ${tx.to}` : `From: ${tx.from}`}
-                </div>
-              </div>
-            </div>
-
-            <div className="text-right">
-              <div
-                className={`font-bold ${!showBalance ? "blur-content" : ""}`}
-              >
-                <div className="font-medium">{tx.amount}</div>
-                <div className="text-sm text-gray-600">{tx.value}</div>
-                <div className="text-xs text-gray-500">{tx.date}</div>
-              </div>
-            </div>
-          </div>
+            transaction={tx}
+            showBalance={showBalance}
+          />
         ))}
       </div>
     </GlassCard>
