@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -106,7 +105,7 @@ const Dashboard = () => {
                     <span>Settings</span>
                   </Link>
                   <Link
-                    to="/api-docs"
+                    to="/apidocs"
                     className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors"
                   >
                     <Code className="h-5 w-5" />
