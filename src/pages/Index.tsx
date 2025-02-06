@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import LoginForm from "@/components/auth/LoginForm";
 import SignupForm from "@/components/auth/SignupForm";
@@ -23,12 +22,10 @@ const Index = () => {
           ) : (
             <MerchantSignupForm />
           )
+        ) : showLogin ? (
+          <LoginForm />
         ) : (
-          showLogin ? (
-            <LoginForm />
-          ) : (
-            <SignupForm />
-          )
+          <SignupForm />
         )}
         <p className="text-center mt-4 text-white">
           {showLogin ? "Don't have an account? " : "Already have an account? "}
@@ -36,12 +33,18 @@ const Index = () => {
             onClick={() => setShowLogin(!showLogin)}
             className="text-white underline hover:text-coffee-light"
           >
-            {showLogin ? (isMerchant ? "Sign up as Merchant" : "Sign up") : "Login"}
+            {showLogin
+              ? isMerchant
+                ? "Sign up as Merchant"
+                : "Sign up"
+              : "Login"}
           </button>
         </p>
         {showLogin && (
           <div className="flex items-center justify-center gap-2 mt-4">
-            <span className="text-white">Are you a business?</span>
+            <span className="text-white">
+              {isMerchant ? "Not a business?" : "Are you a business?"}
+            </span>
             <button
               onClick={() => setIsMerchant(!isMerchant)}
               className="text-white underline hover:text-coffee-light"

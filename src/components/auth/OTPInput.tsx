@@ -17,10 +17,10 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
 
   const handleChange = (index: number, digit: string) => {
     if (digit.length <= 1 && /^\d*$/.test(digit)) {
-      const newValue = value.split('');
+      const newValue = value.split("");
       newValue[index] = digit;
-      onChange(newValue.join(''));
-      
+      onChange(newValue.join(""));
+
       if (digit && index < 3) {
         inputRefs[index + 1].current?.focus();
       }
@@ -28,8 +28,11 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
   };
 
   // Updated the event type to React.KeyboardEvent<HTMLInputElement>
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !value[index] && index > 0) {
+  const handleKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (e.key === "Backspace" && !value[index] && index > 0) {
       inputRefs[index - 1].current?.focus();
     }
   };
@@ -49,18 +52,20 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
             key={index}
             inputRef={inputRefs[index]}
             variant="outlined"
-            value={value[index] || ''}
+            value={value[index] || ""}
             onChange={(e) => handleChange(index, e.target.value)}
-            onKeyDown={(e) => handleKeyDown(index, e as React.KeyboardEvent<HTMLInputElement>)}
+            onKeyDown={(e) =>
+              handleKeyDown(index, e as React.KeyboardEvent<HTMLInputElement>)
+            }
             inputProps={{
               maxLength: 1,
-              style: { 
-                width: '40px', 
-                height: '40px',
-                textAlign: 'center',
-                fontSize: '1.25rem',
-                padding: '8px'
-              }
+              style: {
+                width: "40px",
+                height: "40px",
+                textAlign: "center",
+                fontSize: "1.25rem",
+                padding: "8px",
+              },
             }}
           />
         ))}
