@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import ChangePinForm from "./ChangePinForm";
+import OTPInput from "./OTPInput";
 
 const LoginForm = () => {
   const [showPin, setShowPin] = useState(false);
@@ -20,18 +22,39 @@ const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const [showPinReset, setShowPinReset] = useState(false);
+  const [showOTP, setShowOTP] = useState(false);
+  const [otp, setOtp] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    // Simulate login validation
     setTimeout(() => {
       setIsLoading(false);
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
-      });
-      navigate("/dashboard", { replace: true });
+      setShowOTP(true); // Show OTP step after successful credentials
     }, 1500);
+  };
+
+  const handleOTPSubmit = () => {
+    if (otp.length === 4) {
+      setIsLoading(true);
+      setTimeout(() => {
+        setIsLoading(false);
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully logged in.",
+        });
+        navigate("/dashboard", { replace: true });
+      }, 1000);
+    }
+  };
+
+  const handleSkipOTP = () => {
+    toast({
+      title: "Welcome back!",
+      description: "You have successfully logged in.",
+    });
+    navigate("/dashboard", { replace: true });
   };
 
   const handleThirdPartyLogin = (provider: string) => {
@@ -40,6 +63,31 @@ const LoginForm = () => {
       description: "This feature is coming soon!",
     });
   };
+
+  if (showOTP) {
+    return (
+      <GlassCard className="w-full max-w-md mx-auto animate-fade-in">
+        <h2 className="text-2xl font-bold text-center mb-6">Two-Factor Authentication</h2>
+        <div className="space-y-4">
+          <OTPInput value={otp} onChange={setOtp} />
+          <Button
+            onClick={handleOTPSubmit}
+            className="w-full bg-gradient-to-r from-coffee to-coffee-dark hover:from-coffee-dark hover:to-coffee"
+            disabled={otp.length !== 4 || isLoading}
+          >
+            {isLoading ? "Verifying..." : "Verify"}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={handleSkipOTP}
+            className="w-full text-sm"
+          >
+            Skip for now
+          </Button>
+        </div>
+      </GlassCard>
+    );
+  }
 
   return (
     <GlassCard className="w-full max-w-md mx-auto animate-fade-in">
