@@ -1,3 +1,4 @@
+
 import { TextField } from "@mui/material";
 import { useRef, useEffect } from "react";
 
@@ -27,7 +28,6 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
     }
   };
 
-  // Updated the event type to React.KeyboardEvent<HTMLInputElement>
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace' && !value[index] && index > 0) {
       inputRefs[index - 1].current?.focus();
@@ -59,9 +59,12 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
                 height: '40px',
                 textAlign: 'center',
                 fontSize: '1.25rem',
-                padding: '8px'
-              }
+                padding: '8px',
+                color: 'currentColor' // This ensures text color follows system theme
+              },
+              className: "dark:text-white" // Add dark mode text color
             }}
+            className="dark:text-white"
           />
         ))}
       </div>

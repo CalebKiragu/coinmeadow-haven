@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye, EyeOff, ChevronDown } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   Select,
@@ -17,6 +17,11 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
   const navigate = useNavigate();
   const [selectedCrypto, setSelectedCrypto] = useState("ALL");
   const [selectedFiat, setSelectedFiat] = useState("USD");
+
+  // Mock data - in a real app this would come from auth context/state
+  const userFirstName = "John";
+  const merchantNo = "M123456"; // Only shown for merchant accounts
+  const isMerchant = true; // This would come from auth context
 
   const selectedCryptoData = cryptoCurrencies.find(
     (c) => c.symbol === selectedCrypto
@@ -49,14 +54,24 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
   return (
     <GlassCard className="relative animate-scale-in">
       <div className="flex flex-col gap-4">
-        <div className="flex justify-between items-center flex-wrap gap-4">
-          <h2 className="text-xl font-semibold">Available Balance:</h2>
-          <button
-            onClick={() => setShowBalance(!showBalance)}
-            className="text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            {showBalance ? <EyeOff size={20} /> : <Eye size={20} />}
-          </button>
+        <div className="flex flex-col gap-1">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-xl font-semibold">Hi {userFirstName}!</h1>
+              {isMerchant && (
+                <p className="text-sm text-muted-foreground">
+                  Merchant No: {merchantNo}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => setShowBalance(!showBalance)}
+              className="text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              {showBalance ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+          <h2 className="text-lg font-medium mt-2">Available Balance:</h2>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4">
