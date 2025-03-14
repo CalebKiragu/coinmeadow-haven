@@ -1,17 +1,23 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import LoginForm from "@/components/auth/LoginForm";
 import SignupForm from "@/components/auth/SignupForm";
 import MerchantLoginForm from "@/components/auth/MerchantLoginForm";
 import MerchantSignupForm from "@/components/auth/MerchantSignupForm";
+import { useAppSelector } from "@/lib/redux/hooks";
 
 const Index = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [showLogin, setShowLogin] = useState(true);
   const [isMerchant, setIsMerchant] = useState(false);
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const navigate = useNavigate();
 
-  if (isAuthenticated) {
-    // skip login if already authenticated
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-coffee-light via-coffee to-dollar-dark">

@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Calendar, Filter } from "lucide-react";
 import {
   Select,
@@ -9,46 +10,47 @@ import {
 } from "@/components/ui/select";
 import GlassCard from "../ui/GlassCard";
 import TransactionHistoryItem from "./TransactionHistoryItem";
-
-type Transaction = {
-  id: number;
-  type: "send" | "receive";
-  amount: string;
-  value: string;
-  to?: string;
-  from?: string;
-  date: string;
-  currency: string;
-};
-
-const transactions: Transaction[] = [
-  {
-    id: 1,
-    type: "send",
-    amount: "-0.5 BTC",
-    value: "-$20,123.45",
-    to: "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
-    date: "2024-02-20",
-    currency: "BTC",
-  },
-  {
-    id: 2,
-    type: "receive",
-    amount: "+1.2 ETH",
-    value: "+$2,856.12",
-    from: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
-    date: "2024-02-19",
-    currency: "ETH",
-  },
-];
+import { useAppSelector } from "@/lib/redux/hooks";
+import { ApiService } from "@/lib/service";
 
 const TransactionHistory = ({ showBalance, setShowBalance }) => {
   const [sortBy, setSortBy] = useState("date");
   const [filterCurrency, setFilterCurrency] = useState("all");
+  const [isLoading, setIsLoading] = useState(false);
 
+  const { transactions } = useAppSelector((state) => state.transaction);
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setIsLoading(true);
+      try {
+        await ApiService.getTransactionHistory();
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, []);
+
+  // Filter transactions based on selected currency
   const filteredTransactions = transactions.filter((tx) =>
     filterCurrency === "all" ? true : tx.currency === filterCurrency
   );
+
+  // Sort transactions based on selected sort method
+  const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+    if (sortBy === "date") {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    } else if (sortBy === "amount") {
+      const aValue = parseFloat(a.amount.replace(/[^0-9.-]+/g, ""));
+      const bValue = parseFloat(b.amount.replace(/[^0-9.-]+/g, ""));
+      return bValue - aValue;
+    }
+    return 0;
+  });
 
   return (
     <GlassCard className="animate-fade-in">
@@ -78,15 +80,27 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
           </Select>
         </div>
       </div>
-      <div className="space-y-2">
-        {filteredTransactions.map((tx) => (
-          <TransactionHistoryItem
-            key={tx.id}
-            transaction={tx}
-            showBalance={showBalance}
-          />
-        ))}
-      </div>
+      
+      {isLoading ? (
+        <div className="py-20 text-center text-gray-500">
+          <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p>Loading transactions...</p>
+        </div>
+      ) : sortedTransactions.length === 0 ? (
+        <div className="py-20 text-center text-gray-500">
+          <p>No transactions to display</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {sortedTransactions.map((tx) => (
+            <TransactionHistoryItem
+              key={tx.id}
+              transaction={tx}
+              showBalance={showBalance}
+            />
+          ))}
+        </div>
+      )}
     </GlassCard>
   );
 };

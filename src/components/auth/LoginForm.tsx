@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dialog";
 import ChangePinForm from "./ChangePinForm";
 import OTPInput from "./OTPInput";
+import { ApiService } from "@/lib/service";
+import { useAppSelector } from "@/lib/redux/hooks";
 
 const LoginForm = () => {
   const [showPin, setShowPin] = useState(false);
@@ -24,28 +26,61 @@ const LoginForm = () => {
   const [showPinReset, setShowPinReset] = useState(false);
   const [showOTP, setShowOTP] = useState(false);
   const [otp, setOtp] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [pin, setPin] = useState("");
+  const [activeTab, setActiveTab] = useState<"email" | "phone">("email");
+
+  const { isAuthenticated, error } = useAppSelector((state) => state.auth);
+
+  if (isAuthenticated) {
+    navigate("/dashboard", { replace: true });
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate login validation
-    setTimeout(() => {
+
+    try {
+      const credentials = {
+        ...(activeTab === "email" ? { email } : { phone }),
+        pin,
+      };
+
+      await ApiService.loginUser(credentials);
+      setShowOTP(true);
+    } catch (error) {
+      toast({
+        title: "Login Failed",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      });
       setIsLoading(false);
-      setShowOTP(true); // Show OTP step after successful credentials
-    }, 1500);
+    }
   };
 
-  const handleOTPSubmit = () => {
+  const handleOTPSubmit = async () => {
     if (otp.length === 4) {
       setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
+      try {
+        await ApiService.verifyOtp({
+          ...(activeTab === "email" ? { email } : { phone }),
+          otp,
+        });
+
         toast({
           title: "Welcome back!",
           description: "You have successfully logged in.",
         });
         navigate("/dashboard", { replace: true });
-      }, 1000);
+      } catch (error) {
+        toast({
+          title: "OTP Verification Failed",
+          description: error instanceof Error ? error.message : "Invalid OTP",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+      }
     }
   };
 
@@ -69,7 +104,11 @@ const LoginForm = () => {
       <GlassCard className="w-full max-w-md mx-auto animate-fade-in">
         <h2 className="text-2xl font-bold text-center mb-6">Two-Factor Authentication</h2>
         <div className="space-y-4">
-          <OTPInput value={otp} onChange={setOtp} />
+          <OTPInput 
+            value={otp} 
+            onChange={setOtp} 
+            identifier={activeTab === "email" ? email : phone}
+          />
           <Button
             onClick={handleOTPSubmit}
             className="w-full bg-gradient-to-r from-coffee to-coffee-dark hover:from-coffee-dark hover:to-coffee"
@@ -92,7 +131,11 @@ const LoginForm = () => {
   return (
     <GlassCard className="w-full max-w-md mx-auto animate-fade-in">
       <h2 className="text-2xl font-bold text-center mb-6">Welcome Back</h2>
-      <Tabs defaultValue="email" className="w-full">
+      <Tabs 
+        defaultValue="email" 
+        className="w-full"
+        onValueChange={(value) => setActiveTab(value as "email" | "phone")}
+      >
         <TabsList className="grid w-full grid-cols-2 mb-4">
           <TabsTrigger value="email">Email</TabsTrigger>
           <TabsTrigger value="phone">Phone</TabsTrigger>
@@ -104,6 +147,8 @@ const LoginForm = () => {
               placeholder="Email"
               className="w-full bg-white/50"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </TabsContent>
           <TabsContent value="phone">
@@ -112,6 +157,8 @@ const LoginForm = () => {
               placeholder="Phone (e.g., +254700000000)"
               className="w-full bg-white/50"
               required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
             />
           </TabsContent>
           <div className="space-y-2 relative">
@@ -122,6 +169,8 @@ const LoginForm = () => {
               pattern="\d{4}"
               className="w-full bg-white/50 pr-10"
               required
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
             />
             <button
               type="button"
@@ -131,6 +180,7 @@ const LoginForm = () => {
               {showPin ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
+          {error && <p className="text-red-500 text-sm">{error}</p>}
           <Button
             type="submit"
             className="w-full bg-gradient-to-r from-coffee to-coffee-dark hover:from-coffee-dark hover:to-coffee"

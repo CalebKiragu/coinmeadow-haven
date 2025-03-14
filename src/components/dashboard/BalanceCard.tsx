@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -12,21 +13,56 @@ import { Button } from "@/components/ui/button";
 import GlassCard from "../ui/GlassCard";
 import { Badge } from "../ui/badge";
 import { cryptoCurrencies, fiatCurrencies } from "@/types/currency";
+import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
+import { setSelectedCrypto, setSelectedFiat } from "@/lib/redux/slices/walletSlice";
+import { ApiService } from "@/lib/service";
 
 const BalanceCard = ({ showBalance, setShowBalance }) => {
   const navigate = useNavigate();
-  const [selectedCrypto, setSelectedCrypto] = useState("ALL");
-  const [selectedFiat, setSelectedFiat] = useState("USD");
+  const dispatch = useAppDispatch();
+  
+  const { user } = useAppSelector((state) => state.auth);
+  const { balances, selectedCrypto, selectedFiat, lastUpdated } = useAppSelector((state) => state.wallet);
+  const { prices } = useAppSelector((state) => state.price);
 
-  // Mock data - in a real app this would come from auth context/state
-  const userFirstName = "John";
-  const merchantNo = "M123456"; // Only shown for merchant accounts
-  const isMerchant = true; // This would come from auth context
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Fetch wallet data when component mounts
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        await ApiService.updateDashboard();
+      } catch (error) {
+        console.error("Error updating dashboard:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleSelectCrypto = (value: string) => {
+    dispatch(setSelectedCrypto(value));
+  };
+
+  const handleSelectFiat = (value: string) => {
+    dispatch(setSelectedFiat(value));
+  };
+
+  // Get the selected crypto data
   const selectedCryptoData = cryptoCurrencies.find(
     (c) => c.symbol === selectedCrypto
   );
+
+  // Get the selected fiat data
   const selectedFiatData = fiatCurrencies.find((f) => f.code === selectedFiat);
+
+  // Get price data for the selected crypto
+  const selectedCryptoPrice = prices.find(
+    (price) => price.currency === selectedCrypto
+  );
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -39,17 +75,26 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
 
   const calculateTotalBalance = () => {
     if (selectedCrypto === "ALL") {
-      return cryptoCurrencies.reduce(
-        (total, crypto) => total + (crypto.price || 0),
-        0
-      );
+      // Calculate total balance across all currencies
+      return balances.reduce((total, balance) => {
+        const price = prices.find((p) => p.currency === balance.currency)?.price || 0;
+        return total + (balance.amount * price);
+      }, 0);
+    } else {
+      // Get balance for the selected crypto
+      const balance = balances.find((b) => b.currency === selectedCrypto);
+      const price = prices.find((p) => p.currency === selectedCrypto)?.price || 0;
+      return (balance?.amount || 0) * price;
     }
-    return selectedCryptoData?.price || 0;
   };
 
   const handlePortfolioClick = () => {
     navigate("/portfolio", { state: { selectedCrypto } });
   };
+
+  const userFirstName = user?.firstName || "User";
+  const merchantNo = user?.merchantNo;
+  const isMerchant = user?.isMerchant || false;
 
   return (
     <GlassCard className="relative animate-scale-in">
@@ -58,7 +103,7 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-xl font-semibold">Hi {userFirstName}!</h1>
-              {isMerchant && (
+              {isMerchant && merchantNo && (
                 <p className="text-sm text-muted-foreground">
                   Merchant No: {merchantNo}
                 </p>
@@ -75,7 +120,7 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4">
-          <Select value={selectedCrypto} onValueChange={setSelectedCrypto}>
+          <Select value={selectedCrypto} onValueChange={handleSelectCrypto}>
             <SelectTrigger className="w-full sm:w-[140px]">
               <SelectValue placeholder="Select Wallet" />
             </SelectTrigger>
@@ -89,7 +134,7 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
             </SelectContent>
           </Select>
 
-          <Select value={selectedFiat} onValueChange={setSelectedFiat}>
+          <Select value={selectedFiat} onValueChange={handleSelectFiat}>
             <SelectTrigger className="w-full sm:w-[140px]">
               <SelectValue placeholder="Select Fiat" />
             </SelectTrigger>
@@ -108,7 +153,11 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
             !showBalance ? "blur-content" : ""
           }`}
         >
-          {formatPrice(calculateTotalBalance())}
+          {isLoading ? (
+            <span className="animate-pulse">Loading...</span>
+          ) : (
+            formatPrice(calculateTotalBalance())
+          )}
         </div>
 
         <div
@@ -122,14 +171,19 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
             ) : (
               <span className="break-words">
                 1 {selectedCryptoData?.symbol} ={" "}
-                {formatPrice(selectedCryptoData?.price || 0)}
+                {formatPrice(selectedCryptoPrice?.price || 0)}
               </span>
             )}
 
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="secondary" className="max-w-fit">
-                <span className="text-green-500">+2.5% today</span>
-              </Badge>
+              {selectedCryptoPrice && (
+                <Badge variant="secondary" className="max-w-fit">
+                  <span className={selectedCryptoPrice.priceChange24h >= 0 ? "text-green-500" : "text-red-500"}>
+                    {selectedCryptoPrice.priceChange24h >= 0 ? "+" : ""}
+                    {selectedCryptoPrice.priceChange24h.toFixed(2)}% today
+                  </span>
+                </Badge>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -141,6 +195,12 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
             </div>
           </div>
         </div>
+        
+        {lastUpdated && (
+          <div className="text-xs text-gray-500 mt-2">
+            Last updated: {new Date(lastUpdated).toLocaleTimeString()}
+          </div>
+        )}
       </div>
     </GlassCard>
   );

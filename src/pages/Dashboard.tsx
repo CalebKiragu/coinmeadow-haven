@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -22,6 +23,9 @@ import MarketplaceOfferCard, {
   Offer,
 } from "@/components/marketplace/MarketplaceOfferCard";
 import { Button } from "@/components/ui/button";
+import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
+import { logout } from "@/lib/redux/slices/authSlice";
+import { startPriceUpdates } from "@/lib/service";
 
 const trendingOffers: Offer[] = [
   {
@@ -50,8 +54,32 @@ const trendingOffers: Offer[] = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState("wallet");
   const [showBalance, setShowBalance] = useState(false);
+  
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+
+  useEffect(() => {
+    // Redirect to login if not authenticated
+    if (!isAuthenticated) {
+      navigate("/", { replace: true });
+      return;
+    }
+    
+    // Start price updates
+    const intervalId = startPriceUpdates();
+    
+    // Clean up on unmount
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [isAuthenticated, navigate]);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/", { replace: true });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
@@ -112,7 +140,7 @@ const Dashboard = () => {
                     <span>Developers</span>
                   </Link>
                   <button
-                    onClick={() => navigate("/", { replace: true })}
+                    onClick={handleLogout}
                     className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors text-red-500"
                   >
                     <LogOut className="h-5 w-5" />

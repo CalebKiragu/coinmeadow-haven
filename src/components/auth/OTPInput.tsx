@@ -1,3 +1,4 @@
+
 import { TextField } from "@mui/material";
 import { useRef, useEffect } from "react";
 
@@ -27,7 +28,6 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
     }
   };
 
-  // Updated the event type to React.KeyboardEvent<HTMLInputElement>
   const handleKeyDown = (
     index: number,
     e: React.KeyboardEvent<HTMLInputElement>
@@ -65,6 +65,23 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
                 textAlign: "center",
                 fontSize: "1.25rem",
                 padding: "8px",
+                color: "inherit", // This will inherit text color from parent
+              },
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": {
+                  borderColor: "rgba(255, 255, 255, 0.3)",
+                },
+                "&:hover fieldset": {
+                  borderColor: "rgba(255, 255, 255, 0.5)",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "primary.main",
+                },
+              },
+              "& .MuiInputBase-input": {
+                color: "inherit", // Ensure text inherits color in all states
               },
             }}
           />
