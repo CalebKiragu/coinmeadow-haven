@@ -1,13 +1,38 @@
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+export interface Balance {
+  accountBalance: string;
+  availableBalance: string;
+}
 
-export interface WalletBalance {
+export interface Address {
+  address: string;
+  index: number;
+}
+
+export interface Wallet {
+  active: boolean;
+  frozen: boolean;
+  balance: Balance;
   currency: string;
-  amount: number;
+  accountingCurrency: string;
+  walletId?: string;
+  userId?: string;
+  email?: string;
+  phone?: string;
+  isMerchant?: boolean;
+  merchantNo?: string;
+  createdAt?: bigint;
+  addresses?: Address[];
+  accountCode?: string;
+  accountNumber?: string;
+  customerId: string;
+  id: string;
+  error?: string;
 }
 
 interface WalletState {
-  balances: WalletBalance[];
+  wallets: Wallet[];
   selectedCrypto: string;
   selectedFiat: string;
   isLoading: boolean;
@@ -16,28 +41,28 @@ interface WalletState {
 }
 
 const initialState: WalletState = {
-  balances: [],
-  selectedCrypto: 'ALL',
-  selectedFiat: 'USD',
+  wallets: [],
+  selectedCrypto: "ALL",
+  selectedFiat: "USD",
   isLoading: false,
   error: null,
   lastUpdated: null,
 };
 
 const walletSlice = createSlice({
-  name: 'wallet',
+  name: "wallet",
   initialState,
   reducers: {
-    fetchBalanceStart: (state) => {
+    fetchWalletStart: (state) => {
       state.isLoading = true;
       state.error = null;
     },
-    fetchBalanceSuccess: (state, action: PayloadAction<WalletBalance[]>) => {
-      state.balances = action.payload;
+    fetchWalletSuccess: (state, action: PayloadAction<Wallet[]>) => {
+      state.wallets = action.payload;
       state.isLoading = false;
       state.lastUpdated = new Date().toISOString();
     },
-    fetchBalanceFailure: (state, action: PayloadAction<string>) => {
+    fetchWalletFailure: (state, action: PayloadAction<string>) => {
       state.isLoading = false;
       state.error = action.payload;
     },
@@ -47,24 +72,25 @@ const walletSlice = createSlice({
     setSelectedFiat: (state, action: PayloadAction<string>) => {
       state.selectedFiat = action.payload;
     },
-    addTransaction: (state, action: PayloadAction<WalletBalance>) => {
-      const index = state.balances.findIndex(
-        (balance) => balance.currency === action.payload.currency
+    addTransaction: (state, action: PayloadAction<Wallet>) => {
+      const index = state.wallets.findIndex(
+        (wallet) => wallet.currency === action.payload.currency
       );
-      
+
       if (index !== -1) {
-        state.balances[index].amount += action.payload.amount;
+        state.wallets[index].balance.accountBalance +=
+          action.payload.balance.accountBalance;
       } else {
-        state.balances.push(action.payload);
+        state.wallets.push(action.payload);
       }
     },
   },
 });
 
 export const {
-  fetchBalanceStart,
-  fetchBalanceSuccess,
-  fetchBalanceFailure,
+  fetchWalletStart,
+  fetchWalletSuccess,
+  fetchWalletFailure,
   setSelectedCrypto,
   setSelectedFiat,
   addTransaction,

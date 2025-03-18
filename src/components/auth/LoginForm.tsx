@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -46,13 +45,13 @@ const LoginForm = () => {
         ...(activeTab === "email" ? { email } : { phone }),
         pin,
       };
-
       await ApiService.loginUser(credentials);
       setShowOTP(true);
     } catch (error) {
       toast({
         title: "Login Failed",
-        description: error instanceof Error ? error.message : "An error occurred",
+        description:
+          error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
       setIsLoading(false);
@@ -102,11 +101,13 @@ const LoginForm = () => {
   if (showOTP) {
     return (
       <GlassCard className="w-full max-w-md mx-auto animate-fade-in">
-        <h2 className="text-2xl font-bold text-center mb-6">Two-Factor Authentication</h2>
+        <h2 className="text-2xl font-bold text-center mb-6">
+          Two-Factor Authentication
+        </h2>
         <div className="space-y-4">
-          <OTPInput 
-            value={otp} 
-            onChange={setOtp} 
+          <OTPInput
+            value={otp}
+            onChange={setOtp}
             identifier={activeTab === "email" ? email : phone}
           />
           <Button
@@ -131,8 +132,8 @@ const LoginForm = () => {
   return (
     <GlassCard className="w-full max-w-md mx-auto animate-fade-in">
       <h2 className="text-2xl font-bold text-center mb-6">Welcome Back</h2>
-      <Tabs 
-        defaultValue="email" 
+      <Tabs
+        defaultValue="email"
         className="w-full"
         onValueChange={(value) => setActiveTab(value as "email" | "phone")}
       >

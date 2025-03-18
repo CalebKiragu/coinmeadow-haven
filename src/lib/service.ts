@@ -1,48 +1,96 @@
-
-import axios, { AxiosError, AxiosResponse } from 'axios';
-import { 
-  loginStart, 
-  loginSuccess, 
-  loginFailure, 
-  User 
-} from './redux/slices/authSlice';
-import { 
-  fetchBalanceStart, 
-  fetchBalanceSuccess, 
-  fetchBalanceFailure, 
-  WalletBalance 
-} from './redux/slices/walletSlice';
+import axios, { AxiosError, AxiosResponse } from "axios";
+import {
+  loginStart,
+  loginSuccess,
+  loginFailure,
+  User,
+  Merchant,
+  Token,
+  updateOtp,
+} from "./redux/slices/authSlice";
+import {
+  fetchWalletStart,
+  fetchWalletSuccess,
+  fetchWalletFailure,
+  Wallet,
+} from "./redux/slices/walletSlice";
 import {
   fetchPricesStart,
   fetchPricesSuccess,
   fetchPricesFailure,
   PriceData,
-} from './redux/slices/priceSlice';
+} from "./redux/slices/priceSlice";
 import {
   fetchTransactionsStart,
   fetchTransactionsSuccess,
   fetchTransactionsFailure,
   Transaction,
-} from './redux/slices/transactionSlice';
-import { store } from './redux/store';
+} from "./redux/slices/transactionSlice";
+import { store } from "./redux/store";
 
 // Replace with your actual API base URL
-const API_URL = 'https://api.coinduka.com/v1';
+const API_URL = import.meta.env.VITE_BASE_URL;
 
 // Create an axios instance
 const api = axios.create({
   baseURL: API_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
+
+const buildUrl = (
+  caller: string,
+  urlData?: {
+    email?: string;
+    phone?: string;
+    otp?: string;
+    otpId?: string;
+    basePair?: string;
+    isMerchant?: string;
+    currency?: string;
+  }
+): string => {
+  const { email, phone, otp, otpId, basePair, isMerchant, currency } = urlData;
+
+  switch (caller) {
+    case "verifyuserphone":
+      return `v1/users/verify/phone?${phone && `phone=${phone}`}${
+        otp ? `&otp=${otp}` : ``
+      }${otpId ? `&otpId=${otpId}` : ``}`;
+
+    case "verifymerchantphone":
+      return `v1/merchants/verify/phone?${phone && `phone=${phone}`}${
+        otp ? `&otp=${otp}` : ``
+      }${otpId ? `&otpId=${otpId}` : ``}`;
+
+    case "verifyuseremail":
+      return `v1/users/verify/email?${email && `email=${email}`}${
+        otp ? `&otp=${otp}` : ``
+      }${otpId ? `&otpId=${otpId}` : ``}`;
+
+    case "verifymerchantemail":
+      return `v1/merchants/verify/email?${email && `email=${email}`}${
+        otp ? `&otp=${otp}` : ``
+      }${otpId ? `&otpId=${otpId}` : ``}`;
+
+    case "updatewallets":
+      return `v1/balance/${email ? email : phone}?isMerchant=${isMerchant}`;
+
+    case "updateprices":
+      return `v1/tokens/rate/all?basePair=${basePair}`;
+
+    default:
+      return ``;
+  }
+};
 
 // Add a request interceptor to inject the auth token
 api.interceptors.request.use(
   (config) => {
     const token = store.getState().auth.token;
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token.value}`;
     }
     return config;
   },
@@ -51,42 +99,105 @@ api.interceptors.request.use(
 
 // Define response types
 interface ApiResponse<T> {
-  success: boolean;
-  data: T;
+  otpId: any;
+  success?: boolean;
+  data?: T;
+  msg?: string;
   message?: string;
+  status?: string | boolean;
+  error?: string;
 }
 
 interface AuthResponse {
-  user: User;
-  token: string;
+  user?: User;
+  merchant?: Merchant;
+  token: Token;
 }
 
 interface VerificationResponse {
-  success: boolean;
-  message: string;
+  success?: boolean;
+  message?: string;
+}
+
+interface OtpVerificationResponse {
+  otpId?: string;
+  success?: boolean;
+  msg?: string;
 }
 
 // API service functions
 export const ApiService = {
   // Verify Email
-  verifyEmail: async (email: string): Promise<VerificationResponse> => {
+  verifyUserEmail: async (
+    email: string,
+    otp?: string,
+    otpId?: string
+  ): Promise<OtpVerificationResponse> => {
     try {
-      const response: AxiosResponse<ApiResponse<VerificationResponse>> = await api.post('/auth/verify-email', { email });
-      return response.data.data;
+      const response: AxiosResponse<ApiResponse<OtpVerificationResponse>> =
+        await api.get(buildUrl("verifyuseremail", { email, otp, otpId }));
+      if (response.data.otpId) store.dispatch(updateOtp(response.data));
+      return response.data;
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
-      throw new Error(axiosError.response?.data?.message || 'Error verifying email');
+      throw new Error(
+        axiosError.response?.data?.message || "Error verifying user email"
+      );
+    }
+  },
+
+  verifyMerchantEmail: async (
+    email: string,
+    otp?: string,
+    otpId?: string
+  ): Promise<VerificationResponse> => {
+    try {
+      const response: AxiosResponse<ApiResponse<VerificationResponse>> =
+        await api.get(buildUrl("verifymerchantemail", { email, otp, otpId }));
+      if (response.data.otpId) store.dispatch(updateOtp(response.data));
+      return response.data;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      throw new Error(
+        axiosError.response?.data?.message || "Error verifying merchant email"
+      );
     }
   },
 
   // Verify Phone
-  verifyPhone: async (phone: string): Promise<VerificationResponse> => {
+  verifyUserPhone: async (
+    phone: string,
+    otp?: string,
+    otpId?: string
+  ): Promise<VerificationResponse> => {
     try {
-      const response: AxiosResponse<ApiResponse<VerificationResponse>> = await api.post('/auth/verify-phone', { phone });
-      return response.data.data;
+      const response: AxiosResponse<ApiResponse<VerificationResponse>> =
+        await api.get(buildUrl("verifyuserphone", { phone, otp, otpId }));
+      if (response.data.otpId) store.dispatch(updateOtp(response.data));
+      return response.data;
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
-      throw new Error(axiosError.response?.data?.message || 'Error verifying phone');
+      throw new Error(
+        axiosError.response?.data?.message || "Error verifying user phone"
+      );
+    }
+  },
+
+  verifyMerchantPhone: async (
+    phone: string,
+    otp?: string,
+    otpId?: string
+  ): Promise<VerificationResponse> => {
+    try {
+      const response: AxiosResponse<ApiResponse<VerificationResponse>> =
+        await api.get(buildUrl("verifymerchantphone", { phone, otp, otpId }));
+      if (response.data.otpId) store.dispatch(updateOtp(response.data));
+      return response.data;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      throw new Error(
+        axiosError.response?.data?.message || "Error verifying merchant phone"
+      );
     }
   },
 
@@ -97,17 +208,21 @@ export const ApiService = {
     firstName: string;
     lastName: string;
     pin: string;
-    country: string;
+    otpId: string;
     refId?: string;
   }): Promise<AuthResponse> => {
     store.dispatch(loginStart());
     try {
-      const response: AxiosResponse<ApiResponse<AuthResponse>> = await api.post('/auth/signup', userData);
+      const response: AxiosResponse<ApiResponse<AuthResponse>> = await api.post(
+        "v1/users/register",
+        userData
+      );
       store.dispatch(loginSuccess(response.data.data));
       return response.data.data;
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
-      const errorMessage = axiosError.response?.data?.message || 'Error signing up';
+      const errorMessage =
+        axiosError.response?.data?.message || "Error signing up user";
       store.dispatch(loginFailure(errorMessage));
       throw new Error(errorMessage);
     }
@@ -117,10 +232,8 @@ export const ApiService = {
   signupMerchant: async (merchantData: {
     email?: string;
     phone?: string;
-    firstName: string;
-    lastName: string;
+    otpId: string;
     pin: string;
-    country: string;
     merchantName: string;
     repName: string;
     repContact: string;
@@ -128,12 +241,16 @@ export const ApiService = {
   }): Promise<AuthResponse> => {
     store.dispatch(loginStart());
     try {
-      const response: AxiosResponse<ApiResponse<AuthResponse>> = await api.post('/auth/merchant/signup', merchantData);
+      const response: AxiosResponse<ApiResponse<AuthResponse>> = await api.post(
+        "v1/merchants/register",
+        merchantData
+      );
       store.dispatch(loginSuccess(response.data.data));
       return response.data.data;
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
-      const errorMessage = axiosError.response?.data?.message || 'Error signing up merchant';
+      const errorMessage =
+        axiosError.response?.data?.message || "Error signing up merchant";
       store.dispatch(loginFailure(errorMessage));
       throw new Error(errorMessage);
     }
@@ -143,16 +260,24 @@ export const ApiService = {
   loginUser: async (credentials: {
     email?: string;
     phone?: string;
+    otp?: string;
+    otpId?: string;
     pin: string;
   }): Promise<AuthResponse> => {
     store.dispatch(loginStart());
     try {
-      const response: AxiosResponse<ApiResponse<AuthResponse>> = await api.post('/auth/login', credentials);
+      const response: AxiosResponse<ApiResponse<AuthResponse>> = await api.post(
+        "v1/users/login",
+        credentials
+      );
       store.dispatch(loginSuccess(response.data.data));
       return response.data.data;
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
-      const errorMessage = axiosError.response?.data?.message || 'Error logging in';
+      const errorMessage =
+        axiosError.response?.data?.message ||
+        axiosError.response?.data?.error ||
+        "Error logging in user";
       store.dispatch(loginFailure(errorMessage));
       throw new Error(errorMessage);
     }
@@ -162,16 +287,24 @@ export const ApiService = {
   loginMerchant: async (credentials: {
     email?: string;
     phone?: string;
+    otp?: string;
+    otpId?: string;
     pin: string;
   }): Promise<AuthResponse> => {
     store.dispatch(loginStart());
     try {
-      const response: AxiosResponse<ApiResponse<AuthResponse>> = await api.post('/auth/merchant/login', credentials);
+      const response: AxiosResponse<ApiResponse<AuthResponse>> = await api.post(
+        "v1/merchants/login",
+        credentials
+      );
       store.dispatch(loginSuccess(response.data.data));
       return response.data.data;
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
-      const errorMessage = axiosError.response?.data?.message || 'Error logging in merchant';
+      const errorMessage =
+        axiosError.response?.data?.message ||
+        axiosError.response?.data?.error ||
+        "Error logging in merchant";
       store.dispatch(loginFailure(errorMessage));
       throw new Error(errorMessage);
     }
@@ -184,38 +317,151 @@ export const ApiService = {
     otp: string;
   }): Promise<VerificationResponse> => {
     try {
-      const response: AxiosResponse<ApiResponse<VerificationResponse>> = await api.post('/auth/verify-otp', data);
+      const response: AxiosResponse<ApiResponse<VerificationResponse>> =
+        await api.post("/auth/verify-otp", data);
       return response.data.data;
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
-      throw new Error(axiosError.response?.data?.message || 'Error verifying OTP');
+      throw new Error(
+        axiosError.response?.data?.message || "Error verifying OTP"
+      );
+    }
+  },
+
+  // Change wallet PIN
+  changeUserPin: async (data?: {
+    phone?: string;
+    email?: string;
+    oldPin: string;
+    newPin: string;
+  }): Promise<VerificationResponse> => {
+    try {
+      const response: AxiosResponse<ApiResponse<VerificationResponse>> =
+        await api.post("v1/users/changepin", data);
+      return response.data;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      throw new Error(
+        axiosError.response?.data?.message ||
+          axiosError.response?.data?.error ||
+          "Error changing user PIN"
+      );
+    }
+  },
+
+  changeMerchantPin: async (data?: {
+    phone?: string;
+    email?: string;
+    oldPin: string;
+    newPin: string;
+  }): Promise<VerificationResponse> => {
+    try {
+      const response: AxiosResponse<ApiResponse<VerificationResponse>> =
+        await api.post("v1/merchants/changepin", data);
+      return response.data;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      throw new Error(
+        axiosError.response?.data?.message ||
+          axiosError.response?.data?.error ||
+          "Error changing merchant PIN"
+      );
+    }
+  },
+
+  // Reset wallet PIN
+  resetUserPin: async (data?: {
+    phone?: string;
+    email?: string;
+    otpId?: string;
+    otp?: string;
+    newPin?: string;
+  }): Promise<VerificationResponse> => {
+    try {
+      const response: AxiosResponse<ApiResponse<VerificationResponse>> =
+        await api.post("v1/users/resetpin", data);
+      if (response.data.otpId) store.dispatch(updateOtp(response.data));
+      return response.data;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      throw new Error(
+        axiosError.response?.data?.message ||
+          axiosError.response?.data?.error ||
+          "Error reseting user PIN"
+      );
+    }
+  },
+
+  resetMerchantPin: async (data?: {
+    phone?: string;
+    email?: string;
+    otpId?: string;
+    otp?: string;
+    newPin?: string;
+  }): Promise<VerificationResponse> => {
+    try {
+      const response: AxiosResponse<ApiResponse<VerificationResponse>> =
+        await api.post("v1/merchants/resetpin", data);
+      if (response.data.otpId) store.dispatch(updateOtp(response.data));
+      return response.data;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      throw new Error(
+        axiosError.response?.data?.message ||
+          axiosError.response?.data?.error ||
+          "Error reseting merchant PIN"
+      );
     }
   },
 
   // Update Dashboard
-  updateDashboard: async (): Promise<{
-    balances: WalletBalance[];
+  updateDashboard: async (user?: {
+    email?: string;
+    phone?: string;
+    basePair?: string;
+    currency?: string;
+    isMerchant?: string;
+  }): Promise<{
+    wallets: Wallet[];
     prices: PriceData[];
-    alerts: any[];
+    alerts?: any[];
   }> => {
-    store.dispatch(fetchBalanceStart());
+    const { email, phone, basePair, currency, isMerchant } = user;
+    store.dispatch(fetchWalletStart());
     store.dispatch(fetchPricesStart());
-    
+
     try {
-      const response: AxiosResponse<ApiResponse<{
-        balances: WalletBalance[];
-        prices: PriceData[];
-        alerts: any[];
-      }>> = await api.get('/dashboard/update');
-      
-      store.dispatch(fetchBalanceSuccess(response.data.data.balances));
-      store.dispatch(fetchPricesSuccess(response.data.data.prices));
-      
-      return response.data.data;
+      const pricesResponse: AxiosResponse<ApiResponse<PriceData[]>> =
+        await api.get(buildUrl("updateprices", { basePair }));
+      store.dispatch(fetchPricesSuccess(pricesResponse.data.data));
+      const walletResponse: AxiosResponse<ApiResponse<Wallet[]>> =
+        await api.get(
+          buildUrl("updatewallets", {
+            email,
+            phone,
+            basePair,
+            currency,
+            isMerchant,
+          })
+        );
+
+      if (!walletResponse.data.data.length)
+        store.dispatch(fetchWalletFailure(walletResponse.data.data.toString()));
+      if (walletResponse.data.data.length > 0)
+        store.dispatch(fetchWalletSuccess(walletResponse.data.data));
+
+      return {
+        wallets: walletResponse.data.data,
+        prices: pricesResponse.data.data,
+      };
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
-      const errorMessage = axiosError.response?.data?.message || 'Error updating dashboard';
-      store.dispatch(fetchBalanceFailure(errorMessage));
+      const errorMessage =
+        axiosError.response?.data?.message ||
+        axiosError.response?.data?.error ||
+        "Error updating wallets and rates";
+
+      store.dispatch(fetchWalletFailure(errorMessage));
       store.dispatch(fetchPricesFailure(errorMessage));
       throw new Error(errorMessage);
     }
@@ -225,12 +471,16 @@ export const ApiService = {
   getTransactionHistory: async (): Promise<Transaction[]> => {
     store.dispatch(fetchTransactionsStart());
     try {
-      const response: AxiosResponse<ApiResponse<Transaction[]>> = await api.get('/transactions/history');
+      const response: AxiosResponse<ApiResponse<Transaction[]>> = await api.get(
+        "/transactions/history"
+      );
       store.dispatch(fetchTransactionsSuccess(response.data.data));
       return response.data.data;
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
-      const errorMessage = axiosError.response?.data?.message || 'Error fetching transaction history';
+      const errorMessage =
+        axiosError.response?.data?.message ||
+        "Error fetching transaction history";
       store.dispatch(fetchTransactionsFailure(errorMessage));
       throw new Error(errorMessage);
     }
@@ -238,14 +488,18 @@ export const ApiService = {
 };
 
 // Function to update prices every minute
-export const startPriceUpdates = () => {
-  // Call once immediately
-  ApiService.updateDashboard().catch(error => console.error('Price update error:', error));
-  
-  // Then set interval for every minute
-  const intervalId = setInterval(() => {
-    ApiService.updateDashboard().catch(error => console.error('Price update error:', error));
-  }, 60000); // 60000 ms = 1 minute
-  
-  return intervalId; // Return the interval ID so it can be cleared if needed
-};
+// export const startPriceUpdates = () => {
+//   // Call once immediately
+//   ApiService.updateDashboard().catch((error) =>
+//     console.error("Price update error:", error)
+//   );
+
+//   // Then set interval for every minute
+//   const intervalId = setInterval(() => {
+//     ApiService.updateDashboard().catch((error) =>
+//       console.error("Price update error:", error)
+//     );
+//   }, 60000); // 60000 ms = 1 minute
+
+//   return intervalId; // Return the interval ID so it can be cleared if needed
+// };

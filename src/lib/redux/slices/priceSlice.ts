@@ -1,11 +1,13 @@
-
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface PriceData {
+  basePair: string;
+  source: string;
+  timestamp: bigint;
+  value: string;
+  date: string;
   currency: string;
-  price: number;
-  priceChange24h: number;
-  lastUpdated: string;
+  batchId: string;
 }
 
 interface PriceState {
@@ -21,7 +23,7 @@ const initialState: PriceState = {
 };
 
 const priceSlice = createSlice({
-  name: 'price',
+  name: "price",
   initialState,
   reducers: {
     fetchPricesStart: (state) => {
@@ -40,7 +42,7 @@ const priceSlice = createSlice({
       const index = state.prices.findIndex(
         (price) => price.currency === action.payload.currency
       );
-      
+
       if (index !== -1) {
         state.prices[index] = action.payload;
       } else {

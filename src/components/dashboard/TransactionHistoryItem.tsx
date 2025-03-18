@@ -1,16 +1,25 @@
 import { useState } from "react";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { Fee, Recipient, TxIds } from "@/lib/redux/slices/transactionSlice";
+import { formatTimestamp } from "@/lib/utils";
 
 type TransactionHistoryItemProps = {
   transaction: {
-    id: number;
-    type: "send" | "receive";
-    amount: string;
-    value: string;
-    to?: string;
-    from?: string;
-    date: string;
-    currency: string;
+    type: "SEND" | "RECEIVE" | "DEPOSIT" | "WITHDRAW";
+    userId: string;
+    sender: string;
+    recipient: Recipient[];
+    txId: string;
+    inOut: string;
+    grossValue: string;
+    grossCurrency: string;
+    netValue: string;
+    netCurrency: string;
+    fee: Fee[];
+    status: "INPROGRESS" | "CONFIRMED" | "CANCELLED";
+    timestamp: bigint;
+    updatedAt: bigint;
+    ids: TxIds | string;
   };
   showBalance: boolean;
 };
@@ -30,12 +39,12 @@ const TransactionHistoryItem = ({
         <div className="flex items-center space-x-3">
           <div
             className={`p-1.5 rounded-full ${
-              transaction.type === "send"
+              transaction.type === "SEND"
                 ? "bg-red-100 text-red-600"
                 : "bg-green-100 text-green-600"
             }`}
           >
-            {transaction.type === "send" ? (
+            {transaction.type === "SEND" ? (
               <ArrowUpRight size={16} />
             ) : (
               <ArrowDownLeft size={16} />
@@ -43,20 +52,22 @@ const TransactionHistoryItem = ({
           </div>
           <div className="flex flex-col items-start">
             <span className="font-medium">
-              {transaction.type === "send" ? "Sent" : "Received"}
+              {transaction.type === "SEND" ? "Sent" : "Received"}
             </span>
             <span className="text-sm text-gray-500">
-              {transaction.type === "send"
-                ? `To: ${transaction.to?.slice(0, 12)}...`
-                : `From: ${transaction.from?.slice(0, 12)}...`}
+              {transaction.type === "SEND"
+                ? `To: ${transaction.recipient?.slice(0, 12)}...`
+                : `From: ${transaction.sender?.slice(0, 12)}...`}
             </span>
           </div>
         </div>
 
         <div className={`text-right ${!showBalance ? "blur-content" : ""}`}>
-          <div className="font-medium">{transaction.amount}</div>
-          <div className="text-sm text-gray-500">{transaction.value}</div>
-          <div className="text-xs text-gray-400">{transaction.date}</div>
+          <div className="font-medium">{transaction.grossValue}</div>
+          <div className="text-sm text-gray-500">{transaction.netValue}</div>
+          <div className="text-xs text-gray-400">
+            {formatTimestamp(transaction.timestamp)}
+          </div>
         </div>
       </div>
 
@@ -65,20 +76,20 @@ const TransactionHistoryItem = ({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-gray-500">Transaction ID:</span>
-              <p className="font-medium">#{transaction.id}</p>
+              <p className="font-medium">#{transaction.txId}</p>
             </div>
             <div>
               <span className="text-gray-500">Currency:</span>
-              <p className="font-medium">{transaction.currency}</p>
+              <p className="font-medium">{transaction.grossCurrency}</p>
             </div>
             <div>
               <span className="text-gray-500">
-                {transaction.type === "send" ? "Recipient" : "Sender"}:
+                {transaction.type === "SEND" ? "Recipient" : "Sender"}:
               </span>
               <p className="font-medium break-all">
-                {transaction.type === "send"
-                  ? transaction.to
-                  : transaction.from}
+                {transaction.type === "SEND"
+                  ? `${transaction.recipient}`
+                  : `${transaction.sender}`}
               </p>
             </div>
             <div>

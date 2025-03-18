@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -8,10 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GlassCard from "../ui/GlassCard";
 import ThirdPartyAuth from "./ThirdPartyAuth";
 import OTPInput from "./OTPInput";
-import SignupFormFields from "./SignupFormFields";
+import MerchantSignupFormFields from "./MerchantSignupFormFields";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { ApiService } from "@/lib/service";
 
 const MerchantSignupForm = () => {
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [emailStep, setEmailStep] = useState(1);
   const [phoneStep, setPhoneStep] = useState(1);
@@ -23,10 +25,15 @@ const MerchantSignupForm = () => {
   const [merchantName, setMerchantName] = useState("");
   const [repName, setRepName] = useState("");
   const [repContact, setRepContact] = useState("");
+  const [pin, setPin] = useState("");
+  const [refId, setRefId] = useState(searchParams.get("refId") || "");
   const navigate = useNavigate();
+  const { otp } = useAppSelector((state) => state.auth);
 
   const handleNext = async (type: "email" | "phone") => {
     const identifier = type === "email" ? email : phone;
+    const currentStep = type === "email" ? emailStep : phoneStep;
+
     if (!identifier) {
       toast({
         title: "Error",
@@ -38,10 +45,16 @@ const MerchantSignupForm = () => {
 
     setIsLoading(true);
     try {
-      toast({
-        title: "OTP Sent!",
-        description: `Check your ${type} for the verification code.`,
-      });
+      if (type === "email")
+        await ApiService.verifyMerchantEmail(email, emailOtp, otp?.otpId);
+      if (type === "phone")
+        await ApiService.verifyMerchantPhone(phone, phoneOtp, otp?.otpId);
+
+      if (currentStep === 1)
+        toast({
+          title: "OTP Sent!",
+          description: `Check your ${type} for the verification code.`,
+        });
 
       if (type === "email") {
         setEmailStep((prev) => prev + 1);
@@ -49,49 +62,37 @@ const MerchantSignupForm = () => {
         setPhoneStep((prev) => prev + 1);
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send verification code. Please try again.",
-        variant: "destructive",
-      });
-    }
-    setIsLoading(false);
-  };
-
-  const handleVerifyOtp = async (type: "email" | "phone") => {
-    const otp = type === "email" ? emailOtp : phoneOtp;
-    const identifier = type === "email" ? email : phone;
-
-    setIsLoading(true);
-    try {
-      if (type === "email") {
-        setEmailStep((prev) => prev + 1);
-      } else {
-        setPhoneStep((prev) => prev + 1);
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Invalid verification code. Please try again.",
-        variant: "destructive",
-      });
+      if (currentStep === 1)
+        toast({
+          title: "Error",
+          description: `Failed to send verification code. ${error}. Please try again.`,
+          variant: "destructive",
+        });
+      if (currentStep === 2)
+        toast({
+          title: "Error",
+          description: `Invalid verification code. ${error}. Please try again.`,
+          variant: "destructive",
+        });
     }
     setIsLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!merchantName || !repName || !repContact) {
-      toast({
-        title: "Error",
-        description: "Please fill in all merchant details.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
+
     try {
+      const payload = {
+        ...(activeTab === "email" ? { email } : { phone }),
+        merchantName,
+        repName,
+        repContact,
+        pin,
+        otpId: otp?.otpId,
+        refId,
+      };
+      await ApiService.signupMerchant(payload);
       toast({
         title: "Account created!",
         description: "Welcome to CoinDuka Merchant.",
@@ -152,7 +153,7 @@ const MerchantSignupForm = () => {
             <OTPInput value={otp} onChange={setOtp} identifier={identifier} />
             <Button
               type="button"
-              onClick={() => handleVerifyOtp(activeTab)}
+              onClick={() => handleNext(activeTab)}
               disabled={otp.length !== 4 || isLoading}
               className="w-full bg-gradient-to-r from-coffee to-coffee-dark hover:from-coffee-dark hover:to-coffee"
             >
@@ -163,34 +164,13 @@ const MerchantSignupForm = () => {
       case 3:
         return (
           <div className="animate-fade-in space-y-4">
-            <Input
-              type="text"
-              placeholder="Merchant Name"
-              value={merchantName}
-              onChange={(e) => setMerchantName(e.target.value)}
-              className="w-full bg-white/50"
-              required
-            />
-            <Input
-              type="text"
-              placeholder="Representative Name"
-              value={repName}
-              onChange={(e) => setRepName(e.target.value)}
-              className="w-full bg-white/50"
-              required
-            />
-            <Input
-              type="text"
-              placeholder="Representative Contact"
-              value={repContact}
-              onChange={(e) => setRepContact(e.target.value)}
-              className="w-full bg-white/50"
-              required
-            />
-            <SignupFormFields
-              country=""
-              setCountry={() => {}}
-              refId=""
+            <MerchantSignupFormFields
+              setMerchantName={setMerchantName}
+              setRepName={setRepName}
+              setRepContact={setRepContact}
+              setPin={setPin}
+              setRefId={setRefId}
+              refId={refId}
             />
             <Button
               type="submit"

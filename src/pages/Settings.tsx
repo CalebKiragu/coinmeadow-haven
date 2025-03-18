@@ -3,15 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import ThemeToggle from "@/components/shared/ThemeToggle";
-import {
-  Bell,
-  Mail,
-  Smartphone,
-  Shield,
-  Eye,
-  Lock,
-  Globe,
-} from "lucide-react";
+import { Bell, Mail, Smartphone, Shield, Eye, Lock, Globe } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -28,9 +20,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useAppSelector } from "@/lib/redux/hooks";
 
 const Settings = () => {
   const [showPinDialog, setShowPinDialog] = useState(false);
+  const { user, merchant } = useAppSelector((state) => state.auth);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
@@ -193,7 +187,10 @@ const Settings = () => {
           <DialogHeader>
             <DialogTitle>Change Wallet PIN</DialogTitle>
           </DialogHeader>
-          <ChangePinForm onClose={() => setShowPinDialog(false)} />
+          <ChangePinForm
+            isMerchant={merchant ? true : false}
+            onClose={() => setShowPinDialog(false)}
+          />
         </DialogContent>
       </Dialog>
     </div>

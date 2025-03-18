@@ -1,15 +1,38 @@
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+export interface Recipient {
+  address: string;
+  amount: string;
+  currency: string;
+  basePair: string;
+}
+
+export interface Fee {
+  fiat: number;
+  crypto: number;
+}
+
+export interface TxIds {
+  ref: string;
+  blockchain: string;
+}
 
 export interface Transaction {
-  id: number;
-  type: 'send' | 'receive';
-  amount: string;
-  value: string;
-  to?: string;
-  from?: string;
-  date: string;
-  currency: string;
+  type: "SEND" | "RECEIVE" | "DEPOSIT" | "WITHDRAW";
+  userId: string;
+  sender: string;
+  recipient: Recipient[];
+  txId: string;
+  inOut: string;
+  grossValue: string;
+  grossCurrency: string;
+  netValue: string;
+  netCurrency: string;
+  fee: Fee[];
+  status: "INPROGRESS" | "CONFIRMED" | "CANCELLED";
+  timestamp: bigint;
+  updatedAt: bigint;
+  ids: TxIds | string;
 }
 
 interface TransactionState {
@@ -25,7 +48,7 @@ const initialState: TransactionState = {
 };
 
 const transactionSlice = createSlice({
-  name: 'transaction',
+  name: "transaction",
   initialState,
   reducers: {
     fetchTransactionsStart: (state) => {

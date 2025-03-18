@@ -1,33 +1,23 @@
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { countries } from "@/types/currency";
 import { useEffect, useState } from "react";
 
-type SignupFormFieldsProps = {
-  country: string;
-  setCountry: (value: string) => void;
+type MerchantSignupFormFieldsProps = {
   refId: string;
-  setFirstName: (value: string) => void;
-  setLastName: (value: string) => void;
+  setMerchantName: (value: string) => void;
+  setRepName: (value: string) => void;
+  setRepContact: (value: string) => void;
   setPin: (value: string) => void;
   setRefId: (value: string) => void;
 };
 
-const SignupFormFields = ({
-  country,
-  setCountry,
+const MerchantSignupFormFields = ({
   refId,
-  setFirstName,
-  setLastName,
+  setMerchantName,
+  setRepName,
+  setRepContact,
   setPin,
   setRefId,
-}: SignupFormFieldsProps) => {
+}: MerchantSignupFormFieldsProps) => {
   const [tentativePin, setTentativePin] = useState("");
   const [confirmedPin, setConfirmedPin] = useState("");
   const [error, setError] = useState("");
@@ -47,31 +37,27 @@ const SignupFormFields = ({
       <div className="grid grid-cols-2 gap-4">
         <Input
           type="text"
-          placeholder="First Name"
+          placeholder="Merchant Name"
           className="bg-white/50"
           required
-          onChange={(e) => setFirstName(e.target.value)}
+          onChange={(e) => setMerchantName(e.target.value)}
         />
         <Input
           type="text"
-          placeholder="Last Name"
+          placeholder="Representative Name"
           className="bg-white/50"
           required
-          onChange={(e) => setLastName(e.target.value)}
+          onChange={(e) => setRepName(e.target.value)}
+        />
+        <Input
+          type="text"
+          placeholder="Representative Contact"
+          className="bg-white/50"
+          required
+          onChange={(e) => setRepContact(e.target.value)}
         />
       </div>
-      <Select value={country} onValueChange={setCountry}>
-        <SelectTrigger className="w-full bg-white/50">
-          <SelectValue placeholder="Select Country" />
-        </SelectTrigger>
-        <SelectContent>
-          {countries.map((country) => (
-            <SelectItem key={country.code} value={country.code}>
-              {country.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+
       <Input
         type="password"
         placeholder="PIN"
@@ -98,4 +84,4 @@ const SignupFormFields = ({
   );
 };
 
-export default SignupFormFields;
+export default MerchantSignupFormFields;

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Calendar, Filter } from "lucide-react";
 import {
@@ -32,21 +31,24 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
       }
     };
 
-    fetchTransactions();
+    // fetchTransactions();
   }, []);
 
   // Filter transactions based on selected currency
   const filteredTransactions = transactions.filter((tx) =>
-    filterCurrency === "all" ? true : tx.currency === filterCurrency
+    filterCurrency === "all" ? true : tx.grossCurrency === filterCurrency
   );
 
   // Sort transactions based on selected sort method
   const sortedTransactions = [...filteredTransactions].sort((a, b) => {
     if (sortBy === "date") {
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
+      return (
+        new Date(Number(b.timestamp)).getTime() -
+        new Date(Number(a.timestamp)).getTime()
+      );
     } else if (sortBy === "amount") {
-      const aValue = parseFloat(a.amount.replace(/[^0-9.-]+/g, ""));
-      const bValue = parseFloat(b.amount.replace(/[^0-9.-]+/g, ""));
+      const aValue = parseFloat(a.grossValue.replace(/[^0-9.-]+/g, ""));
+      const bValue = parseFloat(b.grossValue.replace(/[^0-9.-]+/g, ""));
       return bValue - aValue;
     }
     return 0;
@@ -80,7 +82,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
           </Select>
         </div>
       </div>
-      
+
       {isLoading ? (
         <div className="py-20 text-center text-gray-500">
           <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -94,7 +96,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
         <div className="space-y-2">
           {sortedTransactions.map((tx) => (
             <TransactionHistoryItem
-              key={tx.id}
+              key={tx.txId}
               transaction={tx}
               showBalance={showBalance}
             />

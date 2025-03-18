@@ -1,19 +1,25 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import OTPInput from "./OTPInput";
 import { StepIndicator } from "../send/StepIndicator";
+import { ApiService } from "@/lib/service";
+import { useAppSelector } from "@/lib/redux/hooks";
 
 type ChangePinFormProps = {
   isReset?: boolean;
+  isMerchant?: boolean;
   onClose?: () => void;
 };
 
-const ChangePinForm = ({ isReset = false, onClose }: ChangePinFormProps) => {
+const ChangePinForm = ({
+  isReset = false,
+  isMerchant = false,
+  onClose,
+}: ChangePinFormProps) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [otp, setOtp] = useState("");
+  const [confirmOtp, setConfirmOtp] = useState("");
   const [recipient, setRecipient] = useState("");
   const [formData, setFormData] = useState({
     oldPin: "",
@@ -21,10 +27,7 @@ const ChangePinForm = ({ isReset = false, onClose }: ChangePinFormProps) => {
     confirmPin: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-
-  const handleOtpChange = (value: string) => {
-    setOtp(value);
-  };
+  const { error, otp } = useAppSelector((state) => state.auth);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -38,6 +41,8 @@ const ChangePinForm = ({ isReset = false, onClose }: ChangePinFormProps) => {
   const handleStepSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient);
+    const isPhone = /^(0\d{9}|254\d{9})$/.test(recipient);
 
     try {
       if (currentStep === 1) {
@@ -45,22 +50,30 @@ const ChangePinForm = ({ isReset = false, onClose }: ChangePinFormProps) => {
         if (!recipient) {
           throw new Error("Please enter your email or phone number");
         }
-        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient);
-        const isPhone = /^\+\d{10,}$/.test(recipient);
-        
+
         if (!isEmail && !isPhone) {
-          throw new Error("Please enter a valid email or phone number (with country code)");
+          throw new Error(
+            "Please enter a valid email or phone number (without country code)"
+          );
         }
-        // Simulate OTP sending
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setCurrentStep(2);
+        // if reset, Request OTP to proceed
+        // if change, proceed to enter credentials
+        if (isReset && !isMerchant)
+          await ApiService.resetUserPin({
+            ...(isEmail ? { email: recipient } : { phone: recipient }),
+          });
+        if (isReset && isMerchant)
+          await ApiService.resetMerchantPin({
+            ...(isEmail ? { email: recipient } : { phone: recipient }),
+          });
+
+        if (isReset) setCurrentStep(2);
+        if (!isReset) setCurrentStep(3);
       } else if (currentStep === 2) {
-        // Verify OTP
-        if (otp.length !== 4) {
+        // Verify OTP provided
+        if (confirmOtp.length !== 4) {
           throw new Error("Please enter a valid 4-digit OTP");
         }
-        // Simulate OTP verification
-        await new Promise((resolve) => setTimeout(resolve, 1000));
         setCurrentStep(3);
       } else if (currentStep === 3) {
         // Validate PINs
@@ -73,8 +86,35 @@ const ChangePinForm = ({ isReset = false, onClose }: ChangePinFormProps) => {
         if (formData.newPin !== formData.confirmPin) {
           throw new Error("PINs do not match");
         }
-        // Simulate PIN change
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Verify provided PIN and OTP to change/reset PIN
+        if (isReset && !isMerchant)
+          await ApiService.resetUserPin({
+            ...(isEmail ? { email: recipient } : { phone: recipient }),
+            otpId: otp?.otpId,
+            otp: confirmOtp,
+            newPin: formData.confirmPin,
+          });
+        if (isReset && isMerchant)
+          await ApiService.resetMerchantPin({
+            ...(isEmail ? { email: recipient } : { phone: recipient }),
+            otpId: otp?.otpId,
+            otp: confirmOtp,
+            newPin: formData.confirmPin,
+          });
+
+        if (!isReset && !isMerchant)
+          await ApiService.changeUserPin({
+            ...(isEmail ? { email: recipient } : { phone: recipient }),
+            oldPin: formData.oldPin,
+            newPin: formData.confirmPin,
+          });
+        if (!isReset && isMerchant)
+          await ApiService.changeMerchantPin({
+            ...(isEmail ? { email: recipient } : { phone: recipient }),
+            oldPin: formData.oldPin,
+            newPin: formData.confirmPin,
+          });
+
         setCurrentStep(4);
         toast({
           title: "Success!",
@@ -88,7 +128,8 @@ const ChangePinForm = ({ isReset = false, onClose }: ChangePinFormProps) => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: error instanceof Error ? error.message : "An error occurred",
+        description:
+          error instanceof Error ? error.message : "An error occurred",
       });
     } finally {
       setIsLoading(false);
@@ -131,8 +172,8 @@ const ChangePinForm = ({ isReset = false, onClose }: ChangePinFormProps) => {
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-center">Verify OTP</h2>
             <OTPInput
-              value={otp}
-              onChange={handleOtpChange}
+              value={confirmOtp}
+              onChange={setConfirmOtp}
               identifier={recipient}
             />
           </div>
@@ -187,18 +228,14 @@ const ChangePinForm = ({ isReset = false, onClose }: ChangePinFormProps) => {
               {isReset ? "PIN Reset Complete" : "PIN Change Complete"}
             </h2>
             <p className="text-muted-foreground">
-              Your PIN has been successfully {isReset ? "reset" : "changed"}. You
-              can now use your new PIN to access your wallet.
+              Your PIN has been successfully {isReset ? "reset" : "changed"}.
+              You can now use your new PIN to access your wallet.
             </p>
           </div>
         )}
 
         {currentStep < 4 && (
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isLoading}
-          >
+          <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Processing..." : "Continue"}
           </Button>
         )}

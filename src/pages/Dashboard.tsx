@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,7 +24,6 @@ import MarketplaceOfferCard, {
 import { Button } from "@/components/ui/button";
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import { logout } from "@/lib/redux/slices/authSlice";
-import { startPriceUpdates } from "@/lib/service";
 
 const trendingOffers: Offer[] = [
   {
@@ -57,7 +55,7 @@ const Dashboard = () => {
   const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState("wallet");
   const [showBalance, setShowBalance] = useState(false);
-  
+
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
@@ -66,13 +64,13 @@ const Dashboard = () => {
       navigate("/", { replace: true });
       return;
     }
-    
+
     // Start price updates
-    const intervalId = startPriceUpdates();
-    
+    // const intervalId = startPriceUpdates();
+
     // Clean up on unmount
     return () => {
-      clearInterval(intervalId);
+      // clearInterval(intervalId);
     };
   }, [isAuthenticated, navigate]);
 

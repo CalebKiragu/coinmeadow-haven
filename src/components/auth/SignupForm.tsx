@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import axios from "axios";
 import GlassCard from "../ui/GlassCard";
 import SignupFormFields from "./SignupFormFields";
 import ThirdPartyAuth from "./ThirdPartyAuth";
 import OTPInput from "./OTPInput";
+import { ApiService } from "@/lib/service";
+import { useAppSelector } from "@/lib/redux/hooks";
 
 const SignupForm = () => {
   const { toast } = useToast();
@@ -19,14 +20,20 @@ const SignupForm = () => {
   const [phoneStep, setPhoneStep] = useState(1);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [pin, setPin] = useState("");
   const [emailOtp, setEmailOtp] = useState("");
   const [phoneOtp, setPhoneOtp] = useState("");
   const [activeTab, setActiveTab] = useState<"email" | "phone">("email");
   const navigate = useNavigate();
-  const refId = searchParams.get("refId") || "";
+  const [refId, setRefId] = useState(searchParams.get("refId") || "");
+  const { otp } = useAppSelector((state) => state.auth);
 
   const handleNext = async (type: "email" | "phone") => {
     const identifier = type === "email" ? email : phone;
+    const currentStep = type === "email" ? emailStep : phoneStep;
+
     if (!identifier) {
       toast({
         title: "Error",
@@ -38,44 +45,16 @@ const SignupForm = () => {
 
     setIsLoading(true);
     try {
-      // await axios.post("/api/auth/send-otp", {
-      //   type,
-      //   identifier,
-      //   refId,
-      // });
+      if (type === "email")
+        await ApiService.verifyUserEmail(email, emailOtp, otp?.otpId);
+      if (type === "phone")
+        await ApiService.verifyUserPhone(phone, phoneOtp, otp?.otpId);
 
-      toast({
-        title: "OTP Sent!",
-        description: `Check your ${type} for the verification code.`,
-      });
-
-      if (type === "email") {
-        setEmailStep((prev) => prev + 1);
-      } else {
-        setPhoneStep((prev) => prev + 1);
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send verification code. Please try again.",
-        variant: "destructive",
-      });
-    }
-    setIsLoading(false);
-  };
-
-  const handleVerifyOtp = async (type: "email" | "phone") => {
-    const otp = type === "email" ? emailOtp : phoneOtp;
-    const identifier = type === "email" ? email : phone;
-
-    setIsLoading(true);
-    try {
-      // await axios.post("/api/auth/verify-otp", {
-      //   type,
-      //   identifier,
-      //   otp,
-      //   refId,
-      // });
+      if (currentStep === 1)
+        toast({
+          title: "OTP Sent!",
+          description: `Check your ${type} for the verification code.`,
+        });
 
       if (type === "email") {
         setEmailStep((prev) => prev + 1);
@@ -83,11 +62,18 @@ const SignupForm = () => {
         setPhoneStep((prev) => prev + 1);
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Invalid verification code. Please try again.",
-        variant: "destructive",
-      });
+      if (currentStep === 1)
+        toast({
+          title: "Error",
+          description: `Failed to send verification code. ${error}. Please try again.`,
+          variant: "destructive",
+        });
+      if (currentStep === 2)
+        toast({
+          title: "Error",
+          description: `Invalid verification code. ${error}. Please try again.`,
+          variant: "destructive",
+        });
     }
     setIsLoading(false);
   };
@@ -95,14 +81,17 @@ const SignupForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    try {
-      // await axios.post("/api/auth/signup", {
-      //   email,
-      //   phone,
-      //   country,
-      //   refId,
-      // });
 
+    try {
+      const payload = {
+        ...(activeTab === "email" ? { email } : { phone }),
+        firstName,
+        lastName,
+        pin,
+        otpId: otp?.otpId,
+        refId,
+      };
+      await ApiService.signupUser(payload);
       toast({
         title: "Account created!",
         description: "Welcome to CoinDuka.",
@@ -111,7 +100,7 @@ const SignupForm = () => {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to create account. Please try again.",
+        description: `Failed to create account. Error ${error}. Please try again.`,
         variant: "destructive",
       });
       setIsLoading(false);
@@ -163,7 +152,7 @@ const SignupForm = () => {
             <OTPInput value={otp} onChange={setOtp} identifier={identifier} />
             <Button
               type="button"
-              onClick={() => handleVerifyOtp(activeTab)}
+              onClick={() => handleNext(activeTab)}
               disabled={otp.length !== 4 || isLoading}
               className="w-full bg-gradient-to-r from-coffee to-coffee-dark hover:from-coffee-dark hover:to-coffee"
             >
@@ -178,6 +167,10 @@ const SignupForm = () => {
               country={country}
               setCountry={setCountry}
               refId={refId}
+              setFirstName={setFirstName}
+              setLastName={setLastName}
+              setPin={setPin}
+              setRefId={setRefId}
             />
             <Button
               type="submit"
