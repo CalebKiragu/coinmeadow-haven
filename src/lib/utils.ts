@@ -5,6 +5,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function url(): {
+  BASE_URL?: string;
+  CHAIN_URL?: string;
+  AUTH_URL?: string;
+} {
+  return {
+    BASE_URL: `https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/`,
+    CHAIN_URL: `https://a07cchvfjd.execute-api.us-east-1.amazonaws.com/Prod/`,
+    AUTH_URL: `https://en7qgbgo6d.execute-api.us-east-1.amazonaws.com/Prod/`,
+  };
+}
+
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",

@@ -27,9 +27,10 @@ import {
   Transaction,
 } from "./redux/slices/transactionSlice";
 import { store } from "./redux/store";
+import { url } from "./utils";
 
 // Replace with your actual API base URL
-const API_URL = import.meta.env.VITE_BASE_URL;
+const API_URL = url().BASE_URL;
 
 // Create an axios instance
 const api = axios.create({
