@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,6 +25,7 @@ import MarketplaceOfferCard, {
 import { Button } from "@/components/ui/button";
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import { logout } from "@/lib/redux/slices/authSlice";
+import KycBanner from "@/components/verification/KycBanner";
 
 const trendingOffers: Offer[] = [
   {
@@ -149,6 +151,9 @@ const Dashboard = () => {
             </Sheet>
           </div>
         </div>
+
+        {/* KYC verification banner */}
+        <KycBanner />
 
         <Tabs
           defaultValue="wallet"

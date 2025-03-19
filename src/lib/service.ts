@@ -7,6 +7,8 @@ import {
   Merchant,
   Token,
   updateOtp,
+  VerificationStatus,
+  setVerificationStatus,
 } from "./redux/slices/authSlice";
 import {
   fetchWalletStart,
@@ -50,9 +52,10 @@ const buildUrl = (
     basePair?: string;
     isMerchant?: string;
     currency?: string;
+    status?: string;
   }
 ): string => {
-  const { email, phone, otp, otpId, basePair, isMerchant, currency } = urlData;
+  const { email, phone, otp, otpId, basePair, isMerchant, currency, status } = urlData;
 
   switch (caller) {
     case "verifyuserphone":
@@ -80,6 +83,11 @@ const buildUrl = (
 
     case "updateprices":
       return `v1/tokens/rate/all?basePair=${basePair}`;
+      
+    case "verificationstatus":
+      return `v1/verification/status?${email ? `email=${email}` : ''}${
+        phone ? `phone=${phone}` : ''
+      }${status ? `&status=${status}` : ''}`;
 
     default:
       return ``;
@@ -415,7 +423,29 @@ export const ApiService = {
     }
   },
 
-  // Update Dashboard
+  // Get verification status
+  getVerificationStatus: async (data: {
+    email?: string;
+    phone?: string;
+    status?: string;
+  }): Promise<VerificationStatus[]> => {
+    try {
+      const response: AxiosResponse<ApiResponse<VerificationStatus[]>> = 
+        await api.get(buildUrl("verificationstatus", data));
+      
+      if (response.data.data) {
+        store.dispatch(setVerificationStatus(response.data.data));
+      }
+      
+      return response.data.data || [];
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      console.error('Error fetching verification status:', axiosError);
+      return [];
+    }
+  },
+
+  // Update Dashboard with verification status check
   updateDashboard: async (user?: {
     email?: string;
     phone?: string;
@@ -432,6 +462,11 @@ export const ApiService = {
     store.dispatch(fetchPricesStart());
 
     try {
+      // Query for verification status
+      if (email || phone) {
+        await ApiService.getVerificationStatus({ email, phone });
+      }
+      
       const pricesResponse: AxiosResponse<ApiResponse<PriceData[]>> =
         await api.get(buildUrl("updateprices", { basePair }));
       store.dispatch(fetchPricesSuccess(pricesResponse.data.data));

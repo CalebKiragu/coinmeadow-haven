@@ -1,3 +1,4 @@
+
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface Wallets {
@@ -88,11 +89,29 @@ export interface Merchant {
   banned: Banned | null;
 }
 
+export interface VerificationStatus {
+  verifId: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  email: string;
+  location: string;
+  govId: string;
+  selfie: string;
+  govDoc: string;
+  reviewed: string;
+  approved: string;
+  timestamp: number;
+  status: string;
+  isMerchant: number;
+}
+
 interface AuthState {
   user: User | null;
   merchant: Merchant | null;
   token: Token | null;
   otp: Otp | null;
+  verificationStatus: VerificationStatus[] | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -103,9 +122,22 @@ const initialState: AuthState = {
   merchant: null,
   token: null,
   otp: null,
+  verificationStatus: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
+};
+
+// Helper function to parse JSON string in kyc field
+const parseKycData = <T extends User | Merchant>(entity: T): T => {
+  if (entity && entity.kyc && typeof entity.kyc === 'string') {
+    try {
+      entity.kyc = JSON.parse(entity.kyc as unknown as string) as Kyc;
+    } catch (error) {
+      console.error('Failed to parse kyc data:', error);
+    }
+  }
+  return entity;
 };
 
 const authSlice = createSlice({
@@ -127,8 +159,16 @@ const authSlice = createSlice({
     ) => {
       state.isAuthenticated = true;
       state.otp = action.payload.otp;
-      state.user = action.payload.user;
-      state.merchant = action.payload.merchant;
+      
+      // Parse kyc data if it exists as a string
+      if (action.payload.user) {
+        state.user = parseKycData(action.payload.user);
+      }
+      
+      if (action.payload.merchant) {
+        state.merchant = parseKycData(action.payload.merchant);
+      }
+      
       state.token = action.payload.token;
       state.isLoading = false;
       state.error = null;
@@ -142,6 +182,7 @@ const authSlice = createSlice({
       state.merchant = null;
       state.token = null;
       state.otp = null;
+      state.verificationStatus = null;
       state.isAuthenticated = false;
     },
     updateUser: (state, action: PayloadAction<Partial<User>>) => {
@@ -157,6 +198,9 @@ const authSlice = createSlice({
     updateOtp: (state, action: PayloadAction<Partial<Otp>>) => {
       state.otp = action.payload;
     },
+    setVerificationStatus: (state, action: PayloadAction<VerificationStatus[]>) => {
+      state.verificationStatus = action.payload;
+    },
   },
 });
 
@@ -168,6 +212,7 @@ export const {
   updateUser,
   updateMerchant,
   updateOtp,
+  setVerificationStatus,
 } = authSlice.actions;
 
 export default authSlice.reducer;
