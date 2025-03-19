@@ -40,7 +40,7 @@ export const MerchantPayment = ({
         });
         return;
       }
-      onDataChange({ merchantNumber });
+      onDataChange({ merchantNumber, txType: "MERCHANTPAY" as const });
     } else if (currentStep === 2) {
       if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
         toast({

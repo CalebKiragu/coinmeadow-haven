@@ -60,7 +60,7 @@ const Deposit = () => {
         pin,
         inOut: "BTC-BTC", // Default transfer type
         currency: "btc", // Default currency
-        txType: "DEPOSIT"
+        txType: "DEPOSIT" as const
       };
       
       const response = await TransactionService.deposit(payload);

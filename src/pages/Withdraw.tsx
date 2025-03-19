@@ -60,7 +60,7 @@ const Withdraw = () => {
         pin,
         inOut: "BTC-BTC", // Default transfer type
         currency: "btc", // Default currency
-        txType: "WITHDRAW"
+        txType: "WITHDRAW" as const
       };
       
       const response = await TransactionService.withdraw(payload);
