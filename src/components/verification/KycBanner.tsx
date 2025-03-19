@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { Shield, AlertTriangle } from "lucide-react";
 import { useAppSelector } from "@/lib/redux/hooks";
@@ -44,18 +45,19 @@ const KycBanner = () => {
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <AlertTriangle className="h-5 w-5" />
-          <AlertDescription className="text-sm font-medium">
+          <AlertTriangle className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0 text-amber-300" />
+          <AlertDescription className="text-sm md:text-base font-medium">
             Your account verification is incomplete. Verify your identity to access all features.
           </AlertDescription>
         </div>
         <Button 
           variant="outline" 
           size="sm"
-          className="text-white border-white hover:bg-red-800 hover:text-white"
+          className="text-white border-white bg-red-800/50 hover:bg-red-700 hover:text-white transition-colors duration-300"
         >
           <Shield className="mr-2 h-4 w-4" />
-          Verify Now
+          <span className="hidden sm:inline">Verify Now</span>
+          <span className="sm:hidden">Verify</span>
         </Button>
       </div>
     </Alert>

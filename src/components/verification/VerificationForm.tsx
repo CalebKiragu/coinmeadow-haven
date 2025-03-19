@@ -1,10 +1,13 @@
+
 import { useState } from "react";
 import { Camera, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import axios from "axios";
+import { uploadToS3, generateKycFilename } from "@/lib/s3Uploader";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { ApiService } from "@/lib/service";
 
 interface VerificationFormProps {
   onSubmit: (data: any) => void;
@@ -12,6 +15,8 @@ interface VerificationFormProps {
 
 const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user, merchant } = useAppSelector(state => state.auth);
+  
   const [formData, setFormData] = useState({
     firstName: "",
     surname: "",
@@ -38,18 +43,60 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
 
     setIsSubmitting(true);
     try {
-      const formPayload = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        formPayload.append(key, value);
-      });
-
-      // Replace with your actual API endpoint
-      await axios.post("/api/verification", formPayload, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
+      // Get user identifier (email or phone)
+      const identifier = user?.email || merchant?.email || user?.phone || merchant?.phone || '';
+      
+      // Upload files to S3
+      const selfieFilename = generateKycFilename(formData.firstName, identifier, "selfie");
+      const idFrontFilename = generateKycFilename(formData.firstName, identifier, "front");
+      const idBackFilename = generateKycFilename(formData.firstName, identifier, "back");
+      
+      // Upload all files in parallel
+      const [selfieUpload, idFrontUpload, idBackUpload] = await Promise.all([
+        uploadToS3(formData.selfie, selfieFilename),
+        uploadToS3(formData.idFront, idFrontFilename),
+        uploadToS3(formData.idBack, idBackFilename),
+      ]);
+      
+      // Check if all uploads were successful
+      if (!selfieUpload.success || !idFrontUpload.success || !idBackUpload.success) {
+        throw new Error("Failed to upload one or more files");
+      }
+      
+      // Prepare verification submission data
+      const verificationData = {
+        firstName: formData.firstName,
+        lastName: formData.surname,
+        govId: formData.idNumber,
+        email: user?.email || merchant?.email,
+        phone: user?.phone || merchant?.phone,
+        selfie: selfieUpload.url,
+        idFront: idFrontUpload.url,
+        idBack: idBackUpload.url,
+        location: ["0.0", "0.0"], // Default location if geolocation is not available
+        isMerchant: !!merchant
+      };
+      
+      // Try to get user's geolocation
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+          });
+          
+          verificationData.location = [
+            position.coords.longitude.toString(),
+            position.coords.latitude.toString()
+          ];
+        } catch (error) {
+          console.warn("Could not get geolocation:", error);
+          // Continue with default location
+        }
+      }
+      
+      // Submit verification to API
+      await ApiService.submitKycVerification(verificationData);
+      
       toast.success("Verification submitted successfully!");
       onSubmit(formData);
     } catch (error) {

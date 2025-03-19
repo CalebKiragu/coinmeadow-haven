@@ -134,6 +134,19 @@ interface OtpVerificationResponse {
   msg?: string;
 }
 
+interface KycVerificationData {
+  firstName: string;
+  lastName: string;
+  govId: string;
+  email?: string;
+  phone?: string;
+  selfie: string;
+  idFront: string;
+  idBack: string;
+  location: string[];
+  isMerchant: boolean;
+}
+
 // API service functions
 export const ApiService = {
   // Verify Email
@@ -423,6 +436,31 @@ export const ApiService = {
     }
   },
 
+  // Submit KYC Verification
+  submitKycVerification: async (data: KycVerificationData): Promise<VerificationResponse> => {
+    try {
+      const response: AxiosResponse<ApiResponse<VerificationResponse>> = 
+        await api.post("v1/verification/submit", data);
+      
+      // After successful submission, fetch the updated verification status
+      if (response.data.success) {
+        await ApiService.getVerificationStatus({ 
+          email: data.email, 
+          phone: data.phone 
+        });
+      }
+      
+      return response.data;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      throw new Error(
+        axiosError.response?.data?.message || 
+        axiosError.response?.data?.error || 
+        "Error submitting verification"
+      );
+    }
+  },
+
   // Get verification status
   getVerificationStatus: async (data: {
     email?: string;
@@ -522,20 +560,3 @@ export const ApiService = {
     }
   },
 };
-
-// Function to update prices every minute
-// export const startPriceUpdates = () => {
-//   // Call once immediately
-//   ApiService.updateDashboard().catch((error) =>
-//     console.error("Price update error:", error)
-//   );
-
-//   // Then set interval for every minute
-//   const intervalId = setInterval(() => {
-//     ApiService.updateDashboard().catch((error) =>
-//       console.error("Price update error:", error)
-//     );
-//   }, 60000); // 60000 ms = 1 minute
-
-//   return intervalId; // Return the interval ID so it can be cleared if needed
-// };
