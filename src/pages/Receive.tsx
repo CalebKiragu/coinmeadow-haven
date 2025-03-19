@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Home, Copy, QrCode, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import {
 import { cryptoCurrencies } from "@/types/currency";
 import { useToast } from "@/components/ui/use-toast";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
+import { TransactionService } from "@/lib/services/transactionService";
 
 const Receive = () => {
   const navigate = useNavigate();
@@ -19,9 +21,45 @@ const Receive = () => {
   const [selectedCrypto, setSelectedCrypto] = useState(
     cryptoCurrencies[0].symbol
   );
-  const [depositAddress, setDepositAddress] = useState(
-    "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"
-  );
+  const [depositAddress, setDepositAddress] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    fetchDepositAddress(selectedCrypto);
+  }, [selectedCrypto]);
+
+  const fetchDepositAddress = async (currency: string) => {
+    try {
+      setIsLoading(true);
+      const response = await TransactionService.receiveInstructions(currency.toLowerCase());
+      
+      if (response.success && response.data && response.data.address) {
+        setDepositAddress(response.data.address);
+      } else {
+        // Fallback to mock addresses if API fails
+        const mockAddresses = [
+          "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+          "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy",
+          "1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2",
+        ];
+        setDepositAddress(
+          mockAddresses[Math.floor(Math.random() * mockAddresses.length)]
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching deposit address:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch deposit address. Using sample address instead.",
+      });
+      
+      // Use a default address as fallback
+      setDepositAddress("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(depositAddress);
@@ -32,15 +70,7 @@ const Receive = () => {
   };
 
   const generateNewAddress = () => {
-    // Simulate generating a new address
-    const mockAddresses = [
-      "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-      "3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy",
-      "1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2",
-    ];
-    setDepositAddress(
-      mockAddresses[Math.floor(Math.random() * mockAddresses.length)]
-    );
+    fetchDepositAddress(selectedCrypto);
     toast({
       title: "New address generated",
       description: "A new deposit address has been generated for you.",
@@ -56,7 +86,11 @@ const Receive = () => {
           <label className="block text-sm font-medium text-gray-200">
             Select Cryptocurrency
           </label>
-          <Select value={selectedCrypto} onValueChange={setSelectedCrypto}>
+          <Select 
+            value={selectedCrypto} 
+            onValueChange={setSelectedCrypto}
+            disabled={isLoading}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select cryptocurrency" />
             </SelectTrigger>
@@ -71,17 +105,28 @@ const Receive = () => {
         </div>
 
         <div className="flex justify-center p-4 bg-white rounded-lg">
-          <QrCode className="w-48 h-48" />
+          {isLoading ? (
+            <div className="w-48 h-48 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+            </div>
+          ) : (
+            <QrCode className="w-48 h-48" />
+          )}
         </div>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-            <code className="text-sm break-all">{depositAddress}</code>
+            {isLoading ? (
+              <div className="h-6 w-full animate-pulse bg-gray-300 dark:bg-gray-700 rounded"></div>
+            ) : (
+              <code className="text-sm break-all">{depositAddress}</code>
+            )}
             <Button
               variant="ghost"
               size="icon"
               onClick={handleCopy}
               className="shrink-0"
+              disabled={isLoading || !depositAddress}
             >
               <Copy className="h-4 w-4" />
             </Button>
@@ -90,8 +135,13 @@ const Receive = () => {
             variant="outline"
             className="w-full"
             onClick={generateNewAddress}
+            disabled={isLoading}
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
+            {isLoading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
             Generate New Address
           </Button>
         </div>

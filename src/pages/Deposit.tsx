@@ -1,5 +1,7 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   ArrowLeft,
   Home,
@@ -11,9 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import confetti from "canvas-confetti";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
+import { useToast } from "@/components/ui/use-toast";
+import { TransactionService } from "@/lib/services/transactionService";
+import { RootState } from "@/lib/redux/store";
 
 const Deposit = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [payerInfo, setPayerInfo] = useState("");
   const [amount, setAmount] = useState("");
   const [pin, setPin] = useState("");
@@ -21,21 +27,64 @@ const Deposit = () => {
   const [transactionStatus, setTransactionStatus] = useState<
     "success" | "error" | null
   >(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const auth = useSelector((state: RootState) => state.auth);
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (currentStep < 3) {
       setCurrentStep((prev) => prev + 1);
     } else {
-      // Simulate transaction processing
-      const success = Math.random() > 0.5;
-      setTransactionStatus(success ? "success" : "error");
-      if (success) {
+      // Process deposit
+      await processDeposit();
+    }
+  };
+
+  const processDeposit = async () => {
+    try {
+      setIsProcessing(true);
+      
+      const initiator = auth.user?.phone || auth.merchant?.phone || "";
+      const firstName = auth.user?.firstName || auth.merchant?.repName || "";
+      const lastName = auth.user?.lastName || auth.merchant?.merchantName || "";
+      
+      const payload = {
+        type: "deposit",
+        initiator,
+        sender: payerInfo,
+        recipient: initiator,
+        senderFirstName: "External",
+        senderLastName: "Source",
+        recipientFirstName: firstName,
+        recipientLastName: lastName,
+        amount,
+        pin,
+        inOut: "BTC-BTC", // Default transfer type
+        currency: "btc", // Default currency
+        txType: "DEPOSIT"
+      };
+      
+      const response = await TransactionService.deposit(payload);
+      
+      if (response.success) {
+        setTransactionStatus("success");
         confetti({
           particleCount: 100,
           spread: 70,
           origin: { y: 0.6 },
         });
+      } else {
+        setTransactionStatus("error");
+        toast({
+          variant: "destructive",
+          title: "Deposit Failed",
+          description: response.error || "There was an error processing your deposit.",
+        });
       }
+    } catch (error) {
+      console.error("Deposit error:", error);
+      setTransactionStatus("error");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -101,9 +150,13 @@ const Deposit = () => {
               </div>
             )}
 
-            <Button className="w-full" onClick={handleNextStep}>
-              {currentStep === 3 ? "Complete Deposit" : "Next"}
-              <ArrowRight className="ml-2 h-4 w-4" />
+            <Button 
+              className="w-full" 
+              onClick={handleNextStep}
+              disabled={isProcessing}
+            >
+              {isProcessing ? "Processing..." : currentStep === 3 ? "Complete Deposit" : "Next"}
+              {!isProcessing && <ArrowRight className="ml-2 h-4 w-4" />}
             </Button>
           </div>
         ) : (
@@ -125,6 +178,12 @@ const Deposit = () => {
                 </p>
               </>
             )}
+            <Button 
+              className="w-full" 
+              onClick={() => navigate("/dashboard")}
+            >
+              Return to Dashboard
+            </Button>
           </div>
         )}
       </div>

@@ -1,5 +1,7 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   ArrowLeft,
   Home,
@@ -15,15 +17,21 @@ import confetti from "canvas-confetti";
 import { StepIndicator } from "@/components/send/StepIndicator";
 import { MerchantPayment } from "@/components/send/MerchantPayment";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
+import { useToast } from "@/components/ui/use-toast";
+import { TransactionService } from "@/lib/services/transactionService";
+import { RootState } from "@/lib/redux/store";
 
 const SendPay = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("mobile");
   const [currentStep, setCurrentStep] = useState(1);
   const [savedData, setSavedData] = useState<any>({});
   const [transactionStatus, setTransactionStatus] = useState<
     "success" | "error" | null
   >(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const auth = useSelector((state: RootState) => state.auth);
 
   const handleStepClick = (step: number) => {
     if (step <= currentStep) {
@@ -31,20 +39,81 @@ const SendPay = () => {
     }
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (currentStep < 3) {
       setCurrentStep((prev) => prev + 1);
     } else {
-      // Simulate transaction processing
-      const success = Math.random() > 0.5;
-      setTransactionStatus(success ? "success" : "error");
-      if (success) {
+      // Process transaction
+      await processTransaction();
+    }
+  };
+
+  const processTransaction = async () => {
+    try {
+      setIsProcessing(true);
+      
+      const sender = auth.user?.phone || auth.merchant?.phone || "";
+      const senderFirstName = auth.user?.firstName || auth.merchant?.repName || "";
+      const senderLastName = auth.user?.lastName || auth.merchant?.merchantName || "";
+      
+      let payload;
+      
+      if (activeTab === "mobile") {
+        payload = {
+          type: "internal",
+          initiator: sender,
+          sender: sender,
+          recipient: savedData.phoneNumber,
+          senderFirstName,
+          senderLastName,
+          recipientFirstName: "", // We don't have this info for mobile transfers
+          recipientLastName: "",
+          amount: savedData.amount,
+          pin: savedData.pin,
+          inOut: "BTC-BTC", // Default transfer type
+          currency: "btc", // Default currency
+          txType: "USERSEND"
+        };
+      } else {
+        payload = {
+          type: "internal",
+          initiator: sender,
+          sender: sender,
+          recipient: savedData.merchantNumber,
+          senderFirstName,
+          senderLastName,
+          recipientFirstName: "Merchant", // Default merchant name
+          recipientLastName: "Account",
+          amount: savedData.amount,
+          pin: savedData.pin,
+          inOut: "BTC-BTC", // Default transfer type
+          currency: "btc", // Default currency
+          txType: "MERCHANTPAY"
+        };
+      }
+      
+      const response = await TransactionService.transferFunds(payload);
+      
+      if (response.success) {
+        setTransactionStatus("success");
         confetti({
           particleCount: 100,
           spread: 70,
           origin: { y: 0.6 },
         });
+      } else {
+        setTransactionStatus("error");
       }
+    } catch (error) {
+      console.error("Transaction error:", error);
+      setTransactionStatus("error");
+      toast({
+        variant: "destructive",
+        title: "Transaction Failed",
+        description: "There was an error processing your transaction.",
+      });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -162,9 +231,13 @@ const SendPay = () => {
                   />
                 )}
 
-                <Button className="w-full" onClick={handleNextStep}>
-                  {currentStep === 3 ? "Complete Transaction" : "Next"}
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                <Button 
+                  className="w-full" 
+                  onClick={handleNextStep}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? "Processing..." : currentStep === 3 ? "Complete Transaction" : "Next"}
+                  {!isProcessing && <ArrowRight className="ml-2 h-4 w-4" />}
                 </Button>
               </div>
             ) : (
@@ -188,6 +261,12 @@ const SendPay = () => {
                     </p>
                   </>
                 )}
+                <Button 
+                  className="w-full" 
+                  onClick={() => navigate("/dashboard")}
+                >
+                  Return to Dashboard
+                </Button>
               </div>
             )}
           </div>
