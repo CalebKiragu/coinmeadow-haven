@@ -85,13 +85,15 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
   const calculateTotalBalance = () => {
     if (selectedCrypto === "ALL") {
       // Calculate total balance across all currencies
-      return wallets.reduce((total, wallet) => {
-        const priceData = prices.find((p) => p.currency === wallet.currency);
-        const price = priceData ? parseFloat(priceData.value) : 0; // Default to 0 if price not found
-        const balance = parseFloat(wallet.balance.availableBalance); // Convert balance to number
+      return (
+        wallets?.reduce((total, wallet) => {
+          const priceData = prices.find((p) => p.currency === wallet.currency);
+          const price = priceData ? parseFloat(priceData.value) : 0; // Default to 0 if price not found
+          const balance = parseFloat(wallet.balance.availableBalance); // Convert balance to number
 
-        return total + balance * price; // Convert to total balance in base currency
-      }, 0);
+          return total + balance * price; // Convert to total balance in base currency
+        }, 0) || 0
+      );
     } else {
       // Get balance for the selected crypto wallet
       const wallet = wallets.find((w) => w.currency === selectedCrypto);
