@@ -6,8 +6,12 @@ export interface Wallets {
 }
 
 export interface Kyc {
-  approvedBy: string;
-  approvedAt: bigint;
+  verifId?: string;
+  govId?: string;
+  images?: string[];
+  by?: string;
+  at?: bigint;
+  create?: boolean;
 }
 
 export interface ThirdPartySignin {
