@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import OTPInput from "./OTPInput";
 import { StepIndicator } from "../send/StepIndicator";
-import { ApiService } from "@/lib/service";
+import { ApiService } from "@/lib/services";
 import { useAppSelector } from "@/lib/redux/hooks";
 
 type ChangePinFormProps = {

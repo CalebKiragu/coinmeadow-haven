@@ -1,4 +1,3 @@
-
 import axios, { AxiosError, AxiosResponse } from "axios";
 import {
   fetchWalletStart,
@@ -15,6 +14,7 @@ import {
 import { store } from "../redux/store";
 import { url } from "../utils";
 import { AuthService } from "./authService";
+import { VerificationService } from "./verificationService";
 
 // Replace with your actual API base URL
 const API_URL = url().BASE_URL;
@@ -91,9 +91,9 @@ export const WalletService = {
     try {
       // Query for verification status
       if (email || phone) {
-        await AuthService.getVerificationStatus({ email, phone });
+        await VerificationService.getVerificationStatus({ email, phone });
       }
-      
+
       const pricesResponse: AxiosResponse<ApiResponse<PriceData[]>> =
         await api.get(buildUrl("updateprices", { basePair }));
       store.dispatch(fetchPricesSuccess(pricesResponse.data.data));

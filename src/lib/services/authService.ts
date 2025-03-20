@@ -1,4 +1,3 @@
-
 import axios, { AxiosError, AxiosResponse } from "axios";
 import {
   loginStart,
@@ -8,8 +7,6 @@ import {
   Merchant,
   Token,
   updateOtp,
-  VerificationStatus,
-  setVerificationStatus,
 } from "../redux/slices/authSlice";
 import { store } from "../redux/store";
 import { url } from "../utils";
@@ -97,11 +94,6 @@ const buildUrl = (
       return `v1/merchants/verify/email?${email && `email=${email}`}${
         otp ? `&otp=${otp}` : ``
       }${otpId ? `&otpId=${otpId}` : ``}`;
-      
-    case "verificationstatus":
-      return `v1/verification/status?${email ? `email=${email}` : ''}${
-        phone ? `phone=${phone}` : ''
-      }${status ? `&status=${status}` : ''}`;
 
     default:
       return ``;
@@ -393,28 +385,6 @@ export const AuthService = {
           axiosError.response?.data?.error ||
           "Error reseting merchant PIN"
       );
-    }
-  },
-  
-  // Get verification status
-  getVerificationStatus: async (data: {
-    email?: string;
-    phone?: string;
-    status?: string;
-  }): Promise<VerificationStatus[]> => {
-    try {
-      const response: AxiosResponse<ApiResponse<VerificationStatus[]>> = 
-        await api.get(buildUrl("verificationstatus", data));
-      
-      if (response.data.data) {
-        store.dispatch(setVerificationStatus(response.data.data));
-      }
-      
-      return response.data.data || [];
-    } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<null>>;
-      console.error('Error fetching verification status:', axiosError);
-      return [];
     }
   },
 };

@@ -8,7 +8,7 @@ import GlassCard from "../ui/GlassCard";
 import SignupFormFields from "./SignupFormFields";
 import ThirdPartyAuth from "./ThirdPartyAuth";
 import OTPInput from "./OTPInput";
-import { ApiService } from "@/lib/service";
+import { ApiService } from "@/lib/services";
 import { useAppSelector } from "@/lib/redux/hooks";
 
 const SignupForm = () => {

@@ -9,7 +9,7 @@ import ThirdPartyAuth from "./ThirdPartyAuth";
 import OTPInput from "./OTPInput";
 import MerchantSignupFormFields from "./MerchantSignupFormFields";
 import { useAppSelector } from "@/lib/redux/hooks";
-import { ApiService } from "@/lib/service";
+import { ApiService } from "@/lib/services";
 
 const MerchantSignupForm = () => {
   const { toast } = useToast();

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import ChangePinForm from "./ChangePinForm";
 import OTPInput from "./OTPInput";
-import { ApiService } from "@/lib/service";
+import { ApiService } from "@/lib/services";
 import { useAppSelector } from "@/lib/redux/hooks";
 
 const LoginForm = () => {

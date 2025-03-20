@@ -17,7 +17,7 @@ import {
   setSelectedCrypto,
   setSelectedFiat,
 } from "@/lib/redux/slices/walletSlice";
-import { ApiService } from "@/lib/service";
+import { ApiService } from "@/lib/services";
 
 const BalanceCard = ({ showBalance, setShowBalance }) => {
   const navigate = useNavigate();

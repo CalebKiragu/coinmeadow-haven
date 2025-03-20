@@ -1,4 +1,3 @@
-
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -12,9 +11,15 @@ export function url(): {
   AUTH_URL?: string;
 } {
   return {
-    BASE_URL: import.meta.env.VITE_API_BASE_URL || `https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/`,
-    CHAIN_URL: import.meta.env.VITE_CHAIN_URL || `https://a07cchvfjd.execute-api.us-east-1.amazonaws.com/Prod/`,
-    AUTH_URL: import.meta.env.VITE_AUTH_URL || `https://en7qgbgo6d.execute-api.us-east-1.amazonaws.com/Prod/`,
+    BASE_URL:
+      import.meta.env.VITE_API_BASE_URL ||
+      `https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/`,
+    CHAIN_URL:
+      import.meta.env.VITE_CHAIN_URL ||
+      `https://a07cchvfjd.execute-api.us-east-1.amazonaws.com/Prod/`,
+    AUTH_URL:
+      import.meta.env.VITE_AUTH_URL ||
+      `https://en7qgbgo6d.execute-api.us-east-1.amazonaws.com/Prod/`,
   };
 }
 
@@ -39,6 +44,4 @@ export function formatTimestamp(timestamp: bigint): string {
     second: "2-digit", // e.g., 15
     timeZoneName: "short", // e.g., GMT
   }).format(date);
-}
-
-// Output: "Monday, March 11, 2025, 08:00:00 PM GMT"
+} // Output: "Monday, March 11, 2025, 08:00:00 PM GMT"

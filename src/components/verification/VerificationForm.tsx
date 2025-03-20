@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Camera, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { uploadToS3, generateKycFilename } from "@/lib/s3Uploader";
 import { useAppSelector } from "@/lib/redux/hooks";
-import { ApiService } from "@/lib/service";
+import { ApiService } from "@/lib/services";
 
 interface VerificationFormProps {
   onSubmit: (data: any) => void;
@@ -15,8 +14,8 @@ interface VerificationFormProps {
 
 const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user, merchant } = useAppSelector(state => state.auth);
-  
+  const { user, merchant } = useAppSelector((state) => state.auth);
+
   const [formData, setFormData] = useState({
     firstName: "",
     surname: "",
@@ -26,13 +25,14 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
     idBack: null as File | null,
   });
 
-  const handleFileUpload = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFormData(prev => ({ ...prev, [field]: file }));
-      toast.success(`${field} uploaded successfully`);
-    }
-  };
+  const handleFileUpload =
+    (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        setFormData((prev) => ({ ...prev, [field]: file }));
+        toast.success(`${field} uploaded successfully`);
+      }
+    };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,26 +43,42 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
 
     setIsSubmitting(true);
     try {
-      // Get user identifier (email or phone)
-      const identifier = user?.email || merchant?.email || user?.phone || merchant?.phone || '';
-      
+      // Get user identifier (userId or merchantId)
+      const identifier = user?.userId || merchant?.merchantId || "";
+
       // Upload files to S3
-      const selfieFilename = generateKycFilename(formData.firstName, identifier, "selfie");
-      const idFrontFilename = generateKycFilename(formData.firstName, identifier, "front");
-      const idBackFilename = generateKycFilename(formData.firstName, identifier, "back");
-      
+      const selfieFilename = generateKycFilename(
+        formData.firstName,
+        identifier,
+        "selfie"
+      );
+      const idFrontFilename = generateKycFilename(
+        formData.firstName,
+        identifier,
+        "front"
+      );
+      const idBackFilename = generateKycFilename(
+        formData.firstName,
+        identifier,
+        "back"
+      );
+
       // Upload all files in parallel
       const [selfieUpload, idFrontUpload, idBackUpload] = await Promise.all([
         uploadToS3(formData.selfie, selfieFilename),
         uploadToS3(formData.idFront, idFrontFilename),
         uploadToS3(formData.idBack, idBackFilename),
       ]);
-      
+
       // Check if all uploads were successful
-      if (!selfieUpload.success || !idFrontUpload.success || !idBackUpload.success) {
+      if (
+        !selfieUpload.success ||
+        !idFrontUpload.success ||
+        !idBackUpload.success
+      ) {
         throw new Error("Failed to upload one or more files");
       }
-      
+
       // Prepare verification submission data
       const verificationData = {
         firstName: formData.firstName,
@@ -74,29 +90,33 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
         idFront: idFrontUpload.url,
         idBack: idBackUpload.url,
         location: ["0.0", "0.0"], // Default location if geolocation is not available
-        isMerchant: !!merchant
+        isMerchant: !!merchant,
       };
-      
+
       // Try to get user's geolocation
       if (navigator.geolocation) {
         try {
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
-          });
-          
+          const position = await new Promise<GeolocationPosition>(
+            (resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, {
+                timeout: 5000,
+              });
+            }
+          );
+
           verificationData.location = [
             position.coords.longitude.toString(),
-            position.coords.latitude.toString()
+            position.coords.latitude.toString(),
           ];
         } catch (error) {
           console.warn("Could not get geolocation:", error);
           // Continue with default location
         }
       }
-      
+
       // Submit verification to API
       await ApiService.submitKycVerification(verificationData);
-      
+
       toast.success("Verification submitted successfully!");
       onSubmit(formData);
     } catch (error) {
@@ -116,7 +136,9 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
             id="firstName"
             required
             value={formData.firstName}
-            onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, firstName: e.target.value }))
+            }
           />
         </div>
         <div className="space-y-2">
@@ -125,7 +147,9 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
             id="surname"
             required
             value={formData.surname}
-            onChange={(e) => setFormData(prev => ({ ...prev, surname: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, surname: e.target.value }))
+            }
           />
         </div>
       </div>
@@ -136,7 +160,9 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
           id="idNumber"
           required
           value={formData.idNumber}
-          onChange={(e) => setFormData(prev => ({ ...prev, idNumber: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, idNumber: e.target.value }))
+          }
         />
       </div>
 

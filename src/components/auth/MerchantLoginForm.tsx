@@ -15,7 +15,7 @@ import {
 import ChangePinForm from "./ChangePinForm";
 import OTPInput from "./OTPInput";
 import { useAppSelector } from "@/lib/redux/hooks";
-import { ApiService } from "@/lib/service";
+import { ApiService } from "@/lib/services";
 
 const MerchantLoginForm = () => {
   const [showPin, setShowPin] = useState(false);

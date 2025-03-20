@@ -10,7 +10,7 @@ import {
 import GlassCard from "../ui/GlassCard";
 import TransactionHistoryItem from "./TransactionHistoryItem";
 import { useAppSelector } from "@/lib/redux/hooks";
-import { ApiService } from "@/lib/service";
+import { ApiService } from "@/lib/services";
 
 const TransactionHistory = ({ showBalance, setShowBalance }) => {
   const [sortBy, setSortBy] = useState("date");
