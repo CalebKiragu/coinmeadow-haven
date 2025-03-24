@@ -10,6 +10,7 @@ interface AWS_KEYS {
   SECRET_ACCESS_KEY?: string;
   REGION?: string;
   BUCKET_NAME?: string;
+  IDENTITY_POOL_ID?: string;
 }
 
 export function aws(): {
@@ -18,10 +19,9 @@ export function aws(): {
 } {
   return {
     s3: {
-      ACCESS_KEY_ID: "AKIATT33YA5G4IKTOAXB",
-      SECRET_ACCESS_KEY: "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",
       REGION: "us-east-1",
       BUCKET_NAME: "pesatoken-kyc",
+      IDENTITY_POOL_ID: "us-east-1:539c38cd-87a4-4563-bb9e-16e23aa013f5",
     },
   };
 }
@@ -66,3 +66,13 @@ export function formatTimestamp(timestamp: bigint): string {
     timeZoneName: "short", // e.g., GMT
   }).format(date);
 } // Output: "Monday, March 11, 2025, 08:00:00 PM GMT"
+
+// Function to mask sensitive data (phone & email)
+export function maskSensitiveData(value: string | null): string | null {
+  if (!value) return "N/A";
+  if (value.includes("@")) {
+    const [user, domain] = value.split("@");
+    return `${user.slice(0, 3)}***@${domain}`;
+  }
+  return `${value.slice(0, 3)}***${value.slice(-3)}`;
+}

@@ -7,22 +7,33 @@ import VerificationPreview from "@/components/verification/VerificationPreview";
 import VerificationStatus from "@/components/verification/VerificationStatus";
 import { toast } from "sonner";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
+import { ApiService } from "@/lib/services";
 
 export type VerificationStep = "form" | "preview" | "status";
 
 const Verification = () => {
   const [currentStep, setCurrentStep] = useState<VerificationStep>("form");
   const [formData, setFormData] = useState<any>(null);
-  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleFormSubmit = (data: any) => {
     setFormData(data);
     setCurrentStep("preview");
   };
 
-  const handlePreviewSubmit = () => {
-    toast.success("Verification submitted successfully!");
-    setCurrentStep("status");
+  const handlePreviewSubmit = async () => {
+    try {
+      // Submit verification to API
+      setIsSubmitting(true);
+      await ApiService.submitKycVerification(formData);
+      toast.success("Verification submitted successfully!");
+      setCurrentStep("status");
+    } catch (error) {
+      toast.error(`Failed to submit verification. ${error}`);
+      console.error("Verification submission error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleContactSupport = () => {
@@ -57,6 +68,7 @@ const Verification = () => {
               data={formData}
               onEdit={() => setCurrentStep("form")}
               onSubmit={handlePreviewSubmit}
+              isSubmitting={isSubmitting}
             />
           )}
           {currentStep === "status" && <VerificationStatus />}

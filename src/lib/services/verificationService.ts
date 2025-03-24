@@ -4,6 +4,7 @@ import { url } from "../utils";
 import {
   VerificationStatus,
   setVerificationStatus,
+  toggleLoading,
 } from "../redux/slices/authSlice";
 
 // Replace with your actual API base URL
@@ -67,9 +68,9 @@ const buildUrl = (
 
   switch (caller) {
     case "verificationstatus":
-      return `v1/verification/status?${email ? `email=${email}` : ""}${
-        phone ? `phone=${phone}` : ""
-      }${status ? `&status=${status}` : ""}`;
+      return `v1/verification/status?${email ? `email=${email}&` : ""}${
+        phone ? `phone=${phone}&` : ""
+      }${status ? `status=${status}` : ""}`;
 
     default:
       return ``;
@@ -86,6 +87,14 @@ export const VerificationService = {
     try {
       const response: AxiosResponse<ApiResponse<VerificationStatus[]>> =
         await api.get(buildUrl("verificationstatus", data));
+
+      console.log("====================================");
+      console.log(
+        "verification >> ",
+        buildUrl("verificationstatus", data),
+        response.data.data
+      );
+      console.log("====================================");
 
       if (response.data.data) {
         store.dispatch(setVerificationStatus(response.data.data));

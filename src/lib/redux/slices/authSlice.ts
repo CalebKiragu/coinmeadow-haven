@@ -1,4 +1,3 @@
-
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface Wallets {
@@ -130,11 +129,11 @@ const initialState: AuthState = {
 
 // Helper function to parse JSON string in kyc field
 const parseKycData = <T extends User | Merchant>(entity: T): T => {
-  if (entity && entity.kyc && typeof entity.kyc === 'string') {
+  if (entity && entity.kyc && typeof entity.kyc === "string") {
     try {
       entity.kyc = JSON.parse(entity.kyc as unknown as string) as Kyc;
     } catch (error) {
-      console.error('Failed to parse kyc data:', error);
+      console.error("Failed to parse kyc data:", error);
     }
   }
   return entity;
@@ -159,16 +158,16 @@ const authSlice = createSlice({
     ) => {
       state.isAuthenticated = true;
       state.otp = action.payload.otp;
-      
+
       // Parse kyc data if it exists as a string
       if (action.payload.user) {
         state.user = parseKycData(action.payload.user);
       }
-      
+
       if (action.payload.merchant) {
         state.merchant = parseKycData(action.payload.merchant);
       }
-      
+
       state.token = action.payload.token;
       state.isLoading = false;
       state.error = null;
@@ -198,8 +197,18 @@ const authSlice = createSlice({
     updateOtp: (state, action: PayloadAction<Partial<Otp>>) => {
       state.otp = action.payload;
     },
-    setVerificationStatus: (state, action: PayloadAction<VerificationStatus[]>) => {
+    setVerificationStatus: (
+      state,
+      action: PayloadAction<VerificationStatus[]>
+    ) => {
       state.verificationStatus = action.payload;
+    },
+    verificationFailure: (state, action: PayloadAction<string>) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    },
+    toggleLoading: (state) => {
+      state.isLoading = !state.isLoading;
     },
   },
 });
@@ -213,6 +222,8 @@ export const {
   updateMerchant,
   updateOtp,
   setVerificationStatus,
+  verificationFailure,
+  toggleLoading,
 } = authSlice.actions;
 
 export default authSlice.reducer;

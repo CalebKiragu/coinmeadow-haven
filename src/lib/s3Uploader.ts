@@ -1,5 +1,6 @@
 import { aws } from "./utils";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { fromCognitoIdentityPool } from "@aws-sdk/credential-providers";
 
 interface UploadResult {
   success: boolean;
@@ -23,10 +24,10 @@ export const uploadToS3 = async (
     // Initialize S3 Client
     const s3 = new S3Client({
       region: AWS.s3.REGION,
-      credentials: {
-        accessKeyId: AWS.s3.ACCESS_KEY_ID,
-        secretAccessKey: AWS.s3.SECRET_ACCESS_KEY,
-      },
+      credentials: fromCognitoIdentityPool({
+        clientConfig: { region: AWS.s3.REGION },
+        identityPoolId: AWS.s3.IDENTITY_POOL_ID,
+      }),
     });
 
     // Convert File to an ArrayBuffer
@@ -61,16 +62,18 @@ export const uploadToS3 = async (
  */
 export const generateKycFilename = (
   firstName: string,
+  fileName: string,
   identifier: string, // userId or merchantId
   imageType: "selfie" | "front" | "back"
 ): string => {
   // Sanitize inputs to make them safe for filenames
   const sanitizedName = firstName.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const sanitizedFileName = fileName.toLowerCase().replace(/[^a-z0-9]/g, "");
   const sanitizedIdentifier = identifier
     .toLowerCase()
     .replace(/[^a-z0-9@.]/g, "")
     .replace(/@/g, "-at-")
     .replace(/\./g, "-dot-");
 
-  return `${sanitizedName}-${sanitizedIdentifier}-${imageType}.jpeg`;
+  return `${sanitizedName}-${sanitizedIdentifier}-${sanitizedFileName}-${imageType}.jpeg`;
 };

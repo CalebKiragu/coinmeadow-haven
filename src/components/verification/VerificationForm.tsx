@@ -30,14 +30,14 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
       const file = e.target.files?.[0];
       if (file) {
         setFormData((prev) => ({ ...prev, [field]: file }));
-        toast.success(`${field} uploaded successfully`);
+        toast.success(`${field} selected successfully`);
       }
     };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.selfie || !formData.idFront || !formData.idBack) {
-      toast.error("Please upload all required documents");
+      toast.error("Please select all required documents");
       return;
     }
 
@@ -49,18 +49,21 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
       // Upload files to S3
       const selfieFilename = generateKycFilename(
         formData.firstName,
+        formData.selfie.name,
         identifier,
-        "selfie"
+        `selfie`
       );
       const idFrontFilename = generateKycFilename(
         formData.firstName,
+        formData.idFront.name,
         identifier,
-        "front"
+        `front`
       );
       const idBackFilename = generateKycFilename(
         formData.firstName,
+        formData.idBack.name,
         identifier,
-        "back"
+        `back`
       );
 
       // Upload all files in parallel
@@ -113,15 +116,11 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
           // Continue with default location
         }
       }
-
-      // Submit verification to API
-      await ApiService.submitKycVerification(verificationData);
-
-      toast.success("Verification submitted successfully!");
-      onSubmit(formData);
+      toast.success("images uploaded successfully!");
+      onSubmit(verificationData);
     } catch (error) {
-      toast.error(`Failed to submit verification. ${error}`);
-      console.error("Verification submission error:", error);
+      toast.error(`Failed to upload images. ${error}`);
+      console.error("Image upload error:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -229,7 +228,7 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
       </div>
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Submitting..." : "Continue to Preview"}
+        {isSubmitting ? "Uploading..." : "Continue to Preview"}
       </Button>
     </form>
   );
