@@ -120,7 +120,7 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
       toast.success("Verification submitted successfully!");
       onSubmit(formData);
     } catch (error) {
-      toast.error("Failed to submit verification. Please try again.");
+      toast.error(`Failed to submit verification. ${error}`);
       console.error("Verification submission error:", error);
     } finally {
       setIsSubmitting(false);

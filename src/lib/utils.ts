@@ -5,6 +5,27 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+interface AWS_KEYS {
+  ACCESS_KEY_ID?: string;
+  SECRET_ACCESS_KEY?: string;
+  REGION?: string;
+  BUCKET_NAME?: string;
+}
+
+export function aws(): {
+  s3?: AWS_KEYS;
+  ses?: AWS_KEYS;
+} {
+  return {
+    s3: {
+      ACCESS_KEY_ID: "AKIATT33YA5G4IKTOAXB",
+      SECRET_ACCESS_KEY: "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",
+      REGION: "us-east-1",
+      BUCKET_NAME: "pesatoken-kyc",
+    },
+  };
+}
+
 export function url(): {
   BASE_URL?: string;
   CHAIN_URL?: string;

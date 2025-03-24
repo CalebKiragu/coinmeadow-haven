@@ -1,11 +1,13 @@
-import axios from "axios";
-import { url } from "./utils";
+import { aws } from "./utils";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 interface UploadResult {
   success: boolean;
   url: string;
   error?: string;
 }
+
+const AWS = aws();
 
 /**
  * Uploads a file to AWS S3 using a presigned URL
@@ -18,25 +20,30 @@ export const uploadToS3 = async (
   fileName: string
 ): Promise<UploadResult> => {
   try {
-    // Request a presigned URL from the backend
-    const { BASE_URL } = url();
-    const presignedUrlResponse = await axios.get(
-      `${BASE_URL}v1/generatelink?fileName=${fileName}&fileType=${file.type}`
-    );
-
-    const { uploadUrl, publicUrl } = presignedUrlResponse.data;
-
-    // Upload the file directly to S3 using the presigned URL
-    await axios.put(uploadUrl, file, {
-      headers: {
-        "Content-Type": file.type,
-        "x-amz-acl": "public-read",
+    // Initialize S3 Client
+    const s3 = new S3Client({
+      region: AWS.s3.REGION,
+      credentials: {
+        accessKeyId: AWS.s3.ACCESS_KEY_ID,
+        secretAccessKey: AWS.s3.SECRET_ACCESS_KEY,
       },
     });
 
+    // Convert File to an ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer); // Ensure compatibility
+
+    const params = {
+      Bucket: "pesatoken-kyc",
+      Key: `uploads/${fileName}`, // Path in S3 bucket
+      Body: uint8Array,
+      ContentType: file.type || "image/jpeg", // Set the correct content type
+    };
+
+    await s3.send(new PutObjectCommand(params));
     return {
       success: true,
-      url: publicUrl,
+      url: `https://${AWS.s3.BUCKET_NAME}.s3.${AWS.s3.REGION}.amazonaws.com/uploads/${fileName}`,
     };
   } catch (error) {
     console.error("Error uploading to S3:", error);

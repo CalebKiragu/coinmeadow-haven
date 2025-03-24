@@ -5,7 +5,6 @@ import {
   VerificationStatus,
   setVerificationStatus,
 } from "../redux/slices/authSlice";
-import { AuthService } from "./authService";
 
 // Replace with your actual API base URL
 const API_URL = url().BASE_URL;
