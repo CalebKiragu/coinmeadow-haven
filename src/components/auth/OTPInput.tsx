@@ -1,5 +1,10 @@
-import { TextField } from "@mui/material";
-import { useRef, useEffect } from "react";
+
+import React from "react";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 
 type OTPInputProps = {
   value: string;
@@ -8,83 +13,25 @@ type OTPInputProps = {
 };
 
 const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
-  const inputRefs = [
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-  ];
-
-  const handleChange = (index: number, digit: string) => {
-    if (digit.length <= 1 && /^\d*$/.test(digit)) {
-      const newValue = value.split("");
-      newValue[index] = digit;
-      onChange(newValue.join(""));
-
-      if (digit && index < 3) {
-        inputRefs[index + 1].current?.focus();
-      }
-    }
-  };
-
-  const handleKeyDown = (
-    index: number,
-    e: React.KeyboardEvent<HTMLInputElement>
-  ) => {
-    if (e.key === "Backspace" && !value[index] && index > 0) {
-      inputRefs[index - 1].current?.focus();
-    }
-  };
-
-  useEffect(() => {
-    inputRefs[0].current?.focus();
-  }, []);
-
   return (
     <div className="space-y-4">
       <p className="text-sm text-foreground/80 text-center font-medium">
         Enter the 4-digit code sent to {identifier || "your contact"}
       </p>
-      <div className="flex justify-center gap-2">
-        {[0, 1, 2, 3].map((index) => (
-          <TextField
-            key={index}
-            inputRef={inputRefs[index]}
-            variant="outlined"
-            value={value[index] || ""}
-            onChange={(e) => handleChange(index, e.target.value)}
-            onKeyDown={(e) =>
-              handleKeyDown(index, e as React.KeyboardEvent<HTMLInputElement>)
-            }
-            inputProps={{
-              maxLength: 1,
-              style: {
-                width: "40px",
-                height: "40px",
-                textAlign: "center",
-                fontSize: "1.25rem",
-                padding: "8px",
-                color: "inherit", // This will inherit text color from parent
-              },
-            }}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": {
-                  borderColor: "rgba(255, 255, 255, 0.3)",
-                },
-                "&:hover fieldset": {
-                  borderColor: "rgba(255, 255, 255, 0.5)",
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: "primary.main",
-                },
-              },
-              "& .MuiInputBase-input": {
-                color: "inherit", // Ensure text inherits color in all states
-              },
-            }}
-          />
-        ))}
+      <div className="flex justify-center">
+        <InputOTP
+          value={value}
+          onChange={onChange}
+          maxLength={4}
+          pattern="\d{4}"
+          render={({ slots }) => (
+            <InputOTPGroup className="gap-3">
+              {slots.map((slot, index) => (
+                <InputOTPSlot key={index} {...slot} index={index} />
+              ))}
+            </InputOTPGroup>
+          )}
+        />
       </div>
     </div>
   );

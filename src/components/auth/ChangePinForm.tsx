@@ -1,8 +1,10 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import OTPInput from "./OTPInput";
+import ResendOTP from "./ResendOTP";
 import { StepIndicator } from "../send/StepIndicator";
 import { ApiService } from "@/lib/services";
 import { useAppSelector } from "@/lib/redux/hooks";
@@ -35,6 +37,48 @@ const ChangePinForm = ({
       setRecipient(value);
     } else if (value.length <= 4 && /^\d*$/.test(value)) {
       setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setIsLoading(true);
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient);
+    
+    try {
+      // Choose the appropriate resend method based on recipient type and user/merchant status
+      if (isEmail) {
+        if (isMerchant) {
+          await ApiService.resendMerchantEmailOTP(recipient);
+        } else {
+          await ApiService.resendUserEmailOTP(recipient);
+        }
+        toast({
+          title: "OTP Sent",
+          description: `New verification code sent to ${recipient}`,
+        });
+      } else {
+        if (isMerchant) {
+          await ApiService.resendMerchantPhoneOTP(recipient);
+        } else {
+          await ApiService.resendUserPhoneOTP(recipient);
+        }
+        toast({
+          title: "OTP Sent",
+          description: `New verification code sent to ${recipient}`,
+        });
+      }
+      
+      // Reset OTP field
+      setConfirmOtp("");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to resend OTP",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -176,6 +220,7 @@ const ChangePinForm = ({
               onChange={setConfirmOtp}
               identifier={recipient}
             />
+            <ResendOTP onResend={handleResendOTP} />
           </div>
         )}
 
