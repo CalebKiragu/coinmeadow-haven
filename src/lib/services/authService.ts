@@ -95,6 +95,18 @@ const buildUrl = (
         otp ? `&otp=${otp}` : ``
       }${otpId ? `&otpId=${otpId}` : ``}`;
 
+    case "resenduseremail":
+      return `v1/users/resend/email?${email && `email=${email}`}`;
+
+    case "resenduserphone":
+      return `v1/users/resend/phone?${phone && `phone=${phone}`}`;
+
+    case "resendmerchantemail":
+      return `v1/merchants/resend/email?${email && `email=${email}`}`;
+
+    case "resendmerchantphone":
+      return `v1/merchants/resend/phone?${phone && `phone=${phone}`}`;
+
     default:
       return ``;
   }
@@ -171,6 +183,63 @@ export const AuthService = {
       const axiosError = error as AxiosError<ApiResponse<null>>;
       throw new Error(
         axiosError.response?.data?.message || "Error verifying merchant phone"
+      );
+    }
+  },
+
+  // Resend OTP operations
+  resendUserEmailOTP: async (email: string): Promise<VerificationResponse> => {
+    try {
+      const response: AxiosResponse<ApiResponse<VerificationResponse>> =
+        await api.get(buildUrl("resenduseremail", { email }));
+      if (response.data.otpId) store.dispatch(updateOtp(response.data));
+      return response.data;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      throw new Error(
+        axiosError.response?.data?.message || "Error resending OTP to user email"
+      );
+    }
+  },
+
+  resendUserPhoneOTP: async (phone: string): Promise<VerificationResponse> => {
+    try {
+      const response: AxiosResponse<ApiResponse<VerificationResponse>> =
+        await api.get(buildUrl("resenduserphone", { phone }));
+      if (response.data.otpId) store.dispatch(updateOtp(response.data));
+      return response.data;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      throw new Error(
+        axiosError.response?.data?.message || "Error resending OTP to user phone"
+      );
+    }
+  },
+
+  resendMerchantEmailOTP: async (email: string): Promise<VerificationResponse> => {
+    try {
+      const response: AxiosResponse<ApiResponse<VerificationResponse>> =
+        await api.get(buildUrl("resendmerchantemail", { email }));
+      if (response.data.otpId) store.dispatch(updateOtp(response.data));
+      return response.data;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      throw new Error(
+        axiosError.response?.data?.message || "Error resending OTP to merchant email"
+      );
+    }
+  },
+
+  resendMerchantPhoneOTP: async (phone: string): Promise<VerificationResponse> => {
+    try {
+      const response: AxiosResponse<ApiResponse<VerificationResponse>> =
+        await api.get(buildUrl("resendmerchantphone", { phone }));
+      if (response.data.otpId) store.dispatch(updateOtp(response.data));
+      return response.data;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      throw new Error(
+        axiosError.response?.data?.message || "Error resending OTP to merchant phone"
       );
     }
   },
