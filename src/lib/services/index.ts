@@ -1,3 +1,4 @@
+
 import { AuthService } from "./authService";
 import { TransactionService } from "./transactionService";
 import { VerificationService } from "./verificationService";
@@ -19,6 +20,12 @@ export const ApiService = {
   changeMerchantPin: AuthService.changeMerchantPin,
   resetUserPin: AuthService.resetUserPin,
   resetMerchantPin: AuthService.resetMerchantPin,
+  
+  // Resend OTP operations
+  resendUserEmailOTP: AuthService.resendUserEmailOTP,
+  resendUserPhoneOTP: AuthService.resendUserPhoneOTP,
+  resendMerchantEmailOTP: AuthService.resendMerchantEmailOTP,
+  resendMerchantPhoneOTP: AuthService.resendMerchantPhoneOTP,
 
   // Verification operations
   getVerificationStatus: VerificationService.getVerificationStatus,

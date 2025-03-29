@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -14,6 +15,7 @@ import { MobileTransfer } from "@/components/send/MobileTransfer";
 import { SendPayProvider, useSendPay } from "@/contexts/SendPayContext";
 import { TransactionSummary } from "@/components/send/TransactionSummary";
 import { ApiService } from "@/lib/services";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const SendPayContent = () => {
   const navigate = useNavigate();
@@ -31,17 +33,22 @@ const SendPayContent = () => {
     mobileNumber,
     mobileAmount,
     mobilePin,
+    mobileInputType,
     merchantNumber,
     merchantAmount,
     merchantPin,
+    selectedCryptoCurrency,
+    selectedFiatCurrency,
+    convertCryptoToFiat,
+    isLoading
   } = useSendPay();
 
   // Reset step when tab changes
   useEffect(() => {
     if (activeTab === "mobile") {
-      setMobileStep(1);
+      setMerchantStep(1); // Reset merchant step
     } else {
-      setMerchantStep(1);
+      setMobileStep(1); // Reset mobile step
     }
   }, [activeTab]);
 
@@ -81,15 +88,29 @@ const SendPayContent = () => {
     }
   };
 
+  const isButtonDisabled = () => {
+    if (isProcessing) return true;
+    
+    if (activeTab === "mobile") {
+      if (mobileStep === 1 && !mobileNumber) return true;
+      if (mobileStep === 2 && !mobileAmount) return true;
+      if (mobileStep === 3 && (!mobilePin || mobilePin.length < 4)) return true;
+    } else {
+      if (merchantStep === 1 && !merchantNumber) return true;
+      if (merchantStep === 2 && !merchantAmount) return true;
+      if (merchantStep === 3 && (!merchantPin || merchantPin.length < 4)) return true;
+    }
+    
+    return false;
+  };
+
   const processTransaction = async () => {
     try {
       setIsProcessing(true);
 
       const sender = auth.user?.phone || auth.merchant?.phone || "";
-      const senderFirstName =
-        auth.user?.firstName || auth.merchant?.repName || "";
-      const senderLastName =
-        auth.user?.lastName || auth.merchant?.merchantName || "";
+      const senderFirstName = auth.user?.firstName || auth.merchant?.repName || "";
+      const senderLastName = auth.user?.lastName || auth.merchant?.merchantName || "";
 
       let payload;
 
@@ -105,8 +126,8 @@ const SendPayContent = () => {
           recipientLastName: "Doe",
           amount: mobileAmount,
           pin: mobilePin,
-          inOut: "BTC-BTC", // Default transfer type
-          currency: "btc", // Default currency
+          inOut: `${selectedCryptoCurrency}-${selectedCryptoCurrency}`,
+          currency: selectedCryptoCurrency.toLowerCase(),
           txType: "USERSEND",
         };
       } else {
@@ -121,8 +142,8 @@ const SendPayContent = () => {
           recipientLastName: "Co.",
           amount: merchantAmount,
           pin: merchantPin,
-          inOut: "BTC-BTC", // Default transfer type
-          currency: "btc", // Default currency
+          inOut: `${selectedCryptoCurrency}-${selectedCryptoCurrency}`,
+          currency: selectedCryptoCurrency.toLowerCase(),
           txType: "MERCHANTPAY",
         };
       }
@@ -183,9 +204,9 @@ const SendPayContent = () => {
             </TabsTrigger>
           </TabsList>
 
-          <div className="glass-effect p-6 rounded-lg">
+          <div className="glass-effect p-4 sm:p-6 rounded-lg">
             {!transactionStatus ? (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <StepIndicator
                   steps={3}
                   currentStep={currentStep}
@@ -202,6 +223,16 @@ const SendPayContent = () => {
                     amount={
                       activeTab === "mobile" ? mobileAmount : merchantAmount
                     }
+                    loading={isLoading}
+                    currency={selectedCryptoCurrency}
+                    fiatAmount={currentStep === 3 ? 
+                      convertCryptoToFiat(
+                        activeTab === "mobile" ? mobileAmount : merchantAmount,
+                        selectedCryptoCurrency,
+                        selectedFiatCurrency
+                      ) : undefined}
+                    fiatCurrency={selectedFiatCurrency}
+                    rate={currentStep === 3 ? "65000.00" : undefined}
                   />
                 )}
 
@@ -215,17 +246,7 @@ const SendPayContent = () => {
                   <Button
                     className="w-full"
                     onClick={handleNextStep}
-                    disabled={
-                      isProcessing ||
-                      (activeTab === "mobile" &&
-                        ((mobileStep === 1 && !mobileNumber) ||
-                          (mobileStep === 2 && !mobileAmount) ||
-                          (mobileStep === 3 && !mobilePin))) ||
-                      (activeTab === "merchant" &&
-                        ((merchantStep === 1 && !merchantNumber) ||
-                          (merchantStep === 2 && !merchantAmount) ||
-                          (merchantStep === 3 && !merchantPin)))
-                    }
+                    disabled={isButtonDisabled()}
                   >
                     {isProcessing
                       ? "Processing..."
