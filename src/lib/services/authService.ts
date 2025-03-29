@@ -1,3 +1,4 @@
+
 import axios, { AxiosError, AxiosResponse } from "axios";
 import {
   loginStart,
@@ -10,6 +11,15 @@ import {
 } from "../redux/slices/authSlice";
 import { store } from "../redux/store";
 import { url } from "../utils";
+import { 
+  LoginPayload, 
+  LoginResponse, 
+  UserRegistrationPayload, 
+  MerchantRegistrationPayload, 
+  UserResponse, 
+  MerchantResponse, 
+  OtpVerificationResponse 
+} from "../types";
 
 // Replace with your actual API base URL
 const API_URL = url().BASE_URL;
@@ -45,21 +55,9 @@ interface ApiResponse<T> {
   error?: string;
 }
 
-interface AuthResponse {
-  user?: User;
-  merchant?: Merchant;
-  token: Token;
-}
-
 interface VerificationResponse {
   success?: boolean;
   message?: string;
-}
-
-interface OtpVerificationResponse {
-  otpId?: string;
-  success?: boolean;
-  msg?: string;
 }
 
 const buildUrl = (
@@ -245,18 +243,10 @@ export const AuthService = {
   },
 
   // Signup User
-  signupUser: async (userData: {
-    email?: string;
-    phone?: string;
-    firstName: string;
-    lastName: string;
-    pin: string;
-    otpId: string;
-    refId?: string;
-  }): Promise<AuthResponse> => {
+  signupUser: async (userData: UserRegistrationPayload): Promise<LoginResponse> => {
     store.dispatch(loginStart());
     try {
-      const response: AxiosResponse<ApiResponse<AuthResponse>> = await api.post(
+      const response: AxiosResponse<ApiResponse<LoginResponse>> = await api.post(
         "v1/users/register",
         userData
       );
@@ -272,19 +262,10 @@ export const AuthService = {
   },
 
   // Signup Merchant
-  signupMerchant: async (merchantData: {
-    email?: string;
-    phone?: string;
-    otpId: string;
-    pin: string;
-    merchantName: string;
-    repName: string;
-    repContact: string;
-    refId?: string;
-  }): Promise<AuthResponse> => {
+  signupMerchant: async (merchantData: MerchantRegistrationPayload): Promise<LoginResponse> => {
     store.dispatch(loginStart());
     try {
-      const response: AxiosResponse<ApiResponse<AuthResponse>> = await api.post(
+      const response: AxiosResponse<ApiResponse<LoginResponse>> = await api.post(
         "v1/merchants/register",
         merchantData
       );
@@ -300,16 +281,10 @@ export const AuthService = {
   },
 
   // Login User
-  loginUser: async (credentials: {
-    email?: string;
-    phone?: string;
-    otp?: string;
-    otpId?: string;
-    pin: string;
-  }): Promise<AuthResponse> => {
+  loginUser: async (credentials: LoginPayload): Promise<LoginResponse> => {
     store.dispatch(loginStart());
     try {
-      const response: AxiosResponse<ApiResponse<AuthResponse>> = await api.post(
+      const response: AxiosResponse<ApiResponse<LoginResponse>> = await api.post(
         "v1/users/login",
         credentials
       );
@@ -327,16 +302,10 @@ export const AuthService = {
   },
 
   // Login Merchant
-  loginMerchant: async (credentials: {
-    email?: string;
-    phone?: string;
-    otp?: string;
-    otpId?: string;
-    pin: string;
-  }): Promise<AuthResponse> => {
+  loginMerchant: async (credentials: LoginPayload): Promise<LoginResponse> => {
     store.dispatch(loginStart());
     try {
-      const response: AxiosResponse<ApiResponse<AuthResponse>> = await api.post(
+      const response: AxiosResponse<ApiResponse<LoginResponse>> = await api.post(
         "v1/merchants/login",
         credentials
       );
@@ -456,4 +425,13 @@ export const AuthService = {
       );
     }
   },
+
+  // Aliases for registerUser and registerMerchant for backwards compatibility
+  registerUser: async (userData: UserRegistrationPayload): Promise<LoginResponse> => {
+    return AuthService.signupUser(userData);
+  },
+  
+  registerMerchant: async (merchantData: MerchantRegistrationPayload): Promise<LoginResponse> => {
+    return AuthService.signupMerchant(merchantData);
+  }
 };

@@ -3,15 +3,6 @@ import { AuthService } from "./authService";
 import { TransactionService } from "./transactionService";
 import { VerificationService } from "./verificationService";
 import { WalletService } from "./walletService";
-import {
-  LoginResponse,
-  LoginPayload,
-  MerchantRegistrationPayload,
-  MerchantResponse,
-  OtpVerificationResponse,
-  UserRegistrationPayload,
-  UserResponse,
-} from "../types";
 
 export const ApiService = {
   // Auth services
@@ -19,8 +10,12 @@ export const ApiService = {
   loginMerchant: AuthService.loginMerchant,
   registerUser: AuthService.registerUser,
   registerMerchant: AuthService.registerMerchant,
+  signupUser: AuthService.signupUser,
+  signupMerchant: AuthService.signupMerchant,
   verifyUserEmail: AuthService.verifyUserEmail,
   verifyMerchantEmail: AuthService.verifyMerchantEmail,
+  verifyUserPhone: AuthService.verifyUserPhone,
+  verifyMerchantPhone: AuthService.verifyMerchantPhone,
   changeUserPin: AuthService.changeUserPin,
   changeMerchantPin: AuthService.changeMerchantPin,
   resetUserPin: AuthService.resetUserPin,
@@ -32,11 +27,13 @@ export const ApiService = {
 
   // Verification services
   uploadKYC: VerificationService.uploadKYC,
+  submitKycVerification: VerificationService.submitKycVerification,
   getVerificationStatus: VerificationService.getVerificationStatus,
   
   // Wallet services
   getBalance: WalletService.getBalance,
   fetchTransactions: WalletService.fetchTransactions,
+  updateDashboard: WalletService.updateDashboard,
   
   // Transaction services
   transferFunds: TransactionService.transferFunds,

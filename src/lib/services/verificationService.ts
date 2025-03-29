@@ -1,3 +1,4 @@
+
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { store } from "../redux/store";
 import { url } from "../utils";
@@ -134,4 +135,11 @@ export const VerificationService = {
       );
     }
   },
+  
+  // Legacy method alias for uploadKYC
+  uploadKYC: async (
+    data: KycVerificationData
+  ): Promise<VerificationResponse> => {
+    return VerificationService.submitKycVerification(data);
+  }
 };

@@ -1,3 +1,4 @@
+
 import axios, { AxiosError, AxiosResponse } from "axios";
 import {
   fetchWalletStart,
@@ -129,4 +130,25 @@ export const WalletService = {
       throw new Error(errorMessage);
     }
   },
+  
+  // Legacy method aliases
+  getBalance: async (user?: {
+    email?: string;
+    phone?: string;
+    basePair?: string;
+    currency?: string;
+    isMerchant?: string;
+  }): Promise<Wallet[]> => {
+    const result = await WalletService.updateDashboard(user);
+    return result.wallets;
+  },
+  
+  fetchTransactions: async (user?: {
+    email?: string;
+    phone?: string;
+  }): Promise<any[]> => {
+    // This is a temporary implementation that returns an empty array
+    // It should be replaced with an actual implementation in the future
+    return [];
+  }
 };
