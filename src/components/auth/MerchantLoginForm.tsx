@@ -24,13 +24,13 @@ const MerchantLoginForm = () => {
   const navigate = useNavigate();
   const [showPinReset, setShowPinReset] = useState(false);
   const [showOTP, setShowOTP] = useState(false);
-  const [otp, setOtp] = useState("");
+  const [otpCaptured, setOtpCaptured] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
   const [activeTab, setActiveTab] = useState<"email" | "phone">("email");
 
-  const { isAuthenticated, error } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, error, otp } = useAppSelector((state) => state.auth);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,14 +55,16 @@ const MerchantLoginForm = () => {
   };
 
   const handleOTPSubmit = async () => {
-    if (otp.length === 4) {
+    if (otpCaptured.length === 4) {
       setIsLoading(true);
       try {
-        await ApiService.verifyOtp({
+        const credentials = {
           ...(activeTab === "email" ? { email } : { phone }),
-          otp,
-        });
-
+          pin,
+          otp: otp.otp,
+          otpId: otp.otpId,
+        };
+        await ApiService.loginMerchant(credentials);
         toast({
           title: "Welcome back!",
           description: "You have successfully logged in.",
@@ -101,11 +103,11 @@ const MerchantLoginForm = () => {
           Two-Factor Authentication
         </h2>
         <div className="space-y-4">
-          <OTPInput value={otp} onChange={setOtp} />
+          <OTPInput value={otpCaptured} onChange={setOtpCaptured} />
           <Button
             onClick={handleOTPSubmit}
             className="w-full bg-gradient-to-r from-coffee to-coffee-dark hover:from-coffee-dark hover:to-coffee"
-            disabled={otp.length !== 4 || isLoading}
+            disabled={otpCaptured.length !== 4 || isLoading}
           >
             {isLoading ? "Verifying..." : "Verify"}
           </Button>

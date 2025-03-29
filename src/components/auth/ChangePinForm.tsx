@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,31 +42,25 @@ const ChangePinForm = ({
   const handleResendOTP = async () => {
     setIsLoading(true);
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient);
-    
+
     try {
       // Choose the appropriate resend method based on recipient type and user/merchant status
-      if (isEmail) {
-        if (isMerchant) {
-          await ApiService.resendMerchantEmailOTP(recipient);
-        } else {
-          await ApiService.resendUserEmailOTP(recipient);
-        }
-        toast({
-          title: "OTP Sent",
-          description: `New verification code sent to ${recipient}`,
+
+      if (isReset && isMerchant)
+        await ApiService.resetMerchantPin({
+          ...(isEmail ? { email: recipient } : { phone: recipient }),
         });
-      } else {
-        if (isMerchant) {
-          await ApiService.resendMerchantPhoneOTP(recipient);
-        } else {
-          await ApiService.resendUserPhoneOTP(recipient);
-        }
-        toast({
-          title: "OTP Sent",
-          description: `New verification code sent to ${recipient}`,
+
+      if (isReset && !isMerchant)
+        await ApiService.resetUserPin({
+          ...(isEmail ? { email: recipient } : { phone: recipient }),
         });
-      }
-      
+
+      toast({
+        title: "OTP Sent",
+        description: `New verification code sent to ${recipient}`,
+      });
+
       // Reset OTP field
       setConfirmOtp("");
     } catch (error) {
@@ -111,8 +104,11 @@ const ChangePinForm = ({
             ...(isEmail ? { email: recipient } : { phone: recipient }),
           });
 
-        if (isReset) setCurrentStep(2);
-        if (!isReset) setCurrentStep(3);
+        if (isReset) {
+          setCurrentStep(2);
+        } else {
+          setCurrentStep(3);
+        }
       } else if (currentStep === 2) {
         // Verify OTP provided
         if (confirmOtp.length !== 4) {

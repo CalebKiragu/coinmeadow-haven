@@ -24,13 +24,13 @@ const LoginForm = () => {
   const navigate = useNavigate();
   const [showPinReset, setShowPinReset] = useState(false);
   const [showOTP, setShowOTP] = useState(false);
-  const [otp, setOtp] = useState("");
+  const [otpCaptured, setOtpCaptured] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
   const [activeTab, setActiveTab] = useState<"email" | "phone">("email");
 
-  const { isAuthenticated, error } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, error, otp } = useAppSelector((state) => state.auth);
 
   if (isAuthenticated) {
     navigate("/dashboard", { replace: true });
@@ -59,13 +59,16 @@ const LoginForm = () => {
   };
 
   const handleOTPSubmit = async () => {
-    if (otp.length === 4) {
+    if (otpCaptured.length === 4) {
       setIsLoading(true);
       try {
-        await ApiService.verifyOtp({
+        const credentials = {
           ...(activeTab === "email" ? { email } : { phone }),
-          otp,
-        });
+          pin,
+          otp: otp.otp,
+          otpId: otp.otpId,
+        };
+        await ApiService.loginUser(credentials);
 
         toast({
           title: "Welcome back!",
@@ -106,14 +109,14 @@ const LoginForm = () => {
         </h2>
         <div className="space-y-4">
           <OTPInput
-            value={otp}
-            onChange={setOtp}
+            value={otpCaptured}
+            onChange={setOtpCaptured}
             identifier={activeTab === "email" ? email : phone}
           />
           <Button
             onClick={handleOTPSubmit}
             className="w-full bg-gradient-to-r from-coffee to-coffee-dark hover:from-coffee-dark hover:to-coffee"
-            disabled={otp.length !== 4 || isLoading}
+            disabled={otpCaptured.length !== 4 || isLoading}
           >
             {isLoading ? "Verifying..." : "Verify"}
           </Button>
