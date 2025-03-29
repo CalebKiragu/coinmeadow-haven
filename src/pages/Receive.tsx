@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Home, Copy, QrCode, RefreshCw } from "lucide-react";
@@ -13,7 +12,7 @@ import {
 import { cryptoCurrencies } from "@/types/currency";
 import { useToast } from "@/components/ui/use-toast";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
-import { TransactionService } from "@/lib/services/transactionService";
+import { ApiService } from "@/lib/services";
 
 const Receive = () => {
   const navigate = useNavigate();
@@ -31,8 +30,10 @@ const Receive = () => {
   const fetchDepositAddress = async (currency: string) => {
     try {
       setIsLoading(true);
-      const response = await TransactionService.receiveInstructions(currency.toLowerCase());
-      
+      const response = await ApiService.receiveInstructions(
+        currency.toLowerCase()
+      );
+
       if (response.success && response.data && response.data.address) {
         setDepositAddress(response.data.address);
       } else {
@@ -51,9 +52,10 @@ const Receive = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to fetch deposit address. Using sample address instead.",
+        description:
+          "Failed to fetch deposit address. Using sample address instead.",
       });
-      
+
       // Use a default address as fallback
       setDepositAddress("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
     } finally {
@@ -86,8 +88,8 @@ const Receive = () => {
           <label className="block text-sm font-medium text-gray-200">
             Select Cryptocurrency
           </label>
-          <Select 
-            value={selectedCrypto} 
+          <Select
+            value={selectedCrypto}
             onValueChange={setSelectedCrypto}
             disabled={isLoading}
           >

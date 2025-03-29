@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -10,11 +9,11 @@ import { StepIndicator } from "@/components/send/StepIndicator";
 import { MerchantPayment } from "@/components/send/MerchantPayment";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import { useToast } from "@/components/ui/use-toast";
-import { TransactionService } from "@/lib/services/transactionService";
 import { RootState } from "@/lib/redux/store";
 import { MobileTransfer } from "@/components/send/MobileTransfer";
 import { SendPayProvider, useSendPay } from "@/contexts/SendPayContext";
 import { TransactionSummary } from "@/components/send/TransactionSummary";
+import { ApiService } from "@/lib/services";
 
 const SendPayContent = () => {
   const navigate = useNavigate();
@@ -27,14 +26,14 @@ const SendPayContent = () => {
   >(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const auth = useSelector((state: RootState) => state.auth);
-  
+
   const {
-    mobileNumber, 
-    mobileAmount, 
+    mobileNumber,
+    mobileAmount,
     mobilePin,
     merchantNumber,
     merchantAmount,
-    merchantPin
+    merchantPin,
   } = useSendPay();
 
   // Reset step when tab changes
@@ -85,13 +84,15 @@ const SendPayContent = () => {
   const processTransaction = async () => {
     try {
       setIsProcessing(true);
-      
+
       const sender = auth.user?.phone || auth.merchant?.phone || "";
-      const senderFirstName = auth.user?.firstName || auth.merchant?.repName || "";
-      const senderLastName = auth.user?.lastName || auth.merchant?.merchantName || "";
-      
+      const senderFirstName =
+        auth.user?.firstName || auth.merchant?.repName || "";
+      const senderLastName =
+        auth.user?.lastName || auth.merchant?.merchantName || "";
+
       let payload;
-      
+
       if (activeTab === "mobile") {
         payload = {
           type: "internal",
@@ -106,7 +107,7 @@ const SendPayContent = () => {
           pin: mobilePin,
           inOut: "BTC-BTC", // Default transfer type
           currency: "btc", // Default currency
-          txType: "USERSEND"
+          txType: "USERSEND",
         };
       } else {
         payload = {
@@ -122,12 +123,12 @@ const SendPayContent = () => {
           pin: merchantPin,
           inOut: "BTC-BTC", // Default transfer type
           currency: "btc", // Default currency
-          txType: "MERCHANTPAY"
+          txType: "MERCHANTPAY",
         };
       }
-      
-      const response = await TransactionService.transferFunds(payload);
-      
+
+      const response = await ApiService.transferFunds(payload);
+
       if (response.success) {
         setTransactionStatus("success");
         confetti({
@@ -140,7 +141,8 @@ const SendPayContent = () => {
         toast({
           variant: "destructive",
           title: "Transaction Failed",
-          description: response.error || "There was an error processing your transaction.",
+          description:
+            response.error || "There was an error processing your transaction.",
         });
       }
     } catch (error) {
@@ -190,46 +192,51 @@ const SendPayContent = () => {
                   onStepClick={handleStepClick}
                 />
 
+                {currentStep > 1 && (
+                  <TransactionSummary
+                    type={activeTab}
+                    step={currentStep}
+                    recipient={
+                      activeTab === "mobile" ? mobileNumber : merchantNumber
+                    }
+                    amount={
+                      activeTab === "mobile" ? mobileAmount : merchantAmount
+                    }
+                  />
+                )}
+
                 {activeTab === "mobile" ? (
                   <MobileTransfer currentStep={mobileStep} />
                 ) : (
-                  <MerchantPayment
-                    currentStep={merchantStep}
-                  />
-                )}
-
-                {currentStep > 1 && (
-                  <TransactionSummary 
-                    type={activeTab} 
-                    step={currentStep}
-                    recipient={activeTab === "mobile" ? mobileNumber : merchantNumber}
-                    amount={activeTab === "mobile" ? mobileAmount : merchantAmount}
-                  />
+                  <MerchantPayment currentStep={merchantStep} />
                 )}
 
                 <div className="flex flex-col gap-2">
-                  <Button 
-                    className="w-full" 
+                  <Button
+                    className="w-full"
                     onClick={handleNextStep}
-                    disabled={isProcessing || 
-                      (activeTab === "mobile" && (
-                        (mobileStep === 1 && !mobileNumber) ||
-                        (mobileStep === 2 && !mobileAmount) ||
-                        (mobileStep === 3 && !mobilePin)
-                      )) ||
-                      (activeTab === "merchant" && (
-                        (merchantStep === 1 && !merchantNumber) ||
-                        (merchantStep === 2 && !merchantAmount) ||
-                        (merchantStep === 3 && !merchantPin)
-                      ))
+                    disabled={
+                      isProcessing ||
+                      (activeTab === "mobile" &&
+                        ((mobileStep === 1 && !mobileNumber) ||
+                          (mobileStep === 2 && !mobileAmount) ||
+                          (mobileStep === 3 && !mobilePin))) ||
+                      (activeTab === "merchant" &&
+                        ((merchantStep === 1 && !merchantNumber) ||
+                          (merchantStep === 2 && !merchantAmount) ||
+                          (merchantStep === 3 && !merchantPin)))
                     }
                   >
-                    {isProcessing ? "Processing..." : currentStep === 3 ? "Complete Transaction" : "Next"}
+                    {isProcessing
+                      ? "Processing..."
+                      : currentStep === 3
+                      ? "Complete Transaction"
+                      : "Next"}
                   </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full" 
+
+                  <Button
+                    variant="outline"
+                    className="w-full"
                     onClick={handleBackStep}
                     disabled={currentStep === 1}
                   >
@@ -259,8 +266,8 @@ const SendPayContent = () => {
                     </p>
                   </>
                 )}
-                <Button 
-                  className="w-full" 
+                <Button
+                  className="w-full"
                   onClick={() => navigate("/dashboard")}
                 >
                   Return to Dashboard

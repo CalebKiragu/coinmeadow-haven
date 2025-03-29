@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState } from "react";
 
 type SendPayContextType = {
@@ -20,7 +19,11 @@ type SendPayContextType = {
 
 const SendPayContext = createContext<SendPayContextType | undefined>(undefined);
 
-export const SendPayProvider = ({ children }: { children: React.ReactNode }) => {
+export const SendPayProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const [mobileNumber, setMobileNumber] = useState("");
   const [mobileAmount, setMobileAmount] = useState("");
   const [mobilePin, setMobilePin] = useState("");

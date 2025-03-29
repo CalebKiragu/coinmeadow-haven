@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -14,8 +13,8 @@ import { Input } from "@/components/ui/input";
 import confetti from "canvas-confetti";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import { useToast } from "@/components/ui/use-toast";
-import { TransactionService } from "@/lib/services/transactionService";
 import { RootState } from "@/lib/redux/store";
+import { ApiService } from "@/lib/services";
 
 const Withdraw = () => {
   const navigate = useNavigate();
@@ -42,11 +41,11 @@ const Withdraw = () => {
   const processWithdrawal = async () => {
     try {
       setIsProcessing(true);
-      
+
       const initiator = auth.user?.phone || auth.merchant?.phone || "";
       const firstName = auth.user?.firstName || auth.merchant?.repName || "";
       const lastName = auth.user?.lastName || auth.merchant?.merchantName || "";
-      
+
       const payload = {
         type: "withdraw",
         initiator,
@@ -60,11 +59,11 @@ const Withdraw = () => {
         pin,
         inOut: "BTC-BTC", // Default transfer type
         currency: "btc", // Default currency
-        txType: "WITHDRAW" as const
+        txType: "WITHDRAW" as const,
       };
-      
-      const response = await TransactionService.withdraw(payload);
-      
+
+      const response = await ApiService.withdraw(payload);
+
       if (response.success) {
         setTransactionStatus("success");
         confetti({
@@ -77,7 +76,8 @@ const Withdraw = () => {
         toast({
           variant: "destructive",
           title: "Withdrawal Failed",
-          description: response.error || "There was an error processing your withdrawal.",
+          description:
+            response.error || "There was an error processing your withdrawal.",
         });
       }
     } catch (error) {
@@ -150,12 +150,16 @@ const Withdraw = () => {
               </div>
             )}
 
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               onClick={handleNextStep}
               disabled={isProcessing}
             >
-              {isProcessing ? "Processing..." : currentStep === 3 ? "Complete Withdrawal" : "Next"}
+              {isProcessing
+                ? "Processing..."
+                : currentStep === 3
+                ? "Complete Withdrawal"
+                : "Next"}
               {!isProcessing && <ArrowRight className="ml-2 h-4 w-4" />}
             </Button>
           </div>
@@ -178,10 +182,7 @@ const Withdraw = () => {
                 </p>
               </>
             )}
-            <Button 
-              className="w-full" 
-              onClick={() => navigate("/dashboard")}
-            >
+            <Button className="w-full" onClick={() => navigate("/dashboard")}>
               Return to Dashboard
             </Button>
           </div>
