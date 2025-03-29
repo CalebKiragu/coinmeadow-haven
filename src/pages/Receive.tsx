@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Home, Copy, QrCode, RefreshCw } from "lucide-react";
+import { ArrowLeft, Copy, QrCode, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -13,6 +14,7 @@ import { cryptoCurrencies } from "@/types/currency";
 import { useToast } from "@/components/ui/use-toast";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import { ApiService } from "@/lib/services";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Receive = () => {
   const navigate = useNavigate();
@@ -59,7 +61,9 @@ const Receive = () => {
       // Use a default address as fallback
       setDepositAddress("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
     } finally {
-      setIsLoading(false);
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
     }
   };
 
@@ -109,7 +113,7 @@ const Receive = () => {
         <div className="flex justify-center p-4 bg-white rounded-lg">
           {isLoading ? (
             <div className="w-48 h-48 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+              <Skeleton className="w-48 h-48" />
             </div>
           ) : (
             <QrCode className="w-48 h-48" />
@@ -117,22 +121,22 @@ const Receive = () => {
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-            {isLoading ? (
-              <div className="h-6 w-full animate-pulse bg-gray-300 dark:bg-gray-700 rounded"></div>
-            ) : (
+          {isLoading ? (
+            <Skeleton className="h-12 w-full" />
+          ) : (
+            <div className="flex items-center justify-between gap-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
               <code className="text-sm break-all">{depositAddress}</code>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCopy}
-              className="shrink-0"
-              disabled={isLoading || !depositAddress}
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-          </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleCopy}
+                className="shrink-0"
+                disabled={isLoading || !depositAddress}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
           <Button
             variant="outline"
             className="w-full"

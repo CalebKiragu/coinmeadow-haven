@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, Phone } from "lucide-react";
+import { Search, Mail, Phone, ArrowRight } from "lucide-react";
 import { useSendPay } from "@/contexts/SendPayContext";
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cryptoCurrencies, fiatCurrencies } from "@/types/currency";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 // Email validation regex
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -47,7 +47,10 @@ export const MobileTransfer = ({
     convertCryptoToFiat,
     convertFiatToCrypto,
     rates,
-    isLoading
+    isLoading,
+    setBlockchainMode,
+    blockchainAddress,
+    setBlockchainAddress
   } = useSendPay();
   
   const [contacts, setContacts] = useState<any[]>([]);
@@ -124,13 +127,17 @@ export const MobileTransfer = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (mobileInputType === 'phone') {
-      // For phone, only allow digits
+      // For phone, only allow digits and limit to 10 characters
       const value = e.target.value.replace(/[^\d]/g, '');
-      setMobileNumber(value);
+      setMobileNumber(value.substring(0, 10));
     } else {
       // For email, no special handling needed
       setMobileNumber(e.target.value);
     }
+  };
+
+  const handleBlockchainMode = () => {
+    setBlockchainMode(true);
   };
 
   if (currentStep === 1) {
@@ -157,7 +164,7 @@ export const MobileTransfer = ({
                 onValueChange={setSelectedCountryCode}
               >
                 <SelectTrigger className="w-[90px] flex-shrink-0">
-                  <SelectValue placeholder="Code" />
+                  <SelectValue placeholder="+254" />
                 </SelectTrigger>
                 <SelectContent>
                   {countries.map((country) => (
@@ -169,7 +176,11 @@ export const MobileTransfer = ({
                              country.code === 'TZ' ? '255' : 
                              country.code === 'US' ? '1' : '254'}
                     >
-                      {country.name} ({country.code})
+                      +{country.code === 'KE' ? '254' : 
+                         country.code === 'NG' ? '234' : 
+                         country.code === 'UG' ? '256' : 
+                         country.code === 'TZ' ? '255' : 
+                         country.code === 'US' ? '1' : '254'}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -181,6 +192,7 @@ export const MobileTransfer = ({
                 value={mobileNumber}
                 onChange={handleInputChange}
                 className={`flex-grow ${!isValid && mobileNumber ? 'border-red-500' : ''}`}
+                maxLength={10}
                 required
               />
             </div>
@@ -216,16 +228,8 @@ export const MobileTransfer = ({
             </div>
             <div className="h-48 overflow-y-auto glass-effect p-3 rounded-lg">
               {loading ? (
-                <div className="space-y-2">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="flex items-center gap-3 p-2">
-                      <Skeleton className="w-8 h-8 rounded-full" />
-                      <div className="space-y-1 flex-1">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-3 w-1/2" />
-                      </div>
-                    </div>
-                  ))}
+                <div className="text-center py-4">
+                  Loading contacts...
                 </div>
               ) : contacts.length > 0 ? (
                 contacts.map((contact, i) => (
@@ -257,6 +261,14 @@ export const MobileTransfer = ({
             </div>
           </>
         )}
+        
+        <Button 
+          variant="outline"
+          className="w-full mt-4"
+          onClick={handleBlockchainMode}
+        >
+          Send to Blockchain Address <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
       </div>
     );
   }
@@ -264,99 +276,84 @@ export const MobileTransfer = ({
   if (currentStep === 2) {
     return (
       <div className="space-y-4 animate-fade-in">
-        {isLoading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-        ) : (
-          <>
-            <div className="flex gap-2 items-center">
-              <Select
-                value={isCryptoAmount ? "crypto" : "fiat"}
-                onValueChange={(value) => setIsCryptoAmount(value === "crypto")}
-              >
-                <SelectTrigger className="w-[90px]">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="crypto">Crypto</SelectItem>
-                  <SelectItem value="fiat">Fiat</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Input
-                type="number"
-                placeholder={`Enter amount in ${isCryptoAmount ? selectedCryptoCurrency : selectedFiatCurrency}`}
-                value={localAmount}
-                onChange={(e) => setLocalAmount(e.target.value)}
-                required
-                className="flex-grow"
-              />
-              
-              <Select
-                value={isCryptoAmount ? selectedCryptoCurrency : selectedFiatCurrency}
-                onValueChange={(value) => {
-                  if (isCryptoAmount) {
-                    setSelectedCryptoCurrency(value);
-                  } else {
-                    setSelectedFiatCurrency(value);
-                  }
-                }}
-              >
-                <SelectTrigger className="w-[90px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {isCryptoAmount ? 
-                    cryptoCurrencies.map((crypto) => (
-                      <SelectItem key={crypto.symbol} value={crypto.symbol}>
-                        {crypto.symbol}
-                      </SelectItem>
-                    )) : 
-                    fiatCurrencies.map((fiat) => (
-                      <SelectItem key={fiat.code} value={fiat.code}>
-                        {fiat.code}
-                      </SelectItem>
-                    ))
-                  }
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {localAmount && (
-              <div className="text-sm bg-white/10 p-2 rounded-lg">
-                {isCryptoAmount ? (
-                  <p>
-                    ≈ {convertCryptoToFiat(localAmount, selectedCryptoCurrency, selectedFiatCurrency)} {selectedFiatCurrency}
-                    <span className="block text-xs text-gray-400 mt-1">
-                      1 {selectedCryptoCurrency} = {rates[`${selectedCryptoCurrency}-${selectedFiatCurrency}`]?.toFixed(2) || '0.00'} {selectedFiatCurrency}
-                    </span>
-                  </p>
-                ) : (
-                  <p>
-                    ≈ {convertFiatToCrypto(localAmount, selectedCryptoCurrency, selectedFiatCurrency)} {selectedCryptoCurrency}
-                    <span className="block text-xs text-gray-400 mt-1">
-                      1 {selectedCryptoCurrency} = {rates[`${selectedCryptoCurrency}-${selectedFiatCurrency}`]?.toFixed(2) || '0.00'} {selectedFiatCurrency}
-                    </span>
-                  </p>
-                )}
-              </div>
+        <div className="flex gap-2 items-center">
+          <Select
+            value={isCryptoAmount ? "crypto" : "fiat"}
+            onValueChange={(value) => setIsCryptoAmount(value === "crypto")}
+            defaultValue="fiat"
+          >
+            <SelectTrigger className="w-[90px]">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="crypto">Crypto</SelectItem>
+              <SelectItem value="fiat">Fiat</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Input
+            type="number"
+            placeholder={`Enter amount in ${isCryptoAmount ? selectedCryptoCurrency : selectedFiatCurrency}`}
+            value={localAmount}
+            onChange={(e) => setLocalAmount(e.target.value)}
+            required
+            className="flex-grow"
+          />
+          
+          <Select
+            value={isCryptoAmount ? selectedCryptoCurrency : selectedFiatCurrency}
+            onValueChange={(value) => {
+              if (isCryptoAmount) {
+                setSelectedCryptoCurrency(value);
+              } else {
+                setSelectedFiatCurrency(value);
+              }
+            }}
+          >
+            <SelectTrigger className="w-[90px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {isCryptoAmount ? 
+                cryptoCurrencies.map((crypto) => (
+                  <SelectItem key={crypto.symbol} value={crypto.symbol}>
+                    {crypto.symbol}
+                  </SelectItem>
+                )) : 
+                fiatCurrencies.map((fiat) => (
+                  <SelectItem key={fiat.code} value={fiat.code}>
+                    {fiat.code}
+                  </SelectItem>
+                ))
+              }
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {localAmount && (
+          <div className="text-sm bg-white/10 p-3 rounded-lg">
+            {isCryptoAmount ? (
+              <p className="text-emerald-400">
+                ≈ {convertCryptoToFiat(localAmount, selectedCryptoCurrency, selectedFiatCurrency)} {selectedFiatCurrency}
+                <span className="block text-xs text-blue-300 mt-1">
+                  1 {selectedCryptoCurrency} = {rates[`${selectedCryptoCurrency}-${selectedFiatCurrency}`]?.toFixed(2) || '0.00'} {selectedFiatCurrency}
+                </span>
+              </p>
+            ) : (
+              <p className="text-emerald-400">
+                ≈ {convertFiatToCrypto(localAmount, selectedCryptoCurrency, selectedFiatCurrency)} {selectedCryptoCurrency}
+                <span className="block text-xs text-blue-300 mt-1">
+                  1 {selectedCryptoCurrency} = {rates[`${selectedCryptoCurrency}-${selectedFiatCurrency}`]?.toFixed(2) || '0.00'} {selectedFiatCurrency}
+                </span>
+              </p>
             )}
-          </>
+          </div>
         )}
       </div>
     );
   }
   
   if (currentStep === 3) {
-    const fiatEquivalent = convertCryptoToFiat(
-      mobileAmount,
-      selectedCryptoCurrency,
-      selectedFiatCurrency
-    );
-    
     return (
       <div className="space-y-4 animate-fade-in">
         <Input

@@ -25,6 +25,16 @@ type SendPayContextType = {
   merchantPin: string;
   setMerchantPin: (value: string) => void;
   
+  // Blockchain transfer
+  blockchainMode: boolean;
+  setBlockchainMode: (value: boolean) => void;
+  blockchainAddress: string;
+  setBlockchainAddress: (value: string) => void;
+  blockchainAmount: string;
+  setBlockchainAmount: (value: string) => void;
+  blockchainPin: string;
+  setBlockchainPin: (value: string) => void;
+  
   // Currency settings
   selectedCryptoCurrency: string;
   setSelectedCryptoCurrency: (value: string) => void;
@@ -45,6 +55,7 @@ type SendPayContextType = {
   // State management
   resetMobileFlow: () => void;
   resetMerchantFlow: () => void;
+  resetBlockchainFlow: () => void;
   rates: CurrencyRates;
   isLoading: boolean;
 };
@@ -67,10 +78,16 @@ export const SendPayProvider = ({
   const [merchantAmount, setMerchantAmount] = useState("");
   const [merchantPin, setMerchantPin] = useState("");
   
+  // Blockchain transfer state
+  const [blockchainMode, setBlockchainMode] = useState(false);
+  const [blockchainAddress, setBlockchainAddress] = useState("");
+  const [blockchainAmount, setBlockchainAmount] = useState("");
+  const [blockchainPin, setBlockchainPin] = useState("");
+  
   // Currency settings
   const [selectedCryptoCurrency, setSelectedCryptoCurrency] = useState("BTC");
   const [selectedFiatCurrency, setSelectedFiatCurrency] = useState("USD");
-  const [isCryptoAmount, setIsCryptoAmount] = useState(true);
+  const [isCryptoAmount, setIsCryptoAmount] = useState(false); // Default to fiat
   
   // Country code for phone input
   const [selectedCountryCode, setSelectedCountryCode] = useState("254"); // Kenya by default
@@ -166,6 +183,13 @@ export const SendPayProvider = ({
     setMerchantAmount("");
     setMerchantPin("");
   };
+  
+  const resetBlockchainFlow = () => {
+    setBlockchainAddress("");
+    setBlockchainAmount("");
+    setBlockchainPin("");
+    setBlockchainMode(false);
+  };
 
   return (
     <SendPayContext.Provider
@@ -184,6 +208,14 @@ export const SendPayProvider = ({
         setMerchantAmount,
         merchantPin,
         setMerchantPin,
+        blockchainMode,
+        setBlockchainMode,
+        blockchainAddress,
+        setBlockchainAddress,
+        blockchainAmount,
+        setBlockchainAmount,
+        blockchainPin,
+        setBlockchainPin,
         selectedCryptoCurrency,
         setSelectedCryptoCurrency,
         selectedFiatCurrency,
@@ -197,6 +229,7 @@ export const SendPayProvider = ({
         getCurrentRate,
         resetMobileFlow,
         resetMerchantFlow,
+        resetBlockchainFlow,
         rates,
         isLoading,
       }}

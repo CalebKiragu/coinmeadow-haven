@@ -15,7 +15,7 @@ import { MobileTransfer } from "@/components/send/MobileTransfer";
 import { SendPayProvider, useSendPay } from "@/contexts/SendPayContext";
 import { TransactionSummary } from "@/components/send/TransactionSummary";
 import { ApiService } from "@/lib/services";
-import { Skeleton } from "@/components/ui/skeleton";
+import { BlockchainTransfer } from "@/components/send/BlockchainTransfer";
 
 const SendPayContent = () => {
   const navigate = useNavigate();
@@ -23,6 +23,7 @@ const SendPayContent = () => {
   const [activeTab, setActiveTab] = useState("mobile");
   const [mobileStep, setMobileStep] = useState(1);
   const [merchantStep, setMerchantStep] = useState(1);
+  const [blockchainStep, setBlockchainStep] = useState(1);
   const [transactionStatus, setTransactionStatus] = useState<
     "success" | "error" | null
   >(null);
@@ -37,26 +38,43 @@ const SendPayContent = () => {
     merchantNumber,
     merchantAmount,
     merchantPin,
+    blockchainMode,
+    blockchainAddress,
+    blockchainAmount,
+    blockchainPin,
     selectedCryptoCurrency,
     selectedFiatCurrency,
     convertCryptoToFiat,
-    isLoading
+    rates,
+    resetMobileFlow,
+    resetMerchantFlow,
+    resetBlockchainFlow
   } = useSendPay();
 
   // Reset step when tab changes
   useEffect(() => {
     if (activeTab === "mobile") {
       setMerchantStep(1); // Reset merchant step
+      resetMerchantFlow();
     } else {
       setMobileStep(1); // Reset mobile step
+      resetMobileFlow();
+    }
+    
+    // Reset blockchain mode when switching tabs
+    if (blockchainMode) {
+      resetBlockchainFlow();
     }
   }, [activeTab]);
 
-  const currentStep = activeTab === "mobile" ? mobileStep : merchantStep;
+  const currentStep = blockchainMode ? blockchainStep : 
+                     (activeTab === "mobile" ? mobileStep : merchantStep);
 
   const handleStepClick = (step: number) => {
     if (step <= currentStep) {
-      if (activeTab === "mobile") {
+      if (blockchainMode) {
+        setBlockchainStep(step);
+      } else if (activeTab === "mobile") {
         setMobileStep(step);
       } else {
         setMerchantStep(step);
@@ -65,7 +83,13 @@ const SendPayContent = () => {
   };
 
   const handleNextStep = async () => {
-    if (activeTab === "mobile") {
+    if (blockchainMode) {
+      if (blockchainStep < 3) {
+        setBlockchainStep((prev) => prev + 1);
+      } else {
+        await processTransaction();
+      }
+    } else if (activeTab === "mobile") {
       if (mobileStep < 3) {
         setMobileStep((prev) => prev + 1);
       } else {
@@ -81,7 +105,13 @@ const SendPayContent = () => {
   };
 
   const handleBackStep = () => {
-    if (activeTab === "mobile" && mobileStep > 1) {
+    if (blockchainMode) {
+      if (blockchainStep > 1) {
+        setBlockchainStep((prev) => prev - 1);
+      } else {
+        resetBlockchainFlow();
+      }
+    } else if (activeTab === "mobile" && mobileStep > 1) {
       setMobileStep((prev) => prev - 1);
     } else if (activeTab === "merchant" && merchantStep > 1) {
       setMerchantStep((prev) => prev - 1);
@@ -91,7 +121,11 @@ const SendPayContent = () => {
   const isButtonDisabled = () => {
     if (isProcessing) return true;
     
-    if (activeTab === "mobile") {
+    if (blockchainMode) {
+      if (blockchainStep === 1 && !blockchainAddress) return true;
+      if (blockchainStep === 2 && !blockchainAmount) return true;
+      if (blockchainStep === 3 && (!blockchainPin || blockchainPin.length < 4)) return true;
+    } else if (activeTab === "mobile") {
       if (mobileStep === 1 && !mobileNumber) return true;
       if (mobileStep === 2 && !mobileAmount) return true;
       if (mobileStep === 3 && (!mobilePin || mobilePin.length < 4)) return true;
@@ -114,12 +148,28 @@ const SendPayContent = () => {
 
       let payload;
 
-      if (activeTab === "mobile") {
+      if (blockchainMode) {
+        payload = {
+          type: "external",
+          initiator: sender,
+          sender: sender,
+          recipient: blockchainAddress,
+          senderFirstName,
+          senderLastName,
+          recipientFirstName: "External", 
+          recipientLastName: "Wallet",
+          amount: blockchainAmount,
+          pin: blockchainPin,
+          inOut: `${selectedCryptoCurrency}-${selectedCryptoCurrency}`,
+          currency: selectedCryptoCurrency.toLowerCase(),
+          txType: "WITHDRAW",
+        };
+      } else if (activeTab === "mobile") {
         payload = {
           type: "internal",
           initiator: sender,
           sender: sender,
-          recipient: mobileNumber,
+          recipient: mobileInputType === 'phone' ? `${mobileNumber}` : mobileNumber,
           senderFirstName,
           senderLastName,
           recipientFirstName: "John", // Default recipient name
@@ -181,66 +231,151 @@ const SendPayContent = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
-      <NavigationHeader title={"Send/Pay"} />
+      <NavigationHeader title={blockchainMode ? "Send to Blockchain" : "Send/Pay"} />
 
       <div className="max-w-2xl mx-auto">
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="w-full space-y-6"
-        >
-          <TabsList className="w-full bg-transparent border border-white/10">
-            <TabsTrigger
-              value="mobile"
-              className="flex-1 data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/70"
-            >
-              Send to Mobile
-            </TabsTrigger>
-            <TabsTrigger
-              value="merchant"
-              className="flex-1 data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/70"
-            >
-              Pay Merchant
-            </TabsTrigger>
-          </TabsList>
+        {!blockchainMode ? (
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full space-y-6"
+          >
+            <TabsList className="w-full bg-transparent border border-white/10">
+              <TabsTrigger
+                value="mobile"
+                className="flex-1 data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/70"
+              >
+                Send to Mobile
+              </TabsTrigger>
+              <TabsTrigger
+                value="merchant"
+                className="flex-1 data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/70"
+              >
+                Pay Merchant
+              </TabsTrigger>
+            </TabsList>
 
+            <div className="glass-effect p-4 sm:p-6 rounded-lg">
+              {!transactionStatus ? (
+                <div className="space-y-4 sm:space-y-6">
+                  <StepIndicator
+                    steps={3}
+                    currentStep={currentStep}
+                    onStepClick={handleStepClick}
+                  />
+
+                  {currentStep > 1 && (
+                    <TransactionSummary
+                      type={activeTab}
+                      step={currentStep}
+                      recipient={
+                        activeTab === "mobile" ? mobileNumber : merchantNumber
+                      }
+                      amount={
+                        activeTab === "mobile" ? mobileAmount : merchantAmount
+                      }
+                      currency={selectedCryptoCurrency}
+                      fiatAmount={currentStep === 3 ? 
+                        convertCryptoToFiat(
+                          activeTab === "mobile" ? mobileAmount : merchantAmount,
+                          selectedCryptoCurrency,
+                          selectedFiatCurrency
+                        ) : undefined}
+                      fiatCurrency={selectedFiatCurrency}
+                      rate={currentStep === 3 ? rates[`${selectedCryptoCurrency}-${selectedFiatCurrency}`]?.toFixed(2) || "0.00" : undefined}
+                    />
+                  )}
+
+                  {activeTab === "mobile" ? (
+                    <MobileTransfer currentStep={mobileStep} />
+                  ) : (
+                    <MerchantPayment currentStep={merchantStep} />
+                  )}
+
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      className="w-full"
+                      onClick={handleNextStep}
+                      disabled={isButtonDisabled()}
+                    >
+                      {isProcessing
+                        ? "Processing..."
+                        : currentStep === 3
+                        ? "Complete Transaction"
+                        : "Next"}
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleBackStep}
+                      disabled={currentStep === 1}
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center space-y-4 animate-scale-in">
+                  {transactionStatus === "success" ? (
+                    <>
+                      <CheckCircle className="w-24 h-24 mx-auto text-green-500" />
+                      <h3 className="text-2xl font-bold">
+                        Transaction Successful!
+                      </h3>
+                      <p className="text-gray-500">
+                        Your payment has been processed successfully.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="w-24 h-24 mx-auto text-red-500" />
+                      <h3 className="text-2xl font-bold">Transaction Failed</h3>
+                      <p className="text-red-500">
+                        Unable to process transaction. Please try again.
+                      </p>
+                    </>
+                  )}
+                  <Button
+                    className="w-full"
+                    onClick={() => navigate("/dashboard")}
+                  >
+                    Return to Dashboard
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Tabs>
+        ) : (
           <div className="glass-effect p-4 sm:p-6 rounded-lg">
             {!transactionStatus ? (
               <div className="space-y-4 sm:space-y-6">
                 <StepIndicator
                   steps={3}
-                  currentStep={currentStep}
+                  currentStep={blockchainStep}
                   onStepClick={handleStepClick}
                 />
 
-                {currentStep > 1 && (
+                {blockchainStep > 1 && (
                   <TransactionSummary
-                    type={activeTab}
-                    step={currentStep}
-                    recipient={
-                      activeTab === "mobile" ? mobileNumber : merchantNumber
-                    }
-                    amount={
-                      activeTab === "mobile" ? mobileAmount : merchantAmount
-                    }
-                    loading={isLoading}
+                    type="blockchain"
+                    step={blockchainStep}
+                    recipient={blockchainAddress}
+                    amount={blockchainAmount}
                     currency={selectedCryptoCurrency}
-                    fiatAmount={currentStep === 3 ? 
+                    fiatAmount={blockchainStep === 3 ? 
                       convertCryptoToFiat(
-                        activeTab === "mobile" ? mobileAmount : merchantAmount,
+                        blockchainAmount,
                         selectedCryptoCurrency,
                         selectedFiatCurrency
                       ) : undefined}
                     fiatCurrency={selectedFiatCurrency}
-                    rate={currentStep === 3 ? "65000.00" : undefined}
+                    rate={blockchainStep === 3 ? rates[`${selectedCryptoCurrency}-${selectedFiatCurrency}`]?.toFixed(2) || "0.00" : undefined}
                   />
                 )}
 
-                {activeTab === "mobile" ? (
-                  <MobileTransfer currentStep={mobileStep} />
-                ) : (
-                  <MerchantPayment currentStep={merchantStep} />
-                )}
+                <BlockchainTransfer currentStep={blockchainStep} />
 
                 <div className="flex flex-col gap-2">
                   <Button
@@ -250,7 +385,7 @@ const SendPayContent = () => {
                   >
                     {isProcessing
                       ? "Processing..."
-                      : currentStep === 3
+                      : blockchainStep === 3
                       ? "Complete Transaction"
                       : "Next"}
                   </Button>
@@ -259,10 +394,9 @@ const SendPayContent = () => {
                     variant="outline"
                     className="w-full"
                     onClick={handleBackStep}
-                    disabled={currentStep === 1}
                   >
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back
+                    {blockchainStep === 1 ? "Cancel" : "Back"}
                   </Button>
                 </div>
               </div>
@@ -275,7 +409,7 @@ const SendPayContent = () => {
                       Transaction Successful!
                     </h3>
                     <p className="text-gray-500">
-                      Your payment has been processed successfully.
+                      Your blockchain transfer has been processed successfully.
                     </p>
                   </>
                 ) : (
@@ -283,7 +417,7 @@ const SendPayContent = () => {
                     <XCircle className="w-24 h-24 mx-auto text-red-500" />
                     <h3 className="text-2xl font-bold">Transaction Failed</h3>
                     <p className="text-red-500">
-                      Unable to process transaction. Please try again.
+                      Unable to process blockchain transfer. Please try again.
                     </p>
                   </>
                 )}
@@ -296,7 +430,7 @@ const SendPayContent = () => {
               </div>
             )}
           </div>
-        </Tabs>
+        )}
       </div>
     </div>
   );
