@@ -93,22 +93,30 @@ const RecipientInput = ({
                 <SelectValue placeholder="+254" />
               </SelectTrigger>
               <SelectContent>
-                {countries.map((country) => (
-                  <SelectItem 
-                    key={country.code} 
-                    value={country.code === 'KE' ? '254' : 
-                           country.code === 'NG' ? '234' : 
-                           country.code === 'UG' ? '256' : 
-                           country.code === 'TZ' ? '255' : 
-                           country.code === 'US' ? '1' : '254'}
-                  >
-                    +{country.code === 'KE' ? '254' : 
-                       country.code === 'NG' ? '234' : 
-                       country.code === 'UG' ? '256' : 
-                       country.code === 'TZ' ? '255' : 
-                       country.code === 'US' ? '1' : '254'}
-                  </SelectItem>
-                ))}
+                {/* Filter out duplicate country codes */}
+                {(() => {
+                  const uniqueCodes = new Set();
+                  return countries.map((country) => {
+                    let countryCode;
+                    switch(country.code) {
+                      case 'KE': countryCode = '254'; break;
+                      case 'NG': countryCode = '234'; break;
+                      case 'UG': countryCode = '256'; break;
+                      case 'TZ': countryCode = '255'; break;
+                      case 'US': countryCode = '1'; break;
+                      default: return null;
+                    }
+                    
+                    if (uniqueCodes.has(countryCode)) return null;
+                    uniqueCodes.add(countryCode);
+                    
+                    return (
+                      <SelectItem key={country.code} value={countryCode}>
+                        +{countryCode}
+                      </SelectItem>
+                    );
+                  }).filter(Boolean);
+                })()}
               </SelectContent>
             </Select>
             

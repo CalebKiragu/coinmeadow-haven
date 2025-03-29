@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -128,40 +127,38 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
   };
 
   return (
-    <GlassCard className="relative animate-scale-in p-3 sm:p-4">
+    <GlassCard className="relative animate-scale-in p-2 sm:p-3">
       {isLoading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-6 w-1/3" />
-          <Skeleton className="h-4 w-1/4" />
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-1/3" />
+          <Skeleton className="h-3 w-1/4" />
+          <Skeleton className="h-7 w-full" />
           <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-5 w-3/4" />
         </div>
       ) : (
-        <div className="flex flex-col gap-2 sm:gap-3">
-          <div className="flex flex-col gap-1">
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-lg sm:text-xl font-semibold">{greeting(greetName)}</h1>
-                {merchant && merchant.merchantNo && (
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    Merchant No: {merchantNo}
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={() => setShowBalance(!showBalance)}
-                className="text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                {showBalance ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-            <h2 className="text-base sm:text-lg font-medium mt-1">Available Balance:</h2>
+        <div className="flex flex-col gap-1 sm:gap-2">
+          <div className="flex justify-between items-center">
+            <h1 className="text-base sm:text-lg font-semibold">{greeting(greetName)}</h1>
+            <button
+              onClick={() => setShowBalance(!showBalance)}
+              className="text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              {showBalance ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
           </div>
+          
+          {merchant && merchantNo && (
+            <p className="text-xs text-muted-foreground -mt-1">
+              Merchant No: {merchantNo}
+            </p>
+          )}
+          
+          <h2 className="text-sm sm:text-base font-medium mt-1">Available Balance:</h2>
 
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
             <Select value={selectedCrypto} onValueChange={handleSelectCrypto}>
-              <SelectTrigger className="w-full sm:w-[120px] h-8 sm:h-9 text-xs sm:text-sm">
+              <SelectTrigger className="w-full sm:w-[100px] h-7 sm:h-8 text-xs">
                 <SelectValue placeholder="Select Wallet" />
               </SelectTrigger>
               <SelectContent>
@@ -175,7 +172,7 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
             </Select>
 
             <Select value={selectedFiat} onValueChange={handleSelectFiat}>
-              <SelectTrigger className="w-full sm:w-[120px] h-8 sm:h-9 text-xs sm:text-sm">
+              <SelectTrigger className="w-full sm:w-[100px] h-7 sm:h-8 text-xs">
                 <SelectValue placeholder="Select Fiat" />
               </SelectTrigger>
               <SelectContent>
@@ -189,60 +186,52 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
           </div>
 
           <div
-            className={`text-2xl sm:text-3xl font-bold mb-1 ${
+            className={`text-xl sm:text-2xl font-bold my-1 ${
               !showBalance ? "blur-content" : ""
             }`}
           >
             {formatPrice(calculateTotalBalance())}
           </div>
 
-          <div
-            className={`text-xs sm:text-sm text-gray-600 ${
-              !showBalance ? "blur-content" : ""
-            }`}
-          >
-            <div className="flex flex-col gap-1">
-              {selectedCrypto === "ALL" ? (
-                <span>Total balance across all wallets</span>
-              ) : (
-                <span className="break-words">
-                  1 {selectedCryptoData?.symbol} ={" "}
-                  {formatPrice(Number(selectedCryptoPrice?.value) || 0)}
+          <div className="flex flex-wrap gap-1 items-center justify-between text-xs sm:text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <span className={!showBalance ? "blur-content" : ""}>
+                {selectedCrypto === "ALL" ? "Total balance across all wallets" : 
+                  `1 ${selectedCryptoData?.symbol} = ${formatPrice(Number(selectedCryptoPrice?.value) || 0)}`}
+              </span>
+              
+              {lastUpdated && (
+                <span className="text-xs text-gray-500">
+                  • Updated {new Date(lastUpdated).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                 </span>
               )}
+            </div>
 
-              <div className="flex items-center gap-2 flex-wrap">
-                {selectedCryptoPrice && (
-                  <Badge variant="secondary" className="max-w-fit text-xs sm:text-sm">
-                    <span
-                      className={
-                        Number(selectedCryptoPrice.value) >= 0
-                          ? "text-green-500"
-                          : "text-red-500"
-                      }
-                    >
-                      {Number(selectedCryptoPrice.value) >= 0 ? "+" : ""}
-                      {Number(selectedCryptoPrice.value).toFixed(2)}% today
-                    </span>
-                  </Badge>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePortfolioClick}
-                  className="ml-auto text-xs h-7 px-2 py-1"
-                >
-                  See Portfolio
-                </Button>
-              </div>
+            <div className="flex items-center gap-1 flex-wrap">
+              {selectedCryptoPrice && (
+                <Badge variant="secondary" className="max-w-fit text-xs h-5 px-1">
+                  <span
+                    className={
+                      Number(selectedCryptoPrice.value) >= 0
+                        ? "text-green-500"
+                        : "text-red-500"
+                    }
+                  >
+                    {Number(selectedCryptoPrice.value) >= 0 ? "+" : ""}
+                    {Number(selectedCryptoPrice.value).toFixed(2)}% today
+                  </span>
+                </Badge>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePortfolioClick}
+                className="text-xs h-6 px-2 py-0"
+              >
+                See Portfolio
+              </Button>
             </div>
           </div>
-
-          {lastUpdated && (
-            <div className="text-xs text-gray-500 mt-1">
-              Last updated: {new Date(lastUpdated).toLocaleTimeString()}
-            </div>
-          )}
         </div>
       )}
     </GlassCard>

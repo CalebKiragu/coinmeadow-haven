@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -8,11 +7,9 @@ import {
   CheckCircle,
   XCircle,
   Phone,
-  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import confetti from "canvas-confetti";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import { useToast } from "@/components/ui/use-toast";
@@ -34,7 +31,6 @@ const Deposit = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [payerInfo, setPayerInfo] = useState("");
-  const [payerInfoType, setPayerInfoType] = useState<"phone" | "email">("phone");
   const [amount, setAmount] = useState("");
   const [pin, setPin] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
@@ -52,17 +48,12 @@ const Deposit = () => {
   const [rates, setRates] = useState<{[key: string]: number}>({});
   
   const [isValid, setIsValid] = useState(false);
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const phoneRegex = /^\d{1,10}$/;
   
-  // Validate recipient input
+  // Validate recipient input (phone only now)
   useEffect(() => {
-    if (payerInfoType === 'email') {
-      setIsValid(emailRegex.test(payerInfo));
-    } else {
-      setIsValid(phoneRegex.test(payerInfo.replace(/[^\d]/g, '')));
-    }
-  }, [payerInfo, payerInfoType]);
+    setIsValid(phoneRegex.test(payerInfo.replace(/[^\d]/g, '')));
+  }, [payerInfo]);
   
   useEffect(() => {
     // Simulate fetching exchange rates
@@ -124,14 +115,9 @@ const Deposit = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (payerInfoType === 'phone') {
-      // For phone, only allow digits and limit to 10 characters
-      const value = e.target.value.replace(/[^\d]/g, '');
-      setPayerInfo(value.substring(0, 10));
-    } else {
-      // For email, no special handling needed
-      setPayerInfo(e.target.value);
-    }
+    // Only allow digits and limit to 10 characters
+    const value = e.target.value.replace(/[^\d]/g, '');
+    setPayerInfo(value.substring(0, 10));
   };
 
   const handleNextStep = async () => {
@@ -256,78 +242,51 @@ const Deposit = () => {
 
             {currentStep === 1 ? (
               <div className="space-y-4 animate-fade-in">
-                <Tabs 
-                  value={payerInfoType} 
-                  onValueChange={(v) => setPayerInfoType(v as "phone" | "email")}
-                  className="w-full mb-2"
-                >
-                  <TabsList className="w-full grid grid-cols-2">
-                    <TabsTrigger value="phone" className="flex items-center gap-1">
-                      <Phone size={14} /> Phone
-                    </TabsTrigger>
-                    <TabsTrigger value="email" className="flex items-center gap-1">
-                      <Mail size={14} /> Email
-                    </TabsTrigger>
-                  </TabsList>
+                <div className="flex gap-2">
+                  <Select
+                    value={selectedCountryCode}
+                    onValueChange={setSelectedCountryCode}
+                  >
+                    <SelectTrigger className="w-[90px] flex-shrink-0">
+                      <SelectValue placeholder="+254" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countries.map((country) => {
+                        // Get the country code based on country code
+                        let countryCode = "";
+                        switch(country.code) {
+                          case 'KE': countryCode = '254'; break;
+                          case 'NG': countryCode = '234'; break;
+                          case 'UG': countryCode = '256'; break;
+                          case 'TZ': countryCode = '255'; break;
+                          case 'US': countryCode = '1'; break;
+                          default: return null; // Skip duplicate values
+                        }
+                        return (
+                          <SelectItem 
+                            key={country.code} 
+                            value={countryCode}
+                          >
+                            +{countryCode}
+                          </SelectItem>
+                        );
+                      }).filter(Boolean)}
+                    </SelectContent>
+                  </Select>
                   
-                  <TabsContent value="phone" className="mt-2">
-                    <div className="flex gap-2">
-                      <Select
-                        value={selectedCountryCode}
-                        onValueChange={setSelectedCountryCode}
-                      >
-                        <SelectTrigger className="w-[90px] flex-shrink-0">
-                          <SelectValue placeholder="+254" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {countries.map((country) => (
-                            <SelectItem 
-                              key={country.code} 
-                              value={country.code === 'KE' ? '254' : 
-                                     country.code === 'NG' ? '234' : 
-                                     country.code === 'UG' ? '256' : 
-                                     country.code === 'TZ' ? '255' : 
-                                     country.code === 'US' ? '1' : '254'}
-                            >
-                              +{country.code === 'KE' ? '254' : 
-                                 country.code === 'NG' ? '234' : 
-                                 country.code === 'UG' ? '256' : 
-                                 country.code === 'TZ' ? '255' : 
-                                 country.code === 'US' ? '1' : '254'}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      
-                      <Input
-                        type="tel"
-                        placeholder="Enter phone number"
-                        value={payerInfo}
-                        onChange={handleInputChange}
-                        className={`flex-grow ${!isValid && payerInfo ? 'border-red-500' : ''}`}
-                        maxLength={10}
-                        required
-                      />
-                    </div>
-                    {!isValid && payerInfo && (
-                      <p className="text-xs text-red-500 mt-1">Please enter a valid phone number</p>
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="email" className="mt-2">
-                    <Input
-                      type="email"
-                      placeholder="Enter email address"
-                      value={payerInfo}
-                      onChange={handleInputChange}
-                      className={`${!isValid && payerInfo ? 'border-red-500' : ''}`}
-                      required
-                    />
-                    {!isValid && payerInfo && (
-                      <p className="text-xs text-red-500 mt-1">Please enter a valid email address</p>
-                    )}
-                  </TabsContent>
-                </Tabs>
+                  <Input
+                    type="tel"
+                    placeholder="Enter phone number"
+                    value={payerInfo}
+                    onChange={handleInputChange}
+                    className={`flex-grow ${!isValid && payerInfo ? 'border-red-500' : ''}`}
+                    maxLength={10}
+                    required
+                  />
+                </div>
+                {!isValid && payerInfo && (
+                  <p className="text-xs text-red-500 mt-1">Please enter a valid phone number</p>
+                )}
               </div>
             ) : currentStep === 2 ? (
               <div className="space-y-4 animate-fade-in">

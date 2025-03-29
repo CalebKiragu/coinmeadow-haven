@@ -6,11 +6,12 @@ import authReducer from './slices/authSlice';
 import walletReducer from './slices/walletSlice';
 import priceReducer from './slices/priceSlice';
 import transactionReducer from './slices/transactionSlice';
+import notificationReducer from './slices/notificationSlice';
 
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['auth', 'wallet', 'price', 'transaction'], // only these will be persisted
+  whitelist: ['auth', 'wallet', 'price', 'transaction', 'notification'], // added notification
 };
 
 const rootReducer = combineReducers({
@@ -18,6 +19,7 @@ const rootReducer = combineReducers({
   wallet: walletReducer,
   price: priceReducer,
   transaction: transactionReducer,
+  notification: notificationReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

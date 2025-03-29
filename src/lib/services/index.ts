@@ -3,6 +3,7 @@ import { AuthService } from "./authService";
 import { TransactionService } from "./transactionService";
 import { VerificationService } from "./verificationService";
 import { WalletService } from "./walletService";
+import { NotificationService } from "./notificationService";
 
 export const ApiService = {
   // Auth services
@@ -41,4 +42,11 @@ export const ApiService = {
   withdraw: TransactionService.withdraw,
   receiveInstructions: TransactionService.receiveInstructions,
   getTransactionHistory: TransactionService.getTransactionHistory,
+  
+  // Notification services
+  sendPushNotification: NotificationService.sendPushNotification,
+  requestNotificationPermission: NotificationService.requestPermission,
+  notifyNewTransaction: NotificationService.notifyNewTransaction,
+  notifyTransactionStatus: NotificationService.notifyTransactionStatus,
+  notifyKycStatus: NotificationService.notifyKycStatus,
 };
