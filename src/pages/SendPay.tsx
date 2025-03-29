@@ -1,18 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import {
-  ArrowLeft,
-  Home,
-  ArrowRight,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
 import confetti from "canvas-confetti";
 import { StepIndicator } from "@/components/send/StepIndicator";
 import { MerchantPayment } from "@/components/send/MerchantPayment";
@@ -20,31 +12,73 @@ import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import { useToast } from "@/components/ui/use-toast";
 import { TransactionService } from "@/lib/services/transactionService";
 import { RootState } from "@/lib/redux/store";
+import { MobileTransfer } from "@/components/send/MobileTransfer";
+import { SendPayProvider, useSendPay } from "@/contexts/SendPayContext";
+import { TransactionSummary } from "@/components/send/TransactionSummary";
 
-const SendPay = () => {
+const SendPayContent = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("mobile");
-  const [currentStep, setCurrentStep] = useState(1);
-  const [savedData, setSavedData] = useState<any>({});
+  const [mobileStep, setMobileStep] = useState(1);
+  const [merchantStep, setMerchantStep] = useState(1);
   const [transactionStatus, setTransactionStatus] = useState<
     "success" | "error" | null
   >(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const auth = useSelector((state: RootState) => state.auth);
+  
+  const {
+    mobileNumber, 
+    mobileAmount, 
+    mobilePin,
+    merchantNumber,
+    merchantAmount,
+    merchantPin
+  } = useSendPay();
+
+  // Reset step when tab changes
+  useEffect(() => {
+    if (activeTab === "mobile") {
+      setMobileStep(1);
+    } else {
+      setMerchantStep(1);
+    }
+  }, [activeTab]);
+
+  const currentStep = activeTab === "mobile" ? mobileStep : merchantStep;
 
   const handleStepClick = (step: number) => {
     if (step <= currentStep) {
-      setCurrentStep(step);
+      if (activeTab === "mobile") {
+        setMobileStep(step);
+      } else {
+        setMerchantStep(step);
+      }
     }
   };
 
   const handleNextStep = async () => {
-    if (currentStep < 3) {
-      setCurrentStep((prev) => prev + 1);
+    if (activeTab === "mobile") {
+      if (mobileStep < 3) {
+        setMobileStep((prev) => prev + 1);
+      } else {
+        await processTransaction();
+      }
     } else {
-      // Process transaction
-      await processTransaction();
+      if (merchantStep < 3) {
+        setMerchantStep((prev) => prev + 1);
+      } else {
+        await processTransaction();
+      }
+    }
+  };
+
+  const handleBackStep = () => {
+    if (activeTab === "mobile" && mobileStep > 1) {
+      setMobileStep((prev) => prev - 1);
+    } else if (activeTab === "merchant" && merchantStep > 1) {
+      setMerchantStep((prev) => prev - 1);
     }
   };
 
@@ -63,13 +97,13 @@ const SendPay = () => {
           type: "internal",
           initiator: sender,
           sender: sender,
-          recipient: savedData.phoneNumber,
+          recipient: mobileNumber,
           senderFirstName,
           senderLastName,
-          recipientFirstName: "", // We don't have this info for mobile transfers
-          recipientLastName: "",
-          amount: savedData.amount,
-          pin: savedData.pin,
+          recipientFirstName: "John", // Default recipient name
+          recipientLastName: "Doe",
+          amount: mobileAmount,
+          pin: mobilePin,
           inOut: "BTC-BTC", // Default transfer type
           currency: "btc", // Default currency
           txType: "USERSEND"
@@ -79,13 +113,13 @@ const SendPay = () => {
           type: "internal",
           initiator: sender,
           sender: sender,
-          recipient: savedData.merchantNumber,
+          recipient: merchantNumber,
           senderFirstName,
           senderLastName,
-          recipientFirstName: "Merchant", // Default merchant name
-          recipientLastName: "Account",
-          amount: savedData.amount,
-          pin: savedData.pin,
+          recipientFirstName: "Holdings", // Default merchant name
+          recipientLastName: "Co.",
+          amount: merchantAmount,
+          pin: merchantPin,
           inOut: "BTC-BTC", // Default transfer type
           currency: "btc", // Default currency
           txType: "MERCHANTPAY"
@@ -103,6 +137,11 @@ const SendPay = () => {
         });
       } else {
         setTransactionStatus("error");
+        toast({
+          variant: "destructive",
+          title: "Transaction Failed",
+          description: response.error || "There was an error processing your transaction.",
+        });
       }
     } catch (error) {
       console.error("Transaction error:", error);
@@ -115,10 +154,6 @@ const SendPay = () => {
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const handleDataChange = (data: any) => {
-    setSavedData((prev: any) => ({ ...prev, ...data }));
   };
 
   return (
@@ -156,89 +191,52 @@ const SendPay = () => {
                 />
 
                 {activeTab === "mobile" ? (
-                  <>
-                    {currentStep === 1 && (
-                      <div className="space-y-4 animate-fade-in">
-                        <Input
-                          type="tel"
-                          placeholder="Enter phone number"
-                          value={savedData.phoneNumber || ""}
-                          onChange={(e) =>
-                            handleDataChange({ phoneNumber: e.target.value })
-                          }
-                        />
-                        <div className="relative">
-                          <Input
-                            type="search"
-                            placeholder="Search contacts"
-                            className="pl-10"
-                          />
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                        </div>
-                        <div className="h-64 overflow-y-auto glass-effect p-4 rounded-lg">
-                          {Array.from({ length: 10 }).map((_, i) => (
-                            <div
-                              key={i}
-                              className="flex items-center gap-3 p-2 hover:bg-white/10 rounded-lg cursor-pointer"
-                            >
-                              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                                {String.fromCharCode(65 + i)}
-                              </div>
-                              <div>
-                                <div className="font-medium">
-                                  Contact {i + 1}
-                                </div>
-                                <div className="text-sm text-gray-500">
-                                  +254 7XX XXX XXX
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {currentStep === 2 && (
-                      <div className="space-y-4 animate-fade-in">
-                        <Input
-                          type="number"
-                          placeholder="Enter amount"
-                          value={savedData.amount || ""}
-                          onChange={(e) =>
-                            handleDataChange({ amount: e.target.value })
-                          }
-                        />
-                      </div>
-                    )}
-                    {currentStep === 3 && (
-                      <div className="space-y-4 animate-fade-in">
-                        <Input
-                          type="password"
-                          placeholder="Enter PIN"
-                          value={savedData.pin || ""}
-                          onChange={(e) =>
-                            handleDataChange({ pin: e.target.value })
-                          }
-                        />
-                      </div>
-                    )}
-                  </>
+                  <MobileTransfer currentStep={mobileStep} />
                 ) : (
                   <MerchantPayment
-                    onNextStep={handleNextStep}
-                    currentStep={currentStep}
-                    savedData={savedData}
-                    onDataChange={handleDataChange}
+                    currentStep={merchantStep}
                   />
                 )}
 
-                <Button 
-                  className="w-full" 
-                  onClick={handleNextStep}
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? "Processing..." : currentStep === 3 ? "Complete Transaction" : "Next"}
-                  {!isProcessing && <ArrowRight className="ml-2 h-4 w-4" />}
-                </Button>
+                {currentStep > 1 && (
+                  <TransactionSummary 
+                    type={activeTab} 
+                    step={currentStep}
+                    recipient={activeTab === "mobile" ? mobileNumber : merchantNumber}
+                    amount={activeTab === "mobile" ? mobileAmount : merchantAmount}
+                  />
+                )}
+
+                <div className="flex flex-col gap-2">
+                  <Button 
+                    className="w-full" 
+                    onClick={handleNextStep}
+                    disabled={isProcessing || 
+                      (activeTab === "mobile" && (
+                        (mobileStep === 1 && !mobileNumber) ||
+                        (mobileStep === 2 && !mobileAmount) ||
+                        (mobileStep === 3 && !mobilePin)
+                      )) ||
+                      (activeTab === "merchant" && (
+                        (merchantStep === 1 && !merchantNumber) ||
+                        (merchantStep === 2 && !merchantAmount) ||
+                        (merchantStep === 3 && !merchantPin)
+                      ))
+                    }
+                  >
+                    {isProcessing ? "Processing..." : currentStep === 3 ? "Complete Transaction" : "Next"}
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={handleBackStep}
+                    disabled={currentStep === 1}
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="text-center space-y-4 animate-scale-in">
@@ -273,6 +271,14 @@ const SendPay = () => {
         </Tabs>
       </div>
     </div>
+  );
+};
+
+const SendPay = () => {
+  return (
+    <SendPayProvider>
+      <SendPayContent />
+    </SendPayProvider>
   );
 };
 

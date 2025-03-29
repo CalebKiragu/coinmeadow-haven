@@ -1,27 +1,25 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
+import { QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Search, QrCode } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useSendPay } from "@/contexts/SendPayContext";
 
 export const MerchantPayment = ({
-  onNextStep,
   currentStep,
-  savedData,
-  onDataChange,
 }: {
-  onNextStep: () => void;
   currentStep: number;
-  savedData: any;
-  onDataChange: (data: any) => void;
 }) => {
   const { toast } = useToast();
-  const [merchantNumber, setMerchantNumber] = useState(
-    savedData?.merchantNumber || ""
-  );
-  const [amount, setAmount] = useState(savedData?.amount || "");
-  const [pin, setPin] = useState(savedData?.pin || "");
+  const { 
+    merchantNumber, 
+    setMerchantNumber,
+    merchantAmount,
+    setMerchantAmount,
+    merchantPin,
+    setMerchantPin
+  } = useSendPay();
 
   const handleQrScan = () => {
     toast({
@@ -30,45 +28,9 @@ export const MerchantPayment = ({
     });
   };
 
-  const handleNext = () => {
-    if (currentStep === 1) {
-      if (merchantNumber.length !== 6) {
-        toast({
-          title: "Invalid Merchant Number",
-          description: "Please enter a valid 6-digit merchant number",
-          variant: "destructive",
-        });
-        return;
-      }
-      onDataChange({ merchantNumber, txType: "MERCHANTPAY" as const });
-    } else if (currentStep === 2) {
-      if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-        toast({
-          title: "Invalid Amount",
-          description: "Please enter a valid amount",
-          variant: "destructive",
-        });
-        return;
-      }
-      onDataChange({ amount });
-    } else if (currentStep === 3) {
-      if (!pin || pin.length < 4) {
-        toast({
-          title: "Invalid PIN",
-          description: "Please enter your PIN",
-          variant: "destructive",
-        });
-        return;
-      }
-      onDataChange({ pin });
-    }
-    
-    onNextStep();
-  };
-
-  return (
-    <div className="space-y-4 animate-fade-in">
-      {currentStep === 1 && (
+  if (currentStep === 1) {
+    return (
+      <div className="space-y-4 animate-fade-in">
         <div className="relative">
           <Input
             type="text"
@@ -77,6 +39,7 @@ export const MerchantPayment = ({
             onChange={(e) => setMerchantNumber(e.target.value)}
             maxLength={6}
             className="pr-20"
+            required
           />
           <Button
             variant="ghost"
@@ -87,29 +50,37 @@ export const MerchantPayment = ({
             <QrCode className="h-4 w-4" />
           </Button>
         </div>
-      )}
-      
-      {currentStep === 2 && (
+      </div>
+    );
+  }
+  
+  if (currentStep === 2) {
+    return (
+      <div className="space-y-4 animate-fade-in">
         <Input
           type="number"
           placeholder="Enter amount"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          value={merchantAmount}
+          onChange={(e) => setMerchantAmount(e.target.value)}
+          required
         />
-      )}
-      
-      {currentStep === 3 && (
+      </div>
+    );
+  }
+  
+  if (currentStep === 3) {
+    return (
+      <div className="space-y-4 animate-fade-in">
         <Input
           type="password"
           placeholder="Enter PIN"
-          value={pin}
-          onChange={(e) => setPin(e.target.value)}
+          value={merchantPin}
+          onChange={(e) => setMerchantPin(e.target.value)}
+          required
         />
-      )}
-      
-      <Button className="w-full" onClick={handleNext}>
-        Next
-      </Button>
-    </div>
-  );
+      </div>
+    );
+  }
+
+  return null;
 };

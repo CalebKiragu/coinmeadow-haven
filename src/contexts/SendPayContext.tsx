@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState } from "react";
 
 type SendPayContextType = {
@@ -13,6 +14,8 @@ type SendPayContextType = {
   setMerchantAmount: (value: string) => void;
   merchantPin: string;
   setMerchantPin: (value: string) => void;
+  resetMobileFlow: () => void;
+  resetMerchantFlow: () => void;
 };
 
 const SendPayContext = createContext<SendPayContextType | undefined>(undefined);
@@ -24,6 +27,18 @@ export const SendPayProvider = ({ children }: { children: React.ReactNode }) => 
   const [merchantNumber, setMerchantNumber] = useState("");
   const [merchantAmount, setMerchantAmount] = useState("");
   const [merchantPin, setMerchantPin] = useState("");
+
+  const resetMobileFlow = () => {
+    setMobileNumber("");
+    setMobileAmount("");
+    setMobilePin("");
+  };
+
+  const resetMerchantFlow = () => {
+    setMerchantNumber("");
+    setMerchantAmount("");
+    setMerchantPin("");
+  };
 
   return (
     <SendPayContext.Provider
@@ -40,6 +55,8 @@ export const SendPayProvider = ({ children }: { children: React.ReactNode }) => 
         setMerchantAmount,
         merchantPin,
         setMerchantPin,
+        resetMobileFlow,
+        resetMerchantFlow,
       }}
     >
       {children}
