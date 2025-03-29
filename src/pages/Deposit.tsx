@@ -7,15 +7,18 @@ import {
   ArrowRight,
   CheckCircle,
   XCircle,
+  Phone,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import confetti from "canvas-confetti";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import { useToast } from "@/components/ui/use-toast";
 import { RootState } from "@/lib/redux/store";
 import { ApiService } from "@/lib/services";
-import { cryptoCurrencies, fiatCurrencies } from "@/types/currency";
+import { cryptoCurrencies, fiatCurrencies, countries } from "@/types/currency";
 import {
   Select,
   SelectContent,
@@ -24,11 +27,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { TransactionSummary } from "@/components/send/TransactionSummary";
+import { StepIndicator } from "@/components/send/StepIndicator";
 
 const Deposit = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [payerInfo, setPayerInfo] = useState("");
+  const [payerInfoType, setPayerInfoType] = useState<"phone" | "email">("phone");
   const [amount, setAmount] = useState("");
   const [pin, setPin] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
@@ -37,12 +43,26 @@ const Deposit = () => {
   >(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const auth = useSelector((state: RootState) => state.auth);
+  const [selectedCountryCode, setSelectedCountryCode] = useState("254"); // Kenya by default
 
   // Currency handling
   const [selectedCryptoCurrency, setSelectedCryptoCurrency] = useState("BTC");
   const [selectedFiatCurrency, setSelectedFiatCurrency] = useState("USD");
   const [isCryptoAmount, setIsCryptoAmount] = useState(false); // Default to fiat
   const [rates, setRates] = useState<{[key: string]: number}>({});
+  
+  const [isValid, setIsValid] = useState(false);
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^\d{1,10}$/;
+  
+  // Validate recipient input
+  useEffect(() => {
+    if (payerInfoType === 'email') {
+      setIsValid(emailRegex.test(payerInfo));
+    } else {
+      setIsValid(phoneRegex.test(payerInfo.replace(/[^\d]/g, '')));
+    }
+  }, [payerInfo, payerInfoType]);
   
   useEffect(() => {
     // Simulate fetching exchange rates
@@ -103,14 +123,25 @@ const Deposit = () => {
     return (amount / rate).toFixed(8);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (payerInfoType === 'phone') {
+      // For phone, only allow digits and limit to 10 characters
+      const value = e.target.value.replace(/[^\d]/g, '');
+      setPayerInfo(value.substring(0, 10));
+    } else {
+      // For email, no special handling needed
+      setPayerInfo(e.target.value);
+    }
+  };
+
   const handleNextStep = async () => {
     if (currentStep < 3) {
-      if ((currentStep === 1 && !payerInfo) || 
+      if ((currentStep === 1 && !isValid) || 
           (currentStep === 2 && !amount)) {
         toast({
           variant: "destructive",
           title: "Required Field",
-          description: "Please fill in all required fields to continue",
+          description: "Please fill in all required fields correctly to continue",
         });
         return;
       }
@@ -149,10 +180,14 @@ const Deposit = () => {
       const firstName = auth.user?.firstName || auth.merchant?.repName || "";
       const lastName = auth.user?.lastName || auth.merchant?.merchantName || "";
 
+      const formattedPayerInfo = payerInfoType === 'phone' 
+        ? `+${selectedCountryCode}${payerInfo}` 
+        : payerInfo;
+
       const payload = {
         type: "deposit",
         initiator,
-        sender: payerInfo,
+        sender: formattedPayerInfo,
         recipient: initiator,
         senderFirstName: "External",
         senderLastName: "Source",
@@ -198,91 +233,101 @@ const Deposit = () => {
       <div className="max-w-md mx-auto glass-effect p-6 rounded-lg">
         {!transactionStatus ? (
           <div className="space-y-6">
-            <div className="flex justify-between mb-8">
-              {[1, 2, 3].map((step) => (
-                <div
-                  key={step}
-                  className={`flex items-center ${step !== 3 ? "flex-1" : ""}`}
-                  onClick={() => handleStepClick(step)}
-                >
-                  <button 
-                    className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer ${
-                      step <= currentStep
-                        ? "bg-primary text-white"
-                        : "bg-gray-300 text-gray-600"
-                    }`}
-                    disabled={step > currentStep}
-                  >
-                    {step}
-                  </button>
-                  {step !== 3 && (
-                    <div
-                      className={`flex-1 h-1 mx-2 ${
-                        step < currentStep ? "bg-primary" : "bg-gray-200"
-                      }`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
+            <StepIndicator
+              steps={3}
+              currentStep={currentStep}
+              onStepClick={handleStepClick}
+            />
 
             {currentStep > 1 && (
-              <div className="bg-black/20 p-3 rounded-lg border border-white/10">
-                {currentStep === 2 && (
-                  <div className="flex flex-col items-center space-y-2">
-                    <span className="text-xs uppercase tracking-wider text-gray-400">
-                      Depositing from
-                    </span>
-                    <span className="font-bold text-xl">
-                      <Badge variant="outline" className="text-lg px-3 py-1 bg-black/30">
-                        {payerInfo}
-                      </Badge>
-                    </span>
-                  </div>
-                )}
-
-                {currentStep === 3 && (
-                  <div className="flex flex-col items-center space-y-3">
-                    <span className="text-xs uppercase tracking-wider text-gray-400">
-                      Depositing from
-                    </span>
-                    <span className="font-bold text-xl">
-                      <Badge variant="outline" className="text-lg px-3 py-1 bg-black/30">
-                        {payerInfo}
-                      </Badge>
-                    </span>
-                    <div className="flex flex-col items-center">
-                      <span className="font-bold text-2xl text-white">
-                        {isCryptoAmount ? amount : convertFiatToCrypto(amount, selectedCryptoCurrency, selectedFiatCurrency)} 
-                        <span className="text-sm font-normal text-gray-300">{selectedCryptoCurrency}</span>
-                      </span>
-                      {!isCryptoAmount ? (
-                        <span className="text-sm text-emerald-400">
-                          ≈ {amount} {selectedFiatCurrency}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-emerald-400">
-                          ≈ {convertCryptoToFiat(amount, selectedCryptoCurrency, selectedFiatCurrency)} {selectedFiatCurrency}
-                        </span>
-                      )}
-                      <span className="text-xs text-blue-300 mt-2">
-                        Rate: 1 {selectedCryptoCurrency} = {rates[`${selectedCryptoCurrency}-${selectedFiatCurrency}`]?.toFixed(2) || "0.00"} {selectedFiatCurrency}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <TransactionSummary
+                type="mobile"
+                step={currentStep}
+                recipient={payerInfo}
+                amount={isCryptoAmount ? amount : convertFiatToCrypto(amount, selectedCryptoCurrency, selectedFiatCurrency)}
+                currency={selectedCryptoCurrency}
+                fiatAmount={currentStep === 3 ? 
+                  !isCryptoAmount ? amount : convertCryptoToFiat(amount, selectedCryptoCurrency, selectedFiatCurrency) 
+                  : undefined}
+                fiatCurrency={selectedFiatCurrency}
+                rate={currentStep === 3 ? rates[`${selectedCryptoCurrency}-${selectedFiatCurrency}`]?.toFixed(2) || "0.00" : undefined}
+              />
             )}
 
             {currentStep === 1 ? (
               <div className="space-y-4 animate-fade-in">
-                <Input
-                  type="text"
-                  placeholder="Enter Payer's Address/Phone"
-                  value={payerInfo}
-                  onChange={(e) => setPayerInfo(e.target.value)}
-                  required
-                />
+                <Tabs 
+                  value={payerInfoType} 
+                  onValueChange={(v) => setPayerInfoType(v as "phone" | "email")}
+                  className="w-full mb-2"
+                >
+                  <TabsList className="w-full grid grid-cols-2">
+                    <TabsTrigger value="phone" className="flex items-center gap-1">
+                      <Phone size={14} /> Phone
+                    </TabsTrigger>
+                    <TabsTrigger value="email" className="flex items-center gap-1">
+                      <Mail size={14} /> Email
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="phone" className="mt-2">
+                    <div className="flex gap-2">
+                      <Select
+                        value={selectedCountryCode}
+                        onValueChange={setSelectedCountryCode}
+                      >
+                        <SelectTrigger className="w-[90px] flex-shrink-0">
+                          <SelectValue placeholder="+254" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {countries.map((country) => (
+                            <SelectItem 
+                              key={country.code} 
+                              value={country.code === 'KE' ? '254' : 
+                                     country.code === 'NG' ? '234' : 
+                                     country.code === 'UG' ? '256' : 
+                                     country.code === 'TZ' ? '255' : 
+                                     country.code === 'US' ? '1' : '254'}
+                            >
+                              +{country.code === 'KE' ? '254' : 
+                                 country.code === 'NG' ? '234' : 
+                                 country.code === 'UG' ? '256' : 
+                                 country.code === 'TZ' ? '255' : 
+                                 country.code === 'US' ? '1' : '254'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      <Input
+                        type="tel"
+                        placeholder="Enter phone number"
+                        value={payerInfo}
+                        onChange={handleInputChange}
+                        className={`flex-grow ${!isValid && payerInfo ? 'border-red-500' : ''}`}
+                        maxLength={10}
+                        required
+                      />
+                    </div>
+                    {!isValid && payerInfo && (
+                      <p className="text-xs text-red-500 mt-1">Please enter a valid phone number</p>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="email" className="mt-2">
+                    <Input
+                      type="email"
+                      placeholder="Enter email address"
+                      value={payerInfo}
+                      onChange={handleInputChange}
+                      className={`${!isValid && payerInfo ? 'border-red-500' : ''}`}
+                      required
+                    />
+                    {!isValid && payerInfo && (
+                      <p className="text-xs text-red-500 mt-1">Please enter a valid email address</p>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </div>
             ) : currentStep === 2 ? (
               <div className="space-y-4 animate-fade-in">

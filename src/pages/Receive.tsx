@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Copy, QrCode, RefreshCw } from "lucide-react";
+import { Copy, QrCode, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -23,7 +23,7 @@ const Receive = () => {
     cryptoCurrencies[0].symbol
   );
   const [depositAddress, setDepositAddress] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchDepositAddress(selectedCrypto);
@@ -61,9 +61,10 @@ const Receive = () => {
       // Use a default address as fallback
       setDepositAddress("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh");
     } finally {
+      // Simulate loading for better UX
       setTimeout(() => {
         setIsLoading(false);
-      }, 1000);
+      }, 1500);
     }
   };
 
@@ -87,43 +88,56 @@ const Receive = () => {
     <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
       <NavigationHeader title="Receive" />
 
-      <div className="max-w-md mx-auto glass-effect p-6 rounded-lg space-y-6">
-        <div className="space-y-4">
-          <label className="block text-sm font-medium text-gray-200">
-            Select Cryptocurrency
-          </label>
-          <Select
-            value={selectedCrypto}
-            onValueChange={setSelectedCrypto}
-            disabled={isLoading}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select cryptocurrency" />
-            </SelectTrigger>
-            <SelectContent>
-              {cryptoCurrencies.map((crypto) => (
-                <SelectItem key={crypto.symbol} value={crypto.symbol}>
-                  {crypto.name} ({crypto.symbol})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex justify-center p-4 bg-white rounded-lg">
-          {isLoading ? (
-            <div className="w-48 h-48 flex items-center justify-center">
-              <Skeleton className="w-48 h-48" />
-            </div>
-          ) : (
-            <QrCode className="w-48 h-48" />
-          )}
-        </div>
-
-        <div className="space-y-2">
-          {isLoading ? (
+      {isLoading ? (
+        <div className="max-w-md mx-auto glass-effect p-6 rounded-lg space-y-6 animate-pulse">
+          {/* Skeleton for the select cryptocurrency */}
+          <div className="space-y-4">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          
+          {/* Skeleton for QR code */}
+          <div className="flex justify-center p-4 bg-white rounded-lg">
+            <Skeleton className="w-48 h-48" />
+          </div>
+          
+          {/* Skeleton for address display and copy */}
+          <div className="space-y-2">
             <Skeleton className="h-12 w-full" />
-          ) : (
+            <Skeleton className="h-10 w-full" />
+          </div>
+          
+          {/* Skeleton for warning text */}
+          <Skeleton className="h-10 w-full" />
+        </div>
+      ) : (
+        <div className="max-w-md mx-auto glass-effect p-6 rounded-lg space-y-6">
+          <div className="space-y-4">
+            <label className="block text-sm font-medium text-gray-200">
+              Select Cryptocurrency
+            </label>
+            <Select
+              value={selectedCrypto}
+              onValueChange={setSelectedCrypto}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select cryptocurrency" />
+              </SelectTrigger>
+              <SelectContent>
+                {cryptoCurrencies.map((crypto) => (
+                  <SelectItem key={crypto.symbol} value={crypto.symbol}>
+                    {crypto.name} ({crypto.symbol})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex justify-center p-4 bg-white rounded-lg">
+            <QrCode className="w-48 h-48" />
+          </div>
+
+          <div className="space-y-2">
             <div className="flex items-center justify-between gap-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
               <code className="text-sm break-all">{depositAddress}</code>
               <Button
@@ -131,32 +145,27 @@ const Receive = () => {
                 size="icon"
                 onClick={handleCopy}
                 className="shrink-0"
-                disabled={isLoading || !depositAddress}
+                disabled={!depositAddress}
               >
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
-          )}
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={generateNewAddress}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-            ) : (
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={generateNewAddress}
+            >
               <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            Generate New Address
-          </Button>
-        </div>
+              Generate New Address
+            </Button>
+          </div>
 
-        <p className="text-xs text-gray-400 text-center">
-          Warning: Please ensure you send only {selectedCrypto} to this address.
-          Funds sent to the wrong address or blockchain will be lost forever.
-        </p>
-      </div>
+          <p className="text-xs text-gray-400 text-center">
+            Warning: Please ensure you send only {selectedCrypto} to this address.
+            Funds sent to the wrong address or blockchain will be lost forever.
+          </p>
+        </div>
+      )}
     </div>
   );
 };
