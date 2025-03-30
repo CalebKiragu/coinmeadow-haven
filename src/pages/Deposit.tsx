@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -166,9 +167,8 @@ const Deposit = () => {
       const firstName = auth.user?.firstName || auth.merchant?.repName || "";
       const lastName = auth.user?.lastName || auth.merchant?.merchantName || "";
 
-      const formattedPayerInfo = payerInfoType === 'phone' 
-        ? `+${selectedCountryCode}${payerInfo}` 
-        : payerInfo;
+      // Fix: Remove reference to payerInfoType which doesn't exist
+      const formattedPayerInfo = `+${selectedCountryCode}${payerInfo}`;
 
       const payload = {
         type: "deposit",
