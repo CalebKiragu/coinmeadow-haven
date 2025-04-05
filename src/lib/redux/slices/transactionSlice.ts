@@ -18,7 +18,7 @@ export interface TxIds {
 }
 
 export interface Transaction {
-  type: "SEND" | "RECEIVE" | "DEPOSIT" | "WITHDRAW";
+  type: "SEND" | "RECEIVE" | "DEPOSIT" | "WITHDRAW" | "BCWITHDRAW";
   userId: string;
   sender: string;
   recipient: Recipient[];
@@ -29,7 +29,7 @@ export interface Transaction {
   netValue: string;
   netCurrency: string;
   fee: Fee[];
-  status: "INPROGRESS" | "CONFIRMED" | "CANCELLED";
+  status: "INPROGRESS" | "SETTLED" | "CANCELLED";
   timestamp: bigint;
   updatedAt: bigint;
   ids: TxIds | string;

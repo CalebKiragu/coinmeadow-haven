@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Phone, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -33,44 +32,44 @@ const RecipientInput = ({
   mobileInputType,
   setMobileInputType,
   selectedCountryCode,
-  setSelectedCountryCode
+  setSelectedCountryCode,
 }: RecipientInputProps) => {
   const [isValid, setIsValid] = useState(false);
 
   // Validate input based on type
   useEffect(() => {
-    if (mobileInputType === 'email') {
+    if (mobileInputType === "email") {
       setIsValid(emailRegex.test(mobileNumber));
     } else {
-      setIsValid(phoneRegex.test(mobileNumber.replace(/[^\d]/g, '')));
+      setIsValid(phoneRegex.test(mobileNumber.replace(/[^\d]/g, "")));
     }
   }, [mobileNumber, mobileInputType]);
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (mobileInputType === 'phone') {
+    if (mobileInputType === "phone") {
       // For phone, only allow digits and limit to 10 characters
-      const value = e.target.value.replace(/[^\d]/g, '');
+      const value = e.target.value.replace(/[^\d]/g, "");
       setMobileNumber(value.substring(0, 10));
     } else {
       // For email, no special handling needed
       setMobileNumber(e.target.value);
     }
   };
-  
+
   const handleContactSelect = (contact: any) => {
-    if (mobileInputType === 'email' && contact.email && contact.email[0]) {
+    if (mobileInputType === "email" && contact.email && contact.email[0]) {
       setMobileNumber(contact.email[0]);
     } else if (contact.tel && contact.tel[0]) {
       // Clean up the phone number to remove non-digits
-      const cleanPhone = contact.tel[0].replace(/[^\d]/g, '');
+      const cleanPhone = contact.tel[0].replace(/[^\d]/g, "");
       setMobileNumber(cleanPhone.substring(0, 10));
     }
   };
-  
+
   return (
     <div className="space-y-4">
-      <Tabs 
-        value={mobileInputType} 
+      <Tabs
+        value={mobileInputType}
         onValueChange={(v) => setMobileInputType(v as "phone" | "email")}
         className="w-full mb-2"
       >
@@ -82,7 +81,7 @@ const RecipientInput = ({
             <Mail size={14} /> Email
           </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="phone" className="mt-2">
           <div className="flex gap-2">
             <Select
@@ -96,61 +95,80 @@ const RecipientInput = ({
                 {/* Filter out duplicate country codes */}
                 {(() => {
                   const uniqueCodes = new Set();
-                  return countries.map((country) => {
-                    let countryCode;
-                    switch(country.code) {
-                      case 'KE': countryCode = '254'; break;
-                      case 'NG': countryCode = '234'; break;
-                      case 'UG': countryCode = '256'; break;
-                      case 'TZ': countryCode = '255'; break;
-                      case 'US': countryCode = '1'; break;
-                      default: return null;
-                    }
-                    
-                    if (uniqueCodes.has(countryCode)) return null;
-                    uniqueCodes.add(countryCode);
-                    
-                    return (
-                      <SelectItem key={country.code} value={countryCode}>
-                        +{countryCode}
-                      </SelectItem>
-                    );
-                  }).filter(Boolean);
+                  return countries
+                    .map((country) => {
+                      let countryCode;
+                      switch (country.code) {
+                        case "KE":
+                          countryCode = "254";
+                          break;
+                        case "TZ":
+                          countryCode = "255";
+                          break;
+                        case "UG":
+                          countryCode = "256";
+                          break;
+                        case "NG":
+                          countryCode = "234";
+                          break;
+                        case "US":
+                          countryCode = "1";
+                          break;
+                        default:
+                          return null;
+                      }
+
+                      if (uniqueCodes.has(countryCode)) return null;
+                      uniqueCodes.add(countryCode);
+
+                      return (
+                        <SelectItem key={country.code} value={countryCode}>
+                          +{countryCode}
+                        </SelectItem>
+                      );
+                    })
+                    .filter(Boolean);
                 })()}
               </SelectContent>
             </Select>
-            
+
             <Input
               type="tel"
               placeholder="Enter phone number"
               value={mobileNumber}
               onChange={handleInputChange}
-              className={`flex-grow ${!isValid && mobileNumber ? 'border-red-500' : ''}`}
+              className={`flex-grow ${
+                !isValid && mobileNumber ? "border-red-500" : ""
+              }`}
               maxLength={10}
               required
             />
           </div>
           {!isValid && mobileNumber && (
-            <p className="text-xs text-red-500 mt-1">Please enter a valid phone number</p>
+            <p className="text-xs text-red-500 mt-1">
+              Please enter a valid phone number
+            </p>
           )}
         </TabsContent>
-        
+
         <TabsContent value="email" className="mt-2">
           <Input
             type="email"
             placeholder="Enter email address"
             value={mobileNumber}
             onChange={handleInputChange}
-            className={`${!isValid && mobileNumber ? 'border-red-500' : ''}`}
+            className={`${!isValid && mobileNumber ? "border-red-500" : ""}`}
             required
           />
           {!isValid && mobileNumber && (
-            <p className="text-xs text-red-500 mt-1">Please enter a valid email address</p>
+            <p className="text-xs text-red-500 mt-1">
+              Please enter a valid email address
+            </p>
           )}
         </TabsContent>
       </Tabs>
-      
-      <ContactList 
+
+      <ContactList
         mobileInputType={mobileInputType}
         onContactSelect={handleContactSelect}
       />

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -24,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { TransactionSummary } from "@/components/send/TransactionSummary";
 import { StepIndicator } from "@/components/send/StepIndicator";
 
@@ -46,70 +44,110 @@ const Deposit = () => {
   const [selectedCryptoCurrency, setSelectedCryptoCurrency] = useState("BTC");
   const [selectedFiatCurrency, setSelectedFiatCurrency] = useState("USD");
   const [isCryptoAmount, setIsCryptoAmount] = useState(false); // Default to fiat
-  const [rates, setRates] = useState<{[key: string]: number}>({});
-  
+  const [rates, setRates] = useState<{ [key: string]: number }>({});
+
   const [isValid, setIsValid] = useState(false);
   const phoneRegex = /^\d{1,10}$/;
-  
+
   // Validate recipient input (phone only now)
   useEffect(() => {
-    setIsValid(phoneRegex.test(payerInfo.replace(/[^\d]/g, '')));
+    setIsValid(phoneRegex.test(payerInfo.replace(/[^\d]/g, "")));
   }, [payerInfo]);
-  
+
   useEffect(() => {
     // Simulate fetching exchange rates
     const fetchRates = () => {
-      const newRates: {[key: string]: number} = {};
-      
+      const newRates: { [key: string]: number } = {};
+
       // Generate rates for all crypto-fiat pairs
-      cryptoCurrencies.forEach(crypto => {
-        fiatCurrencies.forEach(fiat => {
+      cryptoCurrencies.forEach((crypto) => {
+        fiatCurrencies.forEach((fiat) => {
           let baseRate = 0;
           switch (crypto.symbol) {
-            case "BTC": baseRate = 65000; break;
-            case "ETH": baseRate = 3500; break;
-            case "USDT": baseRate = 1; break;
-            case "USDC": baseRate = 1; break;
-            case "LTC": baseRate = 85; break;
-            case "BASE": baseRate = 0.95; break;
-            default: baseRate = 1;
+            case "BTC":
+              baseRate = 65000;
+              break;
+            case "ETH":
+              baseRate = 3500;
+              break;
+            case "USDT":
+              baseRate = 1;
+              break;
+            case "USDC":
+              baseRate = 1;
+              break;
+            case "LTC":
+              baseRate = 85;
+              break;
+            case "BASE":
+              baseRate = 0.95;
+              break;
+            default:
+              baseRate = 1;
           }
-          
+
           // Adjust for different fiat currencies
           let multiplier = 1;
           switch (fiat.code) {
-            case "EUR": multiplier = 0.92; break;
-            case "GBP": multiplier = 0.78; break;
-            case "NGN": multiplier = 1500; break;
-            case "KES": multiplier = 130; break;
-            case "ZAR": multiplier = 18.5; break;
-            case "UGX": multiplier = 3800; break;
-            case "TSH": multiplier = 2600; break;
-            case "RWF": multiplier = 1250; break;
-            case "ETB": multiplier = 56; break;
-            default: multiplier = 1;
+            case "EUR":
+              multiplier = 0.92;
+              break;
+            case "GBP":
+              multiplier = 0.78;
+              break;
+            case "NGN":
+              multiplier = 1500;
+              break;
+            case "KES":
+              multiplier = 130;
+              break;
+            case "ZAR":
+              multiplier = 18.5;
+              break;
+            case "UGX":
+              multiplier = 3800;
+              break;
+            case "TSH":
+              multiplier = 2600;
+              break;
+            case "RWF":
+              multiplier = 1250;
+              break;
+            case "ETB":
+              multiplier = 56;
+              break;
+            default:
+              multiplier = 1;
           }
-          
+
           const key = `${crypto.symbol}-${fiat.code}`;
           newRates[key] = baseRate * multiplier;
         });
       });
-      
+
       setRates(newRates);
     };
-    
+
     fetchRates();
     const interval = setInterval(fetchRates, 60000);
     return () => clearInterval(interval);
   }, []);
-  
-  const convertCryptoToFiat = (cryptoAmount: string, cryptoCurrency: string, fiatCurrency: string): string => {
+
+  const convertCryptoToFiat = (
+    cryptoAmount: string,
+    cryptoCurrency: string,
+    fiatCurrency: string
+  ): string => {
     const amount = parseFloat(cryptoAmount) || 0;
     const rate = rates[`${cryptoCurrency}-${fiatCurrency}`] || 0;
     return (amount * rate).toFixed(2);
   };
-  
-  const convertFiatToCrypto = (fiatAmount: string, cryptoCurrency: string, fiatCurrency: string): string => {
+
+  const convertFiatToCrypto = (
+    fiatAmount: string,
+    cryptoCurrency: string,
+    fiatCurrency: string
+  ): string => {
     const amount = parseFloat(fiatAmount) || 0;
     const rate = rates[`${cryptoCurrency}-${fiatCurrency}`] || 1;
     return (amount / rate).toFixed(8);
@@ -117,18 +155,17 @@ const Deposit = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Only allow digits and limit to 10 characters
-    const value = e.target.value.replace(/[^\d]/g, '');
+    const value = e.target.value.replace(/[^\d]/g, "");
     setPayerInfo(value.substring(0, 10));
   };
 
   const handleNextStep = async () => {
     if (currentStep < 3) {
-      if ((currentStep === 1 && !isValid) || 
-          (currentStep === 2 && !amount)) {
+      if ((currentStep === 1 && !isValid) || (currentStep === 2 && !amount)) {
         toast({
           variant: "destructive",
           title: "Required Field",
-          description: "Please fill in all required fields correctly to continue",
+          description: "Please fill in required fields to continue",
         });
         return;
       }
@@ -146,13 +183,13 @@ const Deposit = () => {
       await processDeposit();
     }
   };
-  
+
   const handleBackStep = () => {
     if (currentStep > 1) {
       setCurrentStep((prev) => prev - 1);
     }
   };
-  
+
   const handleStepClick = (step: number) => {
     if (step < currentStep) {
       setCurrentStep(step);
@@ -171,7 +208,7 @@ const Deposit = () => {
       const formattedPayerInfo = `+${selectedCountryCode}${payerInfo}`;
 
       const payload = {
-        type: "deposit",
+        type: "internal",
         initiator,
         sender: formattedPayerInfo,
         recipient: initiator,
@@ -179,7 +216,13 @@ const Deposit = () => {
         senderLastName: "Source",
         recipientFirstName: firstName,
         recipientLastName: lastName,
-        amount: isCryptoAmount ? amount : convertFiatToCrypto(amount, selectedCryptoCurrency, selectedFiatCurrency),
+        amount: isCryptoAmount
+          ? convertCryptoToFiat(
+              amount,
+              selectedCryptoCurrency,
+              selectedFiatCurrency
+            )
+          : amount,
         pin,
         inOut: `${selectedCryptoCurrency}-${selectedCryptoCurrency}`,
         currency: selectedCryptoCurrency.toLowerCase(),
@@ -230,13 +273,35 @@ const Deposit = () => {
                 type="mobile"
                 step={currentStep}
                 recipient={payerInfo}
-                amount={isCryptoAmount ? amount : convertFiatToCrypto(amount, selectedCryptoCurrency, selectedFiatCurrency)}
+                amount={
+                  isCryptoAmount
+                    ? amount
+                    : convertFiatToCrypto(
+                        amount,
+                        selectedCryptoCurrency,
+                        selectedFiatCurrency
+                      )
+                }
                 currency={selectedCryptoCurrency}
-                fiatAmount={currentStep === 3 ? 
-                  !isCryptoAmount ? amount : convertCryptoToFiat(amount, selectedCryptoCurrency, selectedFiatCurrency) 
-                  : undefined}
+                fiatAmount={
+                  currentStep === 3
+                    ? !isCryptoAmount
+                      ? amount
+                      : convertCryptoToFiat(
+                          amount,
+                          selectedCryptoCurrency,
+                          selectedFiatCurrency
+                        )
+                    : undefined
+                }
                 fiatCurrency={selectedFiatCurrency}
-                rate={currentStep === 3 ? rates[`${selectedCryptoCurrency}-${selectedFiatCurrency}`]?.toFixed(2) || "0.00" : undefined}
+                rate={
+                  currentStep === 3
+                    ? rates[
+                        `${selectedCryptoCurrency}-${selectedFiatCurrency}`
+                      ]?.toFixed(2) || "0.00"
+                    : undefined
+                }
               />
             )}
 
@@ -251,41 +316,55 @@ const Deposit = () => {
                       <SelectValue placeholder="+254" />
                     </SelectTrigger>
                     <SelectContent>
-                      {countries.map((country) => {
-                        // Get the country code based on country code
-                        let countryCode = "";
-                        switch(country.code) {
-                          case 'KE': countryCode = '254'; break;
-                          case 'NG': countryCode = '234'; break;
-                          case 'UG': countryCode = '256'; break;
-                          case 'TZ': countryCode = '255'; break;
-                          case 'US': countryCode = '1'; break;
-                          default: return null; // Skip duplicate values
-                        }
-                        return (
-                          <SelectItem 
-                            key={country.code} 
-                            value={countryCode}
-                          >
-                            +{countryCode}
-                          </SelectItem>
-                        );
-                      }).filter(Boolean)}
+                      {countries
+                        .map((country) => {
+                          // Get the country code based on country code
+                          let countryCode = "";
+                          switch (country.code) {
+                            case "KE":
+                              countryCode = "254";
+                              break;
+                            case "NG":
+                              countryCode = "234";
+                              break;
+                            case "UG":
+                              countryCode = "256";
+                              break;
+                            case "TZ":
+                              countryCode = "255";
+                              break;
+                            case "US":
+                              countryCode = "1";
+                              break;
+                            default:
+                              return null; // Skip duplicate values
+                          }
+                          return (
+                            <SelectItem key={country.code} value={countryCode}>
+                              +{countryCode}
+                            </SelectItem>
+                          );
+                        })
+                        .filter(Boolean)}
                     </SelectContent>
                   </Select>
-                  
+
                   <Input
                     type="tel"
                     placeholder="Enter phone number"
                     value={payerInfo}
                     onChange={handleInputChange}
-                    className={`flex-grow ${!isValid && payerInfo ? 'border-red-500' : ''}`}
+                    className={`flex-grow ${
+                      !isValid && payerInfo ? "border-red-500" : ""
+                    }`}
                     maxLength={10}
                     required
                   />
                 </div>
                 {!isValid && payerInfo && (
-                  <p className="text-xs text-red-500 mt-1">Please enter a valid phone number</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    Please enter a valid phone number
+                  </p>
                 )}
               </div>
             ) : currentStep === 2 ? (
@@ -293,7 +372,9 @@ const Deposit = () => {
                 <div className="flex gap-2 items-center">
                   <Select
                     value={isCryptoAmount ? "crypto" : "fiat"}
-                    onValueChange={(value) => setIsCryptoAmount(value === "crypto")}
+                    onValueChange={(value) =>
+                      setIsCryptoAmount(value === "crypto")
+                    }
                     defaultValue="fiat"
                   >
                     <SelectTrigger className="w-[90px]">
@@ -304,18 +385,26 @@ const Deposit = () => {
                       <SelectItem value="fiat">Fiat</SelectItem>
                     </SelectContent>
                   </Select>
-                  
+
                   <Input
                     type="number"
-                    placeholder={`Enter amount in ${isCryptoAmount ? selectedCryptoCurrency : selectedFiatCurrency}`}
+                    placeholder={`Enter amount in ${
+                      isCryptoAmount
+                        ? selectedCryptoCurrency
+                        : selectedFiatCurrency
+                    }`}
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     required
                     className="flex-grow"
                   />
-                  
+
                   <Select
-                    value={isCryptoAmount ? selectedCryptoCurrency : selectedFiatCurrency}
+                    value={
+                      isCryptoAmount
+                        ? selectedCryptoCurrency
+                        : selectedFiatCurrency
+                    }
                     onValueChange={(value) => {
                       if (isCryptoAmount) {
                         setSelectedCryptoCurrency(value);
@@ -328,36 +417,58 @@ const Deposit = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {isCryptoAmount ? 
-                        cryptoCurrencies.map((crypto) => (
-                          <SelectItem key={crypto.symbol} value={crypto.symbol}>
-                            {crypto.symbol}
-                          </SelectItem>
-                        )) : 
-                        fiatCurrencies.map((fiat) => (
-                          <SelectItem key={fiat.code} value={fiat.code}>
-                            {fiat.code}
-                          </SelectItem>
-                        ))
-                      }
+                      {isCryptoAmount
+                        ? cryptoCurrencies.map((crypto) => (
+                            <SelectItem
+                              key={crypto.symbol}
+                              value={crypto.symbol}
+                            >
+                              {crypto.symbol}
+                            </SelectItem>
+                          ))
+                        : fiatCurrencies.map((fiat) => (
+                            <SelectItem key={fiat.code} value={fiat.code}>
+                              {fiat.code}
+                            </SelectItem>
+                          ))}
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 {amount && (
                   <div className="text-sm bg-white/10 p-3 rounded-lg">
                     {isCryptoAmount ? (
                       <p className="text-emerald-400">
-                        ≈ {convertCryptoToFiat(amount, selectedCryptoCurrency, selectedFiatCurrency)} {selectedFiatCurrency}
+                        ≈{" "}
+                        {convertCryptoToFiat(
+                          amount,
+                          selectedCryptoCurrency,
+                          selectedFiatCurrency
+                        )}{" "}
+                        {selectedFiatCurrency}
                         <span className="block text-xs text-blue-300 mt-1">
-                          1 {selectedCryptoCurrency} = {rates[`${selectedCryptoCurrency}-${selectedFiatCurrency}`]?.toFixed(2) || '0.00'} {selectedFiatCurrency}
+                          1 {selectedCryptoCurrency} ={" "}
+                          {rates[
+                            `${selectedCryptoCurrency}-${selectedFiatCurrency}`
+                          ]?.toFixed(2) || "0.00"}{" "}
+                          {selectedFiatCurrency}
                         </span>
                       </p>
                     ) : (
                       <p className="text-emerald-400">
-                        ≈ {convertFiatToCrypto(amount, selectedCryptoCurrency, selectedFiatCurrency)} {selectedCryptoCurrency}
+                        ≈{" "}
+                        {convertFiatToCrypto(
+                          amount,
+                          selectedCryptoCurrency,
+                          selectedFiatCurrency
+                        )}{" "}
+                        {selectedCryptoCurrency}
                         <span className="block text-xs text-blue-300 mt-1">
-                          1 {selectedCryptoCurrency} = {rates[`${selectedCryptoCurrency}-${selectedFiatCurrency}`]?.toFixed(2) || '0.00'} {selectedFiatCurrency}
+                          1 {selectedCryptoCurrency} ={" "}
+                          {rates[
+                            `${selectedCryptoCurrency}-${selectedFiatCurrency}`
+                          ]?.toFixed(2) || "0.00"}{" "}
+                          {selectedFiatCurrency}
                         </span>
                       </p>
                     )}
@@ -390,7 +501,7 @@ const Deposit = () => {
                   : "Next"}
                 {!isProcessing && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
-              
+
               <Button
                 variant="outline"
                 className="w-full"

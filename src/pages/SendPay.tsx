@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -44,11 +43,12 @@ const SendPayContent = () => {
     blockchainPin,
     selectedCryptoCurrency,
     selectedFiatCurrency,
+    selectedCountryCode,
     convertCryptoToFiat,
     rates,
     resetMobileFlow,
     resetMerchantFlow,
-    resetBlockchainFlow
+    resetBlockchainFlow,
   } = useSendPay();
 
   // Reset step when tab changes
@@ -60,15 +60,18 @@ const SendPayContent = () => {
       setMobileStep(1); // Reset mobile step
       resetMobileFlow();
     }
-    
+
     // Reset blockchain mode when switching tabs
     if (blockchainMode) {
       resetBlockchainFlow();
     }
   }, [activeTab]);
 
-  const currentStep = blockchainMode ? blockchainStep : 
-                     (activeTab === "mobile" ? mobileStep : merchantStep);
+  const currentStep = blockchainMode
+    ? blockchainStep
+    : activeTab === "mobile"
+    ? mobileStep
+    : merchantStep;
 
   const handleStepClick = (step: number) => {
     if (step <= currentStep) {
@@ -120,11 +123,12 @@ const SendPayContent = () => {
 
   const isButtonDisabled = () => {
     if (isProcessing) return true;
-    
+
     if (blockchainMode) {
       if (blockchainStep === 1 && !blockchainAddress) return true;
       if (blockchainStep === 2 && !blockchainAmount) return true;
-      if (blockchainStep === 3 && (!blockchainPin || blockchainPin.length < 4)) return true;
+      if (blockchainStep === 3 && (!blockchainPin || blockchainPin.length < 4))
+        return true;
     } else if (activeTab === "mobile") {
       if (mobileStep === 1 && !mobileNumber) return true;
       if (mobileStep === 2 && !mobileAmount) return true;
@@ -132,9 +136,10 @@ const SendPayContent = () => {
     } else {
       if (merchantStep === 1 && !merchantNumber) return true;
       if (merchantStep === 2 && !merchantAmount) return true;
-      if (merchantStep === 3 && (!merchantPin || merchantPin.length < 4)) return true;
+      if (merchantStep === 3 && (!merchantPin || merchantPin.length < 4))
+        return true;
     }
-    
+
     return false;
   };
 
@@ -142,12 +147,18 @@ const SendPayContent = () => {
     try {
       setIsProcessing(true);
 
-      const sender = auth.user?.phone || auth.merchant?.phone || "";
-      const senderFirstName = auth.user?.firstName || auth.merchant?.repName || "";
-      const senderLastName = auth.user?.lastName || auth.merchant?.merchantName || "";
+      const sender =
+        auth.user?.phone ||
+        auth.user?.email ||
+        auth.merchant?.phone ||
+        auth.merchant?.email ||
+        "";
+      const senderFirstName =
+        auth.user?.firstName || auth.merchant?.repName || "";
+      const senderLastName =
+        auth.user?.lastName || auth.merchant?.merchantName || "";
 
       let payload;
-
       if (blockchainMode) {
         payload = {
           type: "external",
@@ -156,20 +167,23 @@ const SendPayContent = () => {
           recipient: blockchainAddress,
           senderFirstName,
           senderLastName,
-          recipientFirstName: "External", 
+          recipientFirstName: "External",
           recipientLastName: "Wallet",
           amount: blockchainAmount,
           pin: blockchainPin,
           inOut: `${selectedCryptoCurrency}-${selectedCryptoCurrency}`,
           currency: selectedCryptoCurrency.toLowerCase(),
-          txType: "WITHDRAW",
+          txType: "BCWITHDRAW",
         };
       } else if (activeTab === "mobile") {
         payload = {
           type: "internal",
           initiator: sender,
           sender: sender,
-          recipient: mobileInputType === 'phone' ? `${mobileNumber}` : mobileNumber,
+          recipient:
+            mobileInputType === "phone"
+              ? `${selectedCountryCode}${mobileNumber}`
+              : mobileNumber,
           senderFirstName,
           senderLastName,
           recipientFirstName: "John", // Default recipient name
@@ -200,7 +214,7 @@ const SendPayContent = () => {
 
       const response = await ApiService.transferFunds(payload);
 
-      if (response.success) {
+      if (response.msg === "Transaction successful") {
         setTransactionStatus("success");
         confetti({
           particleCount: 100,
@@ -231,7 +245,9 @@ const SendPayContent = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
-      <NavigationHeader title={blockchainMode ? "Send to Blockchain" : "Send/Pay"} />
+      <NavigationHeader
+        title={blockchainMode ? "Send to Blockchain" : "Send/Pay"}
+      />
 
       <div className="max-w-2xl mx-auto">
         {!blockchainMode ? (
@@ -269,20 +285,33 @@ const SendPayContent = () => {
                       type={activeTab}
                       step={currentStep}
                       recipient={
-                        activeTab === "mobile" ? mobileNumber : merchantNumber
+                        activeTab === "mobile"
+                          ? selectedCountryCode + mobileNumber
+                          : merchantNumber
                       }
                       amount={
                         activeTab === "mobile" ? mobileAmount : merchantAmount
                       }
                       currency={selectedCryptoCurrency}
-                      fiatAmount={currentStep === 3 ? 
-                        convertCryptoToFiat(
-                          activeTab === "mobile" ? mobileAmount : merchantAmount,
-                          selectedCryptoCurrency,
-                          selectedFiatCurrency
-                        ) : undefined}
+                      fiatAmount={
+                        currentStep === 3
+                          ? convertCryptoToFiat(
+                              activeTab === "mobile"
+                                ? mobileAmount
+                                : merchantAmount,
+                              selectedCryptoCurrency,
+                              selectedFiatCurrency
+                            )
+                          : undefined
+                      }
                       fiatCurrency={selectedFiatCurrency}
-                      rate={currentStep === 3 ? rates[`${selectedCryptoCurrency}-${selectedFiatCurrency}`]?.toFixed(2) || "0.00" : undefined}
+                      rate={
+                        currentStep === 3
+                          ? rates[
+                              `${selectedCryptoCurrency}-${selectedFiatCurrency}`
+                            ]?.toFixed(2) || "0.00"
+                          : undefined
+                      }
                     />
                   )}
 
@@ -364,14 +393,23 @@ const SendPayContent = () => {
                     recipient={blockchainAddress}
                     amount={blockchainAmount}
                     currency={selectedCryptoCurrency}
-                    fiatAmount={blockchainStep === 3 ? 
-                      convertCryptoToFiat(
-                        blockchainAmount,
-                        selectedCryptoCurrency,
-                        selectedFiatCurrency
-                      ) : undefined}
+                    fiatAmount={
+                      blockchainStep === 3
+                        ? convertCryptoToFiat(
+                            blockchainAmount,
+                            selectedCryptoCurrency,
+                            selectedFiatCurrency
+                          )
+                        : undefined
+                    }
                     fiatCurrency={selectedFiatCurrency}
-                    rate={blockchainStep === 3 ? rates[`${selectedCryptoCurrency}-${selectedFiatCurrency}`]?.toFixed(2) || "0.00" : undefined}
+                    rate={
+                      blockchainStep === 3
+                        ? rates[
+                            `${selectedCryptoCurrency}-${selectedFiatCurrency}`
+                          ]?.toFixed(2) || "0.00"
+                        : undefined
+                    }
                   />
                 )}
 

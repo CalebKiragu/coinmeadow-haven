@@ -1,4 +1,3 @@
-
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { store } from "../redux/store";
 import { url } from "../utils";
@@ -89,14 +88,6 @@ export const VerificationService = {
       const response: AxiosResponse<ApiResponse<VerificationStatus[]>> =
         await api.get(buildUrl("verificationstatus", data));
 
-      console.log("====================================");
-      console.log(
-        "verification >> ",
-        buildUrl("verificationstatus", data),
-        response.data.data
-      );
-      console.log("====================================");
-
       if (response.data.data) {
         store.dispatch(setVerificationStatus(response.data.data));
       }
@@ -135,11 +126,11 @@ export const VerificationService = {
       );
     }
   },
-  
+
   // Legacy method alias for uploadKYC
   uploadKYC: async (
     data: KycVerificationData
   ): Promise<VerificationResponse> => {
     return VerificationService.submitKycVerification(data);
-  }
+  },
 };

@@ -1,9 +1,9 @@
-
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { store } from "../redux/store";
 import { url } from "../utils";
 import {
   addNewTransaction,
+  Fee,
   fetchTransactionsFailure,
   fetchTransactionsStart,
   fetchTransactionsSuccess,
@@ -54,11 +54,23 @@ interface TransferPayload {
   pin: string;
   inOut: string;
   currency: string;
-  txType: "MERCHANTPAY" | "USERSEND" | "DEPOSIT" | "WITHDRAW";
+  txType: "MERCHANTPAY" | "USERSEND" | "DEPOSIT" | "WITHDRAW" | "BCWITHDRAW";
+}
+
+interface Tx {
+  txId: string;
+  timestamp: bigint;
+  time: string;
+  netValue: string;
+  netCurrency: string;
+  fee: Fee;
+  status: "INPROGRESS" | "SETTLED" | "CANCELLED";
 }
 
 interface TransactionResponse {
-  success: boolean;
+  msg?: string;
+  tx?: Tx;
+  success?: boolean;
   message?: string;
   error?: string;
   data?: any;
@@ -75,9 +87,12 @@ export const TransactionService = {
         payload
       );
 
+      console.log("====================================");
+      console.log(response.data);
+      console.log("====================================");
       // If successful, add the transaction to the store
-      if (response.data.success && response.data.data) {
-        store.dispatch(addNewTransaction(response.data.data));
+      if (response.data.msg === "Transaction successful" && response.data.tx) {
+        // store.dispatch(addNewTransaction(response.data.tx));
       }
 
       return response.data;
@@ -171,12 +186,12 @@ export const TransactionService = {
     try {
       // In a real implementation, this would call the API endpoint
       // For now, we'll generate mock data to simulate the API response
-      
+
       // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       const mockTransactions: Transaction[] = generateMockTransactions(20);
-      
+
       store.dispatch(fetchTransactionsSuccess(mockTransactions));
       return mockTransactions;
     } catch (error) {
@@ -189,59 +204,75 @@ export const TransactionService = {
 
 // Helper function to generate mock transactions
 function generateMockTransactions(count: number): Transaction[] {
-  const transactionTypes: ("SEND" | "RECEIVE" | "DEPOSIT" | "WITHDRAW")[] = [
-    "SEND", "RECEIVE", "DEPOSIT", "WITHDRAW"
+  const transactionTypes: (
+    | "SEND"
+    | "RECEIVE"
+    | "DEPOSIT"
+    | "WITHDRAW"
+    | "BCWITHDRAW"
+  )[] = ["SEND", "RECEIVE", "DEPOSIT", "WITHDRAW", "BCWITHDRAW"];
+
+  const statuses: ("INPROGRESS" | "SETTLED" | "CANCELLED")[] = [
+    "INPROGRESS",
+    "SETTLED",
+    "CANCELLED",
   ];
-  
-  const statuses: ("INPROGRESS" | "CONFIRMED" | "CANCELLED")[] = [
-    "INPROGRESS", "CONFIRMED", "CANCELLED"
-  ];
-  
-  const currencies = ["BTC", "ETH", "USDT"];
-  
+
+  const currencies = ["BTC", "ETH", "USDT", "CELO", "LTC"];
+
   const transactions: Transaction[] = [];
-  
+
   for (let i = 0; i < count; i++) {
-    const type = transactionTypes[Math.floor(Math.random() * transactionTypes.length)];
+    const type =
+      transactionTypes[Math.floor(Math.random() * transactionTypes.length)];
     const status = statuses[Math.floor(Math.random() * statuses.length)];
     const currency = currencies[Math.floor(Math.random() * currencies.length)];
-    const amount = (Math.random() * (type === "SEND" || type === "WITHDRAW" ? 0.5 : 2)).toFixed(6);
-    const timestamp = Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000); // Up to 30 days ago
-    
+    const amount = (
+      Math.random() * (type === "SEND" || type === "WITHDRAW" ? 0.5 : 2)
+    ).toFixed(6);
+    const timestamp =
+      Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000); // Up to 30 days ago
+
     transactions.push({
       type,
       userId: "user123",
-      sender: type === "RECEIVE" || type === "DEPOSIT" ? 
-        "external-sender" : "user-wallet",
-      recipient: [{
-        address: type === "SEND" || type === "WITHDRAW" ? 
-          `recipient-${Math.floor(Math.random() * 1000)}` : "user-wallet",
-        amount,
-        currency,
-        basePair: currency
-      }],
+      sender:
+        type === "RECEIVE" || type === "DEPOSIT"
+          ? "external-sender"
+          : "user-wallet",
+      recipient: [
+        {
+          address:
+            type === "SEND" || type === "WITHDRAW"
+              ? `recipient-${Math.floor(Math.random() * 1000)}`
+              : "user-wallet",
+          amount,
+          currency,
+          basePair: currency,
+        },
+      ],
       txId: `tx-${i}-${Date.now()}`,
       inOut: `${currency}-${currency}`,
       grossValue: amount,
       grossCurrency: currency,
       netValue: (parseFloat(amount) * 0.98).toFixed(6), // Simulating fees
       netCurrency: currency,
-      fee: [{
-        fiat: parseFloat(amount) * 0.02 * 65000, // Simulated USD value
-        crypto: parseFloat(amount) * 0.02 // 2% fee
-      }],
+      fee: [
+        {
+          fiat: parseFloat(amount) * 0.02 * 65000, // Simulated USD value
+          crypto: parseFloat(amount) * 0.02, // 2% fee
+        },
+      ],
       status,
       timestamp: BigInt(timestamp),
       updatedAt: BigInt(timestamp + 300000), // 5 minutes later
       ids: {
         ref: `ref-${i}`,
-        blockchain: `bc-${i}`
-      }
+        blockchain: `bc-${i}`,
+      },
     });
   }
-  
+
   // Sort by timestamp descending (newest first)
-  return transactions.sort((a, b) => 
-    Number(b.timestamp) - Number(a.timestamp)
-  );
+  return transactions.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
 }
