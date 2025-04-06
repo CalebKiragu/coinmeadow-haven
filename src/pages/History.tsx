@@ -65,7 +65,7 @@ const History = () => {
       const txStatus = tx.status.toLowerCase();
       if (
         (status === "pending" && txStatus !== "inprogress") ||
-        (status === "completed" && txStatus !== "confirmed") ||
+        (status === "completed" && (txStatus !== "confirmed" && txStatus !== "settled")) ||
         (status === "failed" && txStatus !== "cancelled")
       ) {
         return false;
@@ -104,7 +104,7 @@ const History = () => {
     (tx) => tx.status === "INPROGRESS"
   );
   const completedTransactions = filteredTransactions.filter(
-    (tx) => tx.status === "CONFIRMED"
+    (tx) => tx.status === "CONFIRMED" || tx.status === "SETTLED"
   );
   const failedTransactions = filteredTransactions.filter(
     (tx) => tx.status === "CANCELLED"
@@ -192,6 +192,7 @@ const History = () => {
                 <SelectItem value="RECEIVE">Receive</SelectItem>
                 <SelectItem value="DEPOSIT">Deposit</SelectItem>
                 <SelectItem value="WITHDRAW">Withdraw</SelectItem>
+                <SelectItem value="BCWITHDRAW">Blockchain Withdraw</SelectItem>
               </SelectContent>
             </Select>
 
@@ -207,7 +208,8 @@ const History = () => {
                 <SelectItem value="all">All Currencies</SelectItem>
                 <SelectItem value="BTC">Bitcoin</SelectItem>
                 <SelectItem value="ETH">Ethereum</SelectItem>
-                <SelectItem value="USDT">USDT</SelectItem>
+                <SelectItem value="LTC">Litecoin</SelectItem>
+                <SelectItem value="CELO">Celo</SelectItem>
               </SelectContent>
             </Select>
 

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Calendar, Filter } from "lucide-react";
 import {
@@ -68,6 +69,8 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
               <SelectItem value="all">All Currencies</SelectItem>
               <SelectItem value="BTC">Bitcoin</SelectItem>
               <SelectItem value="ETH">Ethereum</SelectItem>
+              <SelectItem value="LTC">Litecoin</SelectItem>
+              <SelectItem value="CELO">Celo</SelectItem>
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={setSortBy}>

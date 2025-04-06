@@ -1,3 +1,4 @@
+
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface Recipient {
@@ -29,7 +30,7 @@ export interface Transaction {
   netValue: string;
   netCurrency: string;
   fee: Fee[];
-  status: "INPROGRESS" | "SETTLED" | "CANCELLED";
+  status: "INPROGRESS" | "CONFIRMED" | "SETTLED" | "CANCELLED";
   timestamp: bigint;
   updatedAt: bigint;
   ids: TxIds | string;

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { Fee, Recipient, TxIds } from "@/lib/redux/slices/transactionSlice";
@@ -5,7 +6,7 @@ import { formatTimestamp } from "@/lib/utils";
 
 type TransactionHistoryItemProps = {
   transaction: {
-    type: "SEND" | "RECEIVE" | "DEPOSIT" | "WITHDRAW";
+    type: "SEND" | "RECEIVE" | "DEPOSIT" | "WITHDRAW" | "BCWITHDRAW";
     userId: string;
     sender: string;
     recipient: Recipient[];
@@ -16,7 +17,7 @@ type TransactionHistoryItemProps = {
     netValue: string;
     netCurrency: string;
     fee: Fee[];
-    status: "INPROGRESS" | "CONFIRMED" | "CANCELLED";
+    status: "INPROGRESS" | "CONFIRMED" | "SETTLED" | "CANCELLED";
     timestamp: bigint;
     updatedAt: bigint;
     ids: TxIds | string;
@@ -39,12 +40,12 @@ const TransactionHistoryItem = ({
         <div className="flex items-center space-x-3">
           <div
             className={`p-1.5 rounded-full ${
-              transaction.type === "SEND"
+              transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW"
                 ? "bg-red-100 text-red-600"
                 : "bg-green-100 text-green-600"
             }`}
           >
-            {transaction.type === "SEND" ? (
+            {transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW" ? (
               <ArrowUpRight size={16} />
             ) : (
               <ArrowDownLeft size={16} />
@@ -52,12 +53,18 @@ const TransactionHistoryItem = ({
           </div>
           <div className="flex flex-col items-start">
             <span className="font-medium">
-              {transaction.type === "SEND" ? "Sent" : "Received"}
+              {transaction.type === "SEND" 
+                ? "Sent" 
+                : transaction.type === "WITHDRAW" 
+                ? "Withdrew" 
+                : transaction.type === "BCWITHDRAW" 
+                ? "Withdrew (Blockchain)" 
+                : "Received"}
             </span>
             <span className="text-sm text-gray-500">
-              {transaction.type === "SEND"
-                ? `To: ${transaction.recipient?.slice(0, 12)}...`
-                : `From: ${transaction.sender?.slice(0, 12)}...`}
+              {transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW"
+                ? `To: ${transaction.recipient[0]?.address?.slice(0, 12) || "Unknown"}...`
+                : `From: ${transaction.sender?.slice(0, 12) || "Unknown"}...`}
             </span>
           </div>
         </div>
@@ -84,17 +91,29 @@ const TransactionHistoryItem = ({
             </div>
             <div>
               <span className="text-gray-500">
-                {transaction.type === "SEND" ? "Recipient" : "Sender"}:
+                {transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW" ? "Recipient" : "Sender"}:
               </span>
               <p className="font-medium break-all">
-                {transaction.type === "SEND"
-                  ? `${transaction.recipient}`
-                  : `${transaction.sender}`}
+                {transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW"
+                  ? transaction.recipient[0]?.address || "Unknown"
+                  : transaction.sender || "Unknown"}
               </p>
             </div>
             <div>
               <span className="text-gray-500">Status:</span>
-              <p className="font-medium text-green-500">Completed</p>
+              <p className={`font-medium ${
+                transaction.status === "CONFIRMED" || transaction.status === "SETTLED" 
+                  ? "text-green-500" 
+                  : transaction.status === "CANCELLED" 
+                  ? "text-red-500" 
+                  : "text-yellow-500"
+              }`}>
+                {transaction.status === "INPROGRESS" 
+                  ? "In Progress" 
+                  : transaction.status === "CONFIRMED" || transaction.status === "SETTLED" 
+                  ? "Completed" 
+                  : "Cancelled"}
+              </p>
             </div>
           </div>
         </div>
