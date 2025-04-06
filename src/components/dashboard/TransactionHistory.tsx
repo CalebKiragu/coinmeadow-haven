@@ -25,9 +25,11 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
     const fetchTransactions = async () => {
       setIsLoading(true);
       try {
+        console.log("TransactionHistory: Fetching transactions...");
         await ApiService.getTransactionHistory();
+        console.log("TransactionHistory: Fetched transactions successfully");
       } catch (error) {
-        console.error("Error fetching transactions:", error);
+        console.error("TransactionHistory: Error fetching transactions:", error);
       } finally {
         setIsLoading(false);
       }
@@ -35,6 +37,11 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
 
     fetchTransactions();
   }, []);
+
+  // Log when transactions change
+  useEffect(() => {
+    console.log("TransactionHistory: Transactions updated:", transactions.length);
+  }, [transactions]);
 
   // Filter transactions based on selected currency
   const filteredTransactions = transactions.filter((tx) =>
@@ -44,10 +51,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
   // Sort transactions based on selected sort method
   const sortedTransactions = [...filteredTransactions].sort((a, b) => {
     if (sortBy === "date") {
-      return (
-        new Date(Number(b.timestamp)).getTime() -
-        new Date(Number(a.timestamp)).getTime()
-      );
+      return Number(b.timestamp) - Number(a.timestamp);
     } else if (sortBy === "amount") {
       const aValue = parseFloat(a.grossValue.replace(/[^0-9.-]+/g, ""));
       const bValue = parseFloat(b.grossValue.replace(/[^0-9.-]+/g, ""));

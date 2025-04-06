@@ -53,21 +53,35 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-export function formatTimestamp(timestamp: bigint): string {
-  const date = new Date(Number(timestamp)); // Convert bigint to number
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "long", // e.g., Monday
-    year: "numeric", // e.g., 2025
-    month: "long", // e.g., March
-    day: "numeric", // e.g., 11
-    hour: "2-digit", // e.g., 08 PM
-    minute: "2-digit", // e.g., 30
-    second: "2-digit", // e.g., 15
-    timeZoneName: "short", // e.g., GMT
-  }).format(date);
-} // Output: "Monday, March 11, 2025, 08:00:00 PM GMT"
+// Format a bigint timestamp to a human-readable date string
+export const formatTimestamp = (timestamp: bigint): string => {
+  try {
+    // Convert BigInt to number safely 
+    const dateNumber = Number(timestamp);
+    if (isNaN(dateNumber)) {
+      console.error("Invalid timestamp format:", timestamp);
+      return "Invalid date";
+    }
+    
+    const date = new Date(dateNumber);
+    if (isNaN(date.getTime())) {
+      console.error("Invalid date from timestamp:", timestamp);
+      return "Invalid date";
+    }
+    
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch (error) {
+    console.error("Error formatting timestamp:", error);
+    return "Error formatting date";
+  }
+};
 
-// Function to mask sensitive data (phone & email)
 export function maskSensitiveData(value: string | null): string | null {
   if (!value) return "N/A";
   if (value.includes("@")) {

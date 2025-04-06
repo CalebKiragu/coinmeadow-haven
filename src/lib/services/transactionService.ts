@@ -110,18 +110,26 @@ export const TransactionService = {
   }): Promise<string[]> => {
     try {
       const { userIdentifier, currency, isMerchant } = params;
+      console.log(`Fetching addresses for ${userIdentifier}, currency: ${currency}, isMerchant: ${isMerchant}`);
+      
       const response: AxiosResponse<ApiResponse<DepositAddressResponse>> =
         await api.get(
           `v1/wallets/address/get/${userIdentifier}?fresh=false&currency=${currency.toLowerCase()}&isMerchant=${isMerchant}&raw=false`
         );
       
+      console.log("Address response:", response.data);
+      
       if (response.data.data?.error) {
         throw new Error(response.data.data.error);
       }
       
-      return response.data.data?.addresses || [];
+      // Handle case where addresses might be undefined
+      const addresses = response.data.data?.addresses || [];
+      console.log("Returning addresses:", addresses);
+      return addresses;
     } catch (error) {
       console.error("Error fetching deposit addresses:", error);
+      // Return empty array instead of undefined
       return [];
     }
   },
@@ -135,20 +143,31 @@ export const TransactionService = {
   }): Promise<string> => {
     try {
       const { userIdentifier, currency, isMerchant, fresh } = params;
+      console.log(`Generating address for ${userIdentifier}, currency: ${currency}, isMerchant: ${isMerchant}, fresh: ${fresh}`);
+      
       const response: AxiosResponse<ApiResponse<DepositAddressResponse>> =
         await api.get(
           `v1/wallets/address/generate/${userIdentifier}?currency=${currency.toLowerCase()}&isMerchant=${isMerchant}&fresh=${fresh}&raw=false`
         );
 
+      console.log("Generate address response:", response.data);
+      
       if (response.data.data?.error) {
         throw new Error(response.data.data.error);
       }
 
-      return response.data.data?.address || "";
+      // If address is undefined, throw an error
+      if (!response.data.data?.address) {
+        throw new Error("No address returned from API");
+      }
+
+      return response.data.data.address;
     } catch (error) {
       if (error instanceof Error) {
+        console.error("Error generating address:", error.message);
         throw new Error(error.message || "Error generating deposit address");
       }
+      console.error("Unknown error generating address");
       throw new Error("Error generating deposit address");
     }
   },
@@ -195,20 +214,30 @@ export const TransactionService = {
       
       console.log("Fetching transaction history for", identifier);
       
-      // Updated endpoint
+      // Updated endpoint with more detailed logging
       const response: AxiosResponse<ApiResponse<Transaction[]>> = await api.get(
         `v1/transactions/find?initiator=${identifier}&sender=${identifier}&recipient=${identifier}`
       );
       
-      console.log("Transaction history response:", response.data);
+      console.log("Transaction history response status:", response.status);
+      console.log("Transaction history response data:", response.data);
       
-      if (response.data.data) {
-        store.dispatch(fetchTransactionsSuccess(response.data.data));
-        return response.data.data;
+      if (!response.data.data) {
+        console.log("No transaction data returned, using empty array");
+        store.dispatch(fetchTransactionsSuccess([]));
+        return [];
       }
       
-      store.dispatch(fetchTransactionsSuccess([]));
-      return [];
+      // Ensure we convert timestamp and updatedAt to BigInt for consistency
+      const processedTransactions = response.data.data.map(tx => ({
+        ...tx,
+        timestamp: typeof tx.timestamp === 'number' ? BigInt(tx.timestamp) : tx.timestamp,
+        updatedAt: typeof tx.updatedAt === 'number' ? BigInt(tx.updatedAt) : tx.updatedAt
+      }));
+      
+      console.log(`Found ${processedTransactions.length} transactions`);
+      store.dispatch(fetchTransactionsSuccess(processedTransactions));
+      return processedTransactions;
     } catch (error) {
       let errorMessage = "Failed to fetch transaction history";
       if (error instanceof Error) {

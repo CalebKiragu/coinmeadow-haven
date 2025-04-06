@@ -83,20 +83,37 @@ const Receive = () => {
       setPreviousAddresses(addresses);
       
       // If there are previous addresses, use the first one as the current address
-      if (addresses.length > 0) {
+      if (addresses && addresses.length > 0) {
         setDepositAddress(addresses[0]);
       } else {
         console.log("No previous addresses, generating a new one");
         // If no previous addresses, generate a new one
-        const address = await ApiService.generateDepositAddress({
-          userIdentifier,
-          currency,
-          isMerchant,
-          fresh: false
-        });
-        
-        console.log("Generated address:", address);
-        setDepositAddress(address);
+        try {
+          const address = await ApiService.generateDepositAddress({
+            userIdentifier,
+            currency,
+            isMerchant,
+            fresh: false
+          });
+          
+          console.log("Generated address:", address);
+          if (address) {
+            setDepositAddress(address);
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Failed to generate deposit address. Please try again later.",
+            });
+          }
+        } catch (genError) {
+          console.error("Error generating address:", genError);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to generate deposit address. Please try again later.",
+          });
+        }
       }
     } catch (error) {
       console.error("Error fetching deposit address:", error);
@@ -105,7 +122,6 @@ const Receive = () => {
         title: "Error",
         description: "Failed to fetch deposit address. Please try again later.",
       });
-      setDepositAddress("");
     } finally {
       setIsLoading(false);
       setIsFetchingAddresses(false);

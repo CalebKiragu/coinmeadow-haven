@@ -66,6 +66,21 @@ const TransactionHistoryItem = ({
   const colors = getTransactionTypeColor(transaction.type);
   const isOutgoing = transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW";
 
+  // Safely handle recipient
+  const safeRecipient = transaction.recipient && transaction.recipient.length > 0 ? 
+    transaction.recipient[0] : { address: 'Unknown' };
+
+  // Safe formatter for timestamp
+  const safeFormatTimestamp = (timestamp: bigint | null | undefined) => {
+    if (!timestamp) return "Unknown date";
+    try {
+      return formatTimestamp(timestamp);
+    } catch (error) {
+      console.error("Error formatting timestamp:", error);
+      return "Invalid date";
+    }
+  };
+
   return (
     <div
       className="group transition-all duration-200"
@@ -96,7 +111,7 @@ const TransactionHistoryItem = ({
             </span>
             <span className="text-sm text-gray-500">
               {isOutgoing
-                ? `To: ${transaction.recipient[0]?.address?.slice(0, 12) || "Unknown"}...`
+                ? `To: ${safeRecipient.address?.slice(0, 12) || "Unknown"}...`
                 : `From: ${transaction.sender?.slice(0, 12) || "Unknown"}...`}
             </span>
           </div>
@@ -108,7 +123,7 @@ const TransactionHistoryItem = ({
           </div>
           <div className="text-sm text-gray-500">{transaction.netValue} {transaction.netCurrency}</div>
           <div className="text-xs text-gray-400">
-            {formatTimestamp(transaction.timestamp)}
+            {safeFormatTimestamp(transaction.timestamp)}
           </div>
         </div>
       </div>
@@ -130,7 +145,7 @@ const TransactionHistoryItem = ({
               </span>
               <p className="font-medium break-all text-white/90">
                 {isOutgoing
-                  ? transaction.recipient[0]?.address || "Unknown"
+                  ? safeRecipient.address || "Unknown"
                   : transaction.sender || "Unknown"}
               </p>
             </div>
