@@ -42,6 +42,8 @@ export const ApiService = {
   withdraw: TransactionService.withdraw,
   receiveInstructions: TransactionService.receiveInstructions,
   getTransactionHistory: TransactionService.getTransactionHistory,
+  getDepositAddresses: TransactionService.getDepositAddresses,
+  generateDepositAddress: TransactionService.generateDepositAddress,
   
   // Notification services
   sendPushNotification: NotificationService.sendPushNotification,

@@ -2,11 +2,9 @@ import axios, { AxiosError, AxiosResponse } from "axios";
 import { store } from "../redux/store";
 import { url } from "../utils";
 import {
-  addNewTransaction,
-  Fee,
-  fetchTransactionsFailure,
   fetchTransactionsStart,
   fetchTransactionsSuccess,
+  fetchTransactionsFailure,
   Transaction,
 } from "../redux/slices/transactionSlice";
 
@@ -41,238 +39,165 @@ interface ApiResponse<T> {
   error?: string;
 }
 
-interface TransferPayload {
-  type: string;
-  initiator: string;
-  sender: string;
-  recipient: string;
-  senderFirstName: string;
-  senderLastName: string;
-  recipientFirstName: string;
-  recipientLastName: string;
-  amount: string;
-  pin: string;
-  inOut: string;
-  currency: string;
-  txType: "MERCHANTPAY" | "USERSEND" | "DEPOSIT" | "WITHDRAW" | "BCWITHDRAW";
-}
-
-interface Tx {
-  txId: string;
-  timestamp: bigint;
-  time: string;
-  netValue: string;
-  netCurrency: string;
-  fee: Fee;
-  status: "INPROGRESS" | "SETTLED" | "CANCELLED";
-}
-
-interface TransactionResponse {
-  msg?: string;
-  tx?: Tx;
+interface TransferResponse {
   success?: boolean;
   message?: string;
+}
+
+interface DepositAddressResponse {
+  address?: string;
+  addresses?: string[];
   error?: string;
-  data?: any;
 }
 
 export const TransactionService = {
-  // Transfer funds between accounts
-  transferFunds: async (
-    payload: TransferPayload
-  ): Promise<TransactionResponse> => {
+  // Transfer funds between users
+  transferFunds: async (data: any): Promise<TransferResponse> => {
     try {
-      const response: AxiosResponse<TransactionResponse> = await api.post(
-        "v1/transact/transfer",
-        payload
-      );
-
-      console.log("====================================");
-      console.log(response.data);
-      console.log("====================================");
-      // If successful, add the transaction to the store
-      if (response.data.msg === "Transaction successful" && response.data.tx) {
-        // store.dispatch(addNewTransaction(response.data.tx));
-      }
-
-      return response.data;
+      const response: AxiosResponse<ApiResponse<TransferResponse>> =
+        await api.post("v1/transfer", data);
+      return response.data.data || { success: false };
     } catch (error) {
-      const axiosError = error as AxiosError<TransactionResponse>;
-      return {
-        success: false,
-        error:
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      throw new Error(
+        axiosError.response?.data?.message ||
           axiosError.response?.data?.error ||
-          axiosError.response?.data?.message ||
-          "Transaction failed. Please try again.",
-      };
+          "Error transferring funds"
+      );
     }
   },
 
   // Make a deposit
-  deposit: async (payload: TransferPayload): Promise<TransactionResponse> => {
+  deposit: async (data: any): Promise<TransferResponse> => {
     try {
-      const response: AxiosResponse<TransactionResponse> = await api.post(
-        "v1/transact/deposit",
-        payload
-      );
-
-      if (response.data.success && response.data.data) {
-        store.dispatch(addNewTransaction(response.data.data));
-      }
-
-      return response.data;
+      const response: AxiosResponse<ApiResponse<TransferResponse>> =
+        await api.post("v1/deposit", data);
+      return response.data.data || { success: false };
     } catch (error) {
-      const axiosError = error as AxiosError<TransactionResponse>;
-      return {
-        success: false,
-        error:
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      throw new Error(
+        axiosError.response?.data?.message ||
           axiosError.response?.data?.error ||
-          axiosError.response?.data?.message ||
-          "Deposit failed. Please try again.",
-      };
+          "Error processing deposit"
+      );
     }
   },
 
   // Make a withdrawal
-  withdraw: async (payload: TransferPayload): Promise<TransactionResponse> => {
+  withdraw: async (data: any): Promise<TransferResponse> => {
     try {
-      const response: AxiosResponse<TransactionResponse> = await api.post(
-        "v1/transact/withdraw",
-        payload
+      const response: AxiosResponse<ApiResponse<TransferResponse>> =
+        await api.post("v1/withdraw", data);
+      return response.data.data || { success: false };
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      throw new Error(
+        axiosError.response?.data?.message ||
+          axiosError.response?.data?.error ||
+          "Error processing withdrawal"
       );
+    }
+  },
 
-      if (response.data.success && response.data.data) {
-        store.dispatch(addNewTransaction(response.data.data));
+  // Get previously generated addresses
+  getDepositAddresses: async (params: {
+    userIdentifier: string; 
+    currency: string;
+    isMerchant: boolean;
+  }): Promise<string[]> => {
+    try {
+      const { userIdentifier, currency, isMerchant } = params;
+      const response: AxiosResponse<ApiResponse<DepositAddressResponse>> =
+        await api.get(
+          `v1/wallets/address/get/${userIdentifier}?fresh=false&currency=${currency.toLowerCase()}&isMerchant=${isMerchant}&raw=false`
+        );
+      
+      if (response.data.data?.error) {
+        throw new Error(response.data.data.error);
+      }
+      
+      return response.data.data?.addresses || [];
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<DepositAddressResponse>>;
+      console.error("Error fetching deposit addresses:", axiosError);
+      return [];
+    }
+  },
+
+  // Generate new deposit address
+  generateDepositAddress: async (params: {
+    userIdentifier: string;
+    currency: string;
+    isMerchant: boolean;
+    fresh: boolean;
+  }): Promise<string> => {
+    try {
+      const { userIdentifier, currency, isMerchant, fresh } = params;
+      const response: AxiosResponse<ApiResponse<DepositAddressResponse>> =
+        await api.get(
+          `v1/wallets/address/generate/${userIdentifier}?currency=${currency.toLowerCase()}&isMerchant=${isMerchant}&fresh=${fresh}&raw=false`
+        );
+
+      if (response.data.data?.error) {
+        throw new Error(response.data.data.error);
       }
 
-      return response.data;
+      return response.data.data?.address || "";
     } catch (error) {
-      const axiosError = error as AxiosError<TransactionResponse>;
-      return {
-        success: false,
-        error:
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      throw new Error(
+        axiosError.response?.data?.message ||
           axiosError.response?.data?.error ||
-          axiosError.response?.data?.message ||
-          "Withdrawal failed. Please try again.",
-      };
-    }
-  },
-
-  // Receive funds (generate address or instructions)
-  receiveInstructions: async (
-    currency: string
-  ): Promise<TransactionResponse> => {
-    try {
-      const response: AxiosResponse<TransactionResponse> = await api.get(
-        `v1/transact/receive?currency=${currency}`
+          "Error generating deposit address"
       );
-
-      return response.data;
-    } catch (error) {
-      const axiosError = error as AxiosError<TransactionResponse>;
-      return {
-        success: false,
-        error:
-          axiosError.response?.data?.error ||
-          axiosError.response?.data?.message ||
-          "Failed to get receiving instructions. Please try again.",
-      };
     }
   },
 
-  // Get Transaction History
+  // Legacy method alias for receiveInstructions
+  receiveInstructions: async (currency: string): Promise<any> => {
+    console.warn("receiveInstructions is deprecated, use generateDepositAddress instead");
+    // For backward compatibility, we'll keep this function but call the new one
+    try {
+      const userInfo = store.getState().auth.user || store.getState().auth.merchant;
+      const isMerchant = !!store.getState().auth.merchant;
+      const identifier = userInfo?.email || userInfo?.phone || "";
+      
+      if (!identifier) {
+        throw new Error("User not logged in");
+      }
+
+      const address = await TransactionService.generateDepositAddress({
+        userIdentifier: identifier,
+        currency,
+        isMerchant,
+        fresh: false,
+      });
+
+      return { success: true, data: { address } };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Get transaction history
   getTransactionHistory: async (): Promise<Transaction[]> => {
     store.dispatch(fetchTransactionsStart());
     try {
-      // In a real implementation, this would call the API endpoint
-      // For now, we'll generate mock data to simulate the API response
-
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      const mockTransactions: Transaction[] = generateMockTransactions(20);
-
-      store.dispatch(fetchTransactionsSuccess(mockTransactions));
-      return mockTransactions;
+      const userInfo = store.getState().auth.user || store.getState().auth.merchant;
+      const identifier = userInfo?.email || userInfo?.phone;
+      
+      // This is a placeholder until you implement the actual API call
+      const response: AxiosResponse<ApiResponse<Transaction[]>> = await api.get(
+        `v1/transactions?user=${identifier}`
+      );
+      
+      store.dispatch(fetchTransactionsSuccess(response.data.data || []));
+      return response.data.data || [];
     } catch (error) {
-      const errorMessage = "Error fetching transaction history";
+      const axiosError = error as AxiosError;
+      const errorMessage = axiosError.response?.data?.message || axiosError.message;
       store.dispatch(fetchTransactionsFailure(errorMessage));
-      throw new Error(errorMessage);
+      return [];
     }
   },
 };
-
-// Helper function to generate mock transactions
-function generateMockTransactions(count: number): Transaction[] {
-  const transactionTypes: (
-    | "SEND"
-    | "RECEIVE"
-    | "DEPOSIT"
-    | "WITHDRAW"
-    | "BCWITHDRAW"
-  )[] = ["SEND", "RECEIVE", "DEPOSIT", "WITHDRAW", "BCWITHDRAW"];
-
-  const statuses: ("INPROGRESS" | "SETTLED" | "CANCELLED")[] = [
-    "INPROGRESS",
-    "SETTLED",
-    "CANCELLED",
-  ];
-
-  const currencies = ["BTC", "ETH", "USDT", "CELO", "LTC"];
-
-  const transactions: Transaction[] = [];
-
-  for (let i = 0; i < count; i++) {
-    const type =
-      transactionTypes[Math.floor(Math.random() * transactionTypes.length)];
-    const status = statuses[Math.floor(Math.random() * statuses.length)];
-    const currency = currencies[Math.floor(Math.random() * currencies.length)];
-    const amount = (
-      Math.random() * (type === "SEND" || type === "WITHDRAW" ? 0.5 : 2)
-    ).toFixed(6);
-    const timestamp =
-      Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000); // Up to 30 days ago
-
-    transactions.push({
-      type,
-      userId: "user123",
-      sender:
-        type === "RECEIVE" || type === "DEPOSIT"
-          ? "external-sender"
-          : "user-wallet",
-      recipient: [
-        {
-          address:
-            type === "SEND" || type === "WITHDRAW"
-              ? `recipient-${Math.floor(Math.random() * 1000)}`
-              : "user-wallet",
-          amount,
-          currency,
-          basePair: currency,
-        },
-      ],
-      txId: `tx-${i}-${Date.now()}`,
-      inOut: `${currency}-${currency}`,
-      grossValue: amount,
-      grossCurrency: currency,
-      netValue: (parseFloat(amount) * 0.98).toFixed(6), // Simulating fees
-      netCurrency: currency,
-      fee: [
-        {
-          fiat: parseFloat(amount) * 0.02 * 65000, // Simulated USD value
-          crypto: parseFloat(amount) * 0.02, // 2% fee
-        },
-      ],
-      status,
-      timestamp: BigInt(timestamp),
-      updatedAt: BigInt(timestamp + 300000), // 5 minutes later
-      ids: {
-        ref: `ref-${i}`,
-        blockchain: `bc-${i}`,
-      },
-    });
-  }
-
-  // Sort by timestamp descending (newest first)
-  return transactions.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
-}

@@ -2,6 +2,7 @@ export type CryptoCurrency = {
   symbol: string;
   name: string;
   price: number;
+  details?: string;
 };
 
 export type FiatCurrency = {
@@ -16,12 +17,10 @@ export type Country = {
 };
 
 export const cryptoCurrencies: CryptoCurrency[] = [
-  { symbol: "ETH", name: "Ethereum", price: 3450.2 },
   { symbol: "BTC", name: "Bitcoin", price: 65750.8 },
-  { symbol: "USDT", name: "Tether", price: 1.0 },
-  { symbol: "USDC", name: "USD Coin", price: 1.0 },
+  { symbol: "ETH", name: "Ethereum", price: 3450.2, details: "Supports ERC-20 tokens" },
   { symbol: "LTC", name: "Litecoin", price: 80.45 },
-  { symbol: "BASE", name: "Base", price: 0.95 },
+  { symbol: "CELO", name: "Celo", price: 0.95, details: "Supports cUSD" },
 ];
 
 export const fiatCurrencies: FiatCurrency[] = [
