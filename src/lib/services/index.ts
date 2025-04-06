@@ -1,54 +1,19 @@
 
 import { AuthService } from "./authService";
-import { TransactionService } from "./transactionService";
+import { NotificationService } from "./notificationService";
 import { VerificationService } from "./verificationService";
 import { WalletService } from "./walletService";
-import { NotificationService } from "./notificationService";
+import { TransactionService } from "./transactionService";
+import { RateService } from "./rateService";
 
 export const ApiService = {
-  // Auth services
-  loginUser: AuthService.loginUser,
-  loginMerchant: AuthService.loginMerchant,
-  registerUser: AuthService.registerUser,
-  registerMerchant: AuthService.registerMerchant,
-  signupUser: AuthService.signupUser,
-  signupMerchant: AuthService.signupMerchant,
-  verifyUserEmail: AuthService.verifyUserEmail,
-  verifyMerchantEmail: AuthService.verifyMerchantEmail,
-  verifyUserPhone: AuthService.verifyUserPhone,
-  verifyMerchantPhone: AuthService.verifyMerchantPhone,
-  changeUserPin: AuthService.changeUserPin,
-  changeMerchantPin: AuthService.changeMerchantPin,
-  resetUserPin: AuthService.resetUserPin,
-  resetMerchantPin: AuthService.resetMerchantPin,
-  resendUserEmailOTP: AuthService.resendUserEmailOTP,
-  resendUserPhoneOTP: AuthService.resendUserPhoneOTP,
-  resendMerchantEmailOTP: AuthService.resendMerchantEmailOTP,
-  resendMerchantPhoneOTP: AuthService.resendMerchantPhoneOTP,
-
-  // Verification services
-  uploadKYC: VerificationService.uploadKYC,
-  submitKycVerification: VerificationService.submitKycVerification,
-  getVerificationStatus: VerificationService.getVerificationStatus,
+  ...AuthService,
+  ...NotificationService,
+  ...VerificationService,
+  ...WalletService,
+  ...TransactionService,
   
-  // Wallet services
-  getBalance: WalletService.getBalance,
-  fetchTransactions: WalletService.fetchTransactions,
-  updateDashboard: WalletService.updateDashboard,
-  
-  // Transaction services
-  transferFunds: TransactionService.transferFunds,
-  deposit: TransactionService.deposit,
-  withdraw: TransactionService.withdraw,
-  receiveInstructions: TransactionService.receiveInstructions,
-  getTransactionHistory: TransactionService.getTransactionHistory,
-  getDepositAddresses: TransactionService.getDepositAddresses,
-  generateDepositAddress: TransactionService.generateDepositAddress,
-  
-  // Notification services
-  sendPushNotification: NotificationService.sendPushNotification,
-  requestNotificationPermission: NotificationService.requestPermission,
-  notifyNewTransaction: NotificationService.notifyNewTransaction,
-  notifyTransactionStatus: NotificationService.notifyTransactionStatus,
-  notifyKycStatus: NotificationService.notifyKycStatus,
+  // Add rate service functions
+  getForexRates: RateService.fetchForexRates,
+  updateForexRates: RateService.updateForexRates,
 };

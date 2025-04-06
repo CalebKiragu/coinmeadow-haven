@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -32,7 +33,7 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch wallet data when component mounts
+  // Fetch wallet data when component mounts or selected currencies change
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -51,7 +52,7 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
     };
 
     if (user || merchant) fetchData();
-  }, [user, merchant]);
+  }, [user, merchant, selectedCrypto, selectedFiat]);
 
   const handleSelectCrypto = (value: string) => {
     dispatch(setSelectedCrypto(value));

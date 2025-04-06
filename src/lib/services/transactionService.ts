@@ -182,25 +182,39 @@ export const TransactionService = {
     }
   },
 
-  // Get transaction history
+  // Get transaction history using new endpoint
   getTransactionHistory: async (): Promise<Transaction[]> => {
     store.dispatch(fetchTransactionsStart());
     try {
       const userInfo = store.getState().auth.user || store.getState().auth.merchant;
       const identifier = userInfo?.email || userInfo?.phone;
       
-      // This is a placeholder until you implement the actual API call
+      if (!identifier) {
+        throw new Error("User not logged in");
+      }
+      
+      console.log("Fetching transaction history for", identifier);
+      
+      // Updated endpoint
       const response: AxiosResponse<ApiResponse<Transaction[]>> = await api.get(
-        `v1/transactions?user=${identifier}`
+        `v1/transactions/find?initiator=${identifier}&sender=${identifier}&recipient=${identifier}`
       );
       
-      store.dispatch(fetchTransactionsSuccess(response.data.data || []));
-      return response.data.data || [];
+      console.log("Transaction history response:", response.data);
+      
+      if (response.data.data) {
+        store.dispatch(fetchTransactionsSuccess(response.data.data));
+        return response.data.data;
+      }
+      
+      store.dispatch(fetchTransactionsSuccess([]));
+      return [];
     } catch (error) {
       let errorMessage = "Failed to fetch transaction history";
       if (error instanceof Error) {
         errorMessage = error.message;
       }
+      console.error("Transaction history error:", errorMessage);
       store.dispatch(fetchTransactionsFailure(errorMessage));
       return [];
     }

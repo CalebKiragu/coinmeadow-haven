@@ -10,13 +10,14 @@ import {
 } from "@/components/ui/select";
 import GlassCard from "../ui/GlassCard";
 import TransactionHistoryItem from "./TransactionHistoryItem";
-import { useAppSelector } from "@/lib/redux/hooks";
+import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import { ApiService } from "@/lib/services";
 
 const TransactionHistory = ({ showBalance, setShowBalance }) => {
   const [sortBy, setSortBy] = useState("date");
   const [filterCurrency, setFilterCurrency] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
+  const dispatch = useAppDispatch();
 
   const { transactions } = useAppSelector((state) => state.transaction);
 
@@ -32,7 +33,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
       }
     };
 
-    // fetchTransactions();
+    fetchTransactions();
   }, []);
 
   // Filter transactions based on selected currency
