@@ -22,6 +22,7 @@ import Settings from "./pages/Settings";
 import Portfolio from "./pages/Portfolio";
 import ApiDocs from "./pages/ApiDocs";
 
+// Create a new QueryClient instance
 const queryClient = new QueryClient();
 
 const App = () => (

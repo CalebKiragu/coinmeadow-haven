@@ -16,4 +16,7 @@ export const ApiService = {
   // Add rate service functions
   getForexRates: RateService.fetchForexRates,
   updateForexRates: RateService.updateForexRates,
+  
+  // Ensure the notification permission method is properly exposed
+  requestPermission: NotificationService.requestPermission,
 };

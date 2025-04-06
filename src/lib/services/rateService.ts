@@ -94,7 +94,7 @@ export const RateService = {
         const priceData: PriceData = {
           basePair: 'USD',
           source: 'openexchangerates',
-          timestamp: BigInt(Date.now()),
+          timestamp: Date.now(), // Use number instead of BigInt
           value: rate.toString(),
           date: new Date().toISOString(),
           currency,
