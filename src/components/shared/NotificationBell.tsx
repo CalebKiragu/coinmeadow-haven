@@ -23,7 +23,7 @@ const NotificationBell = () => {
   // Request notification permission when component mounts
   useEffect(() => {
     const requestPermission = async () => {
-      await ApiService.requestNotificationPermission();
+      await ApiService.requestPermission();
     };
     
     requestPermission();
