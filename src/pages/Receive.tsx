@@ -23,7 +23,7 @@ import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import { ApiService } from "@/lib/services";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cryptoCurrencies } from "@/types/currency";
-import QRCode from "qrcode.react";
+import { QRCodeSVG } from "qrcode.react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/redux/store";
 import {
@@ -202,7 +202,6 @@ const Receive = () => {
                   value={selectedCrypto}
                   onValueChange={setSelectedCrypto}
                   disabled={isLoading}
-                  className="flex-1"
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select cryptocurrency" />
@@ -239,13 +238,12 @@ const Receive = () => {
 
           <div className="flex justify-center p-4 bg-white rounded-lg">
             {depositAddress ? (
-              <QRCode 
+              <QRCodeSVG 
                 value={depositAddress} 
                 size={192} 
                 fgColor="#000000"
                 bgColor="#FFFFFF"
                 level="H"
-                renderAs="svg"
                 includeMargin={true}
               />
             ) : (

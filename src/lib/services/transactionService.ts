@@ -1,3 +1,4 @@
+
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { store } from "../redux/store";
 import { url } from "../utils";
@@ -42,6 +43,8 @@ interface ApiResponse<T> {
 interface TransferResponse {
   success?: boolean;
   message?: string;
+  error?: string;
+  msg?: string;
 }
 
 interface DepositAddressResponse {
@@ -59,11 +62,11 @@ export const TransactionService = {
       return response.data.data || { success: false };
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
-      throw new Error(
+      const errorMessage = 
         axiosError.response?.data?.message ||
-          axiosError.response?.data?.error ||
-          "Error transferring funds"
-      );
+        axiosError.response?.data?.error ||
+        "Error transferring funds";
+      return { success: false, error: errorMessage };
     }
   },
 
@@ -75,11 +78,11 @@ export const TransactionService = {
       return response.data.data || { success: false };
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
-      throw new Error(
+      const errorMessage = 
         axiosError.response?.data?.message ||
-          axiosError.response?.data?.error ||
-          "Error processing deposit"
-      );
+        axiosError.response?.data?.error ||
+        "Error processing deposit";
+      return { success: false, error: errorMessage };
     }
   },
 
@@ -91,11 +94,11 @@ export const TransactionService = {
       return response.data.data || { success: false };
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
-      throw new Error(
+      const errorMessage = 
         axiosError.response?.data?.message ||
-          axiosError.response?.data?.error ||
-          "Error processing withdrawal"
-      );
+        axiosError.response?.data?.error ||
+        "Error processing withdrawal";
+      return { success: false, error: errorMessage };
     }
   },
 
@@ -118,8 +121,7 @@ export const TransactionService = {
       
       return response.data.data?.addresses || [];
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<DepositAddressResponse>>;
-      console.error("Error fetching deposit addresses:", axiosError);
+      console.error("Error fetching deposit addresses:", error);
       return [];
     }
   },
@@ -144,12 +146,10 @@ export const TransactionService = {
 
       return response.data.data?.address || "";
     } catch (error) {
-      const axiosError = error as AxiosError<ApiResponse<null>>;
-      throw new Error(
-        axiosError.response?.data?.message ||
-          axiosError.response?.data?.error ||
-          "Error generating deposit address"
-      );
+      if (error instanceof Error) {
+        throw new Error(error.message || "Error generating deposit address");
+      }
+      throw new Error("Error generating deposit address");
     }
   },
 
@@ -175,7 +175,10 @@ export const TransactionService = {
 
       return { success: true, data: { address } };
     } catch (error) {
-      return { success: false, error: error.message };
+      if (error instanceof Error) {
+        return { success: false, error: error.message };
+      }
+      return { success: false, error: "Unknown error occurred" };
     }
   },
 
@@ -194,8 +197,10 @@ export const TransactionService = {
       store.dispatch(fetchTransactionsSuccess(response.data.data || []));
       return response.data.data || [];
     } catch (error) {
-      const axiosError = error as AxiosError;
-      const errorMessage = axiosError.response?.data?.message || axiosError.message;
+      let errorMessage = "Failed to fetch transaction history";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       store.dispatch(fetchTransactionsFailure(errorMessage));
       return [];
     }
