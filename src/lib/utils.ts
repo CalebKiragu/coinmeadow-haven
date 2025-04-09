@@ -54,6 +54,38 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+// Format crypto values to avoid scientific notation for small numbers
+export function formatCryptoValue(value: string | number): string {
+  try {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    
+    if (isNaN(numValue)) return "0";
+    
+    // Extremely small values (less than 0.000001)
+    if (Math.abs(numValue) < 0.000001 && numValue !== 0) {
+      return numValue.toFixed(10).replace(/\.?0+$/, "");
+    }
+    
+    // Small values (less than 0.01)
+    if (Math.abs(numValue) < 0.01 && numValue !== 0) {
+      return numValue.toFixed(8).replace(/\.?0+$/, "");
+    }
+    
+    // Medium values (less than 1000)
+    if (Math.abs(numValue) < 1000) {
+      return numValue.toFixed(6).replace(/\.?0+$/, "");
+    }
+    
+    // Large values
+    return numValue.toLocaleString('en-US', {
+      maximumFractionDigits: 2
+    });
+  } catch (error) {
+    console.error("Error formatting crypto value:", error);
+    return String(value);
+  }
+}
+
 // Format a bigint timestamp to a human-readable date string with improved error handling
 export const formatTimestamp = (timestamp: bigint | number | string | undefined | null): string => {
   try {
@@ -103,4 +135,49 @@ export function maskSensitiveData(value: string | null): string | null {
     return `${user.slice(0, 3)}***@${domain}`;
   }
   return `${value.slice(0, 3)}***${value.slice(-3)}`;
+}
+
+// Function to estimate fiat value of cryptocurrency
+export function estimateFiatValue(
+  cryptoAmount: string,
+  cryptoCurrency: string,
+  fiatCurrency = "USD",
+  rates: any = {} // Will use redux store rates
+): string {
+  try {
+    const amount = parseFloat(cryptoAmount);
+    if (isNaN(amount)) return "";
+    
+    // Default rates if we can't find in the store
+    const defaultRates: Record<string, number> = {
+      "BTC-USD": 65000,
+      "ETH-USD": 3500,
+      "LTC-USD": 85,
+      "CELO-USD": 0.95,
+      "BTC-EUR": 60000,
+      "ETH-EUR": 3200,
+      "LTC-EUR": 78,
+      "CELO-EUR": 0.87,
+      "BTC-KES": 8450000,
+      "ETH-KES": 455000,
+      "LTC-KES": 11050,
+      "CELO-KES": 124,
+    };
+    
+    // Try to get rate from rates object, fallback to default
+    const key = `${cryptoCurrency}-${fiatCurrency}`;
+    const rate = rates[key] || defaultRates[key] || 0;
+    
+    if (!rate) return "";
+    
+    const fiatValue = amount * rate;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: fiatCurrency,
+      maximumFractionDigits: 2
+    }).format(fiatValue);
+  } catch (error) {
+    console.error("Error estimating fiat value:", error);
+    return "";
+  }
 }

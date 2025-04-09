@@ -2,7 +2,9 @@
 import { useState } from "react";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { Fee, Recipient, TxIds } from "@/lib/redux/slices/transactionSlice";
-import { formatTimestamp } from "@/lib/utils";
+import { formatTimestamp, formatCryptoValue, estimateFiatValue } from "@/lib/utils";
+import { useAppSelector } from "@/lib/redux/hooks";
+import { motion } from "framer-motion";
 
 type TransactionHistoryItemProps = {
   transaction: {
@@ -23,13 +25,20 @@ type TransactionHistoryItemProps = {
     ids: TxIds | string;
   };
   showBalance: boolean;
+  onExpand?: () => void;
 };
 
 const TransactionHistoryItem = ({
   transaction,
   showBalance,
+  onExpand,
 }: TransactionHistoryItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { prices } = useAppSelector((state) => state.price);
+  
+  // Get the user's default currency preferences - use USD as fallback
+  const auth = useAppSelector((state) => state.auth);
+  const userCurrency = auth.user?.currency || auth.merchant?.currency || "USD";
 
   // Function to get transaction type color
   const getTransactionTypeColor = (type: string) => {
@@ -91,13 +100,37 @@ const TransactionHistoryItem = ({
       return "Invalid date";
     }
   };
+  
+  // Determine if both currencies are crypto
+  const isCryptoCurrency = (currency: string) => {
+    return ['BTC', 'ETH', 'LTC', 'CELO'].includes(currency);
+  };
+  
+  const bothCrypto = isCryptoCurrency(transaction.grossCurrency) && isCryptoCurrency(transaction.netCurrency);
+  
+  // Compute fiat equivalent
+  const fiatEquivalent = isCryptoCurrency(transaction.grossCurrency) 
+    ? estimateFiatValue(transaction.grossValue, transaction.grossCurrency, userCurrency, 
+        prices.reduce((acc, price) => {
+          acc[`${price.currency}-${userCurrency}`] = parseFloat(price.value);
+          return acc;
+        }, {} as Record<string, number>)
+      )
+    : "";
+
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded);
+    if (onExpand && !isExpanded) {
+      onExpand();
+    }
+  };
 
   return (
-    <div
-      className="group transition-all duration-200"
-      onClick={() => setIsExpanded(!isExpanded)}
-    >
-      <div className={`flex items-center justify-between p-3 hover:bg-gradient-to-r ${colors.gradient} rounded-lg cursor-pointer`}>
+    <div className="group transition-all duration-200">
+      <div 
+        className={`flex items-center justify-between p-3 hover:bg-gradient-to-r ${colors.gradient} rounded-lg cursor-pointer`}
+        onClick={toggleExpand}
+      >
         <div className="flex items-center space-x-3">
           <div
             className={`p-1.5 rounded-full ${colors.bg} ${colors.text}`}
@@ -130,9 +163,13 @@ const TransactionHistoryItem = ({
 
         <div className={`text-right ${!showBalance ? "blur-content" : ""}`}>
           <div className={`font-medium ${isOutgoing ? "text-red-400" : "text-green-500"}`}>
-            {isOutgoing ? "-" : "+"}{transaction.grossValue} {transaction.grossCurrency}
+            {isOutgoing ? "-" : "+"}{formatCryptoValue(transaction.grossValue)} {transaction.grossCurrency}
           </div>
-          <div className="text-sm text-gray-500">{transaction.netValue} {transaction.netCurrency}</div>
+          {fiatEquivalent && (
+            <div className="text-xs text-gray-500 font-medium">
+              ≈ {fiatEquivalent}
+            </div>
+          )}
           <div className="text-xs text-gray-400">
             {safeFormatTimestamp(transaction.timestamp)}
           </div>
@@ -140,29 +177,39 @@ const TransactionHistoryItem = ({
       </div>
 
       {isExpanded && (
-        <div className="px-4 py-3 bg-gradient-to-r from-white/5 to-white/10 rounded-b-lg -mt-2 animate-fade-in">
+        <motion.div 
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.3 }}
+          className="px-4 py-3 bg-white/10 dark:bg-black/20 backdrop-blur-sm rounded-b-lg -mt-1"
+        >
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-400">Transaction ID:</span>
-              <p className="font-medium text-white/90">#{transaction.txId}</p>
+              <span className="text-gray-400 text-xs">Transaction ID:</span>
+              <p className="font-medium text-white/90 bg-black/20 p-1 rounded mt-1 overflow-x-auto break-all">
+                #{transaction.txId}
+              </p>
             </div>
             <div>
-              <span className="text-gray-400">Currency:</span>
-              <p className="font-medium text-white/90">{transaction.grossCurrency}</p>
+              <span className="text-gray-400 text-xs">Date & Time:</span>
+              <p className="font-medium text-blue-200 mt-1">
+                {safeFormatTimestamp(transaction.timestamp)}
+              </p>
             </div>
             <div>
-              <span className="text-gray-400">
+              <span className="text-gray-400 text-xs">
                 {isOutgoing ? "Recipient" : "Sender"}:
               </span>
-              <p className="font-medium break-all text-white/90">
+              <p className="font-medium break-all text-white/90 bg-black/20 p-1 rounded mt-1 overflow-x-auto">
                 {isOutgoing
                   ? safeRecipient.address || "Unknown"
                   : transaction.sender || "Unknown"}
               </p>
             </div>
             <div>
-              <span className="text-gray-400">Status:</span>
-              <p className={`font-medium ${getStatusColor(transaction.status)}`}>
+              <span className="text-gray-400 text-xs">Status:</span>
+              <p className={`font-medium ${getStatusColor(transaction.status)} mt-1`}>
                 {transaction.status === "INPROGRESS" 
                   ? "In Progress" 
                   : transaction.status === "CONFIRMED" || transaction.status === "SETTLED" 
@@ -170,8 +217,38 @@ const TransactionHistoryItem = ({
                   : "Cancelled"}
               </p>
             </div>
+            <div>
+              <span className="text-gray-400 text-xs">Gross Amount:</span>
+              <p className={`font-medium ${isOutgoing ? "text-red-400" : "text-green-500"} mt-1`}>
+                {isOutgoing ? "-" : "+"}{formatCryptoValue(transaction.grossValue)} {transaction.grossCurrency}
+                {fiatEquivalent && (
+                  <span className="text-xs text-gray-300 ml-2">
+                    ≈ {fiatEquivalent}
+                  </span>
+                )}
+              </p>
+            </div>
+            <div>
+              <span className="text-gray-400 text-xs">Net Amount:</span>
+              <p className="font-medium text-purple-300 mt-1">
+                {formatCryptoValue(transaction.netValue)} {transaction.netCurrency}
+              </p>
+            </div>
+            {transaction.fee && transaction.fee.length > 0 && (
+              <div className="col-span-2">
+                <span className="text-gray-400 text-xs">Fees:</span>
+                <div className="mt-1 font-medium text-orange-300">
+                  {transaction.fee.map((fee, index) => (
+                    <div key={index} className="flex justify-between">
+                      <span>Network Fee:</span>
+                      <span>{fee.crypto ? formatCryptoValue(fee.crypto) : '0'} {transaction.grossCurrency}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

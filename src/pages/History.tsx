@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -18,12 +18,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Search } from "lucide-react";
+import { Calendar as CalendarIcon, Search, Filter, SortAsc } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Transaction } from "@/lib/redux/slices/transactionSlice";
 import { ApiService } from "@/lib/services";
+import TransactionHistoryItem from "@/components/dashboard/TransactionHistoryItem";
+import { motion, AnimatePresence } from "framer-motion";
 
 const History = () => {
   const dispatch = useAppDispatch();
@@ -34,10 +36,18 @@ const History = () => {
   const [currency, setCurrency] = useState("all");
   const [status, setStatus] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
   
+  // Memoize transactions fetching to prevent unnecessary requests
   useEffect(() => {
-    // Fetch transaction history when component mounts
     const fetchTransactions = async () => {
+      // Check if we already have transactions
+      if (transactions.length > 0) {
+        console.log("History: Using cached transactions");
+        return;
+      }
+      
       try {
         await ApiService.getTransactionHistory();
       } catch (error) {
@@ -46,104 +56,114 @@ const History = () => {
     };
     
     fetchTransactions();
-  }, [dispatch]);
+  }, [transactions.length, dispatch]);
 
-  // Filter transactions based on current filters
-  const filteredTransactions = transactions.filter((tx) => {
-    // Filter by transaction type
-    if (transactionType !== "all" && tx.type !== transactionType) {
-      return false;
-    }
-    
-    // Filter by currency
-    if (currency !== "all" && tx.grossCurrency !== currency) {
-      return false;
-    }
-    
-    // Filter by status
-    if (status !== "all") {
-      const txStatus = tx.status.toLowerCase();
-      if (
-        (status === "pending" && txStatus !== "inprogress") ||
-        (status === "completed" && (txStatus !== "confirmed" && txStatus !== "settled")) ||
-        (status === "failed" && txStatus !== "cancelled")
-      ) {
+  // Memoize filtered transactions for better performance
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((tx) => {
+      // Filter by transaction type
+      if (transactionType !== "all" && tx.type !== transactionType) {
         return false;
       }
-    }
-    
-    // Filter by date if selected
-    if (date) {
-      const txDate = new Date(Number(tx.timestamp));
-      const selectedDate = new Date(date);
-      if (
-        txDate.getDate() !== selectedDate.getDate() ||
-        txDate.getMonth() !== selectedDate.getMonth() ||
-        txDate.getFullYear() !== selectedDate.getFullYear()
-      ) {
-        return false;
-      }
-    }
-    
-    // Filter by search term
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      // Search in transaction ID, recipient address, or sender
-      const recipientAddresses = tx.recipient && tx.recipient.length > 0 
-        ? tx.recipient.map(r => r.address).filter(Boolean).join(' ').toLowerCase()
-        : '';
       
-      return (
-        tx.txId.toLowerCase().includes(searchLower) ||
-        recipientAddresses.includes(searchLower) ||
-        (tx.sender && tx.sender.toLowerCase().includes(searchLower))
-      );
-    }
-    
-    return true;
-  });
+      // Filter by currency
+      if (currency !== "all" && tx.grossCurrency !== currency) {
+        return false;
+      }
+      
+      // Filter by status
+      if (status !== "all") {
+        const txStatus = tx.status.toLowerCase();
+        if (
+          (status === "pending" && txStatus !== "inprogress") ||
+          (status === "completed" && (txStatus !== "confirmed" && txStatus !== "settled")) ||
+          (status === "failed" && txStatus !== "cancelled")
+        ) {
+          return false;
+        }
+      }
+      
+      // Filter by date if selected
+      if (date) {
+        const txDate = new Date(Number(tx.timestamp));
+        const selectedDate = new Date(date);
+        if (
+          txDate.getDate() !== selectedDate.getDate() ||
+          txDate.getMonth() !== selectedDate.getMonth() ||
+          txDate.getFullYear() !== selectedDate.getFullYear()
+        ) {
+          return false;
+        }
+      }
+      
+      // Filter by search term
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        // Search in transaction ID, recipient address, or sender
+        const recipientAddresses = tx.recipient && tx.recipient.length > 0 
+          ? tx.recipient.map(r => r.address).filter(Boolean).join(' ').toLowerCase()
+          : '';
+        
+        return (
+          tx.txId.toLowerCase().includes(searchLower) ||
+          recipientAddresses.includes(searchLower) ||
+          (tx.sender && tx.sender.toLowerCase().includes(searchLower))
+        );
+      }
+      
+      return true;
+    });
+  }, [transactions, transactionType, currency, status, date, searchTerm]);
 
-  // Group transactions by status
-  const pendingTransactions = filteredTransactions.filter(
-    (tx) => tx.status === "INPROGRESS"
+  // Sort the filtered transactions
+  const sortedTransactions = useMemo(() => {
+    return [...filteredTransactions].sort((a, b) => {
+      switch (sortBy) {
+        case "newest":
+          return Number(b.timestamp) - Number(a.timestamp);
+        case "oldest":
+          return Number(a.timestamp) - Number(b.timestamp);
+        case "highest":
+          const aValue = parseFloat(a.grossValue.replace(/[^0-9.-]+/g, ""));
+          const bValue = parseFloat(b.grossValue.replace(/[^0-9.-]+/g, ""));
+          return bValue - aValue;
+        case "lowest":
+          const aVal = parseFloat(a.grossValue.replace(/[^0-9.-]+/g, ""));
+          const bVal = parseFloat(b.grossValue.replace(/[^0-9.-]+/g, ""));
+          return aVal - bVal;
+        default:
+          return Number(b.timestamp) - Number(a.timestamp);
+      }
+    });
+  }, [filteredTransactions, sortBy]);
+
+  // Group sorted transactions by status for the tabs
+  const pendingTransactions = useMemo(() => 
+    sortedTransactions.filter(tx => tx.status === "INPROGRESS"), 
+    [sortedTransactions]
   );
-  const completedTransactions = filteredTransactions.filter(
-    (tx) => tx.status === "CONFIRMED" || tx.status === "SETTLED"
+  
+  const completedTransactions = useMemo(() => 
+    sortedTransactions.filter(tx => tx.status === "CONFIRMED" || tx.status === "SETTLED"), 
+    [sortedTransactions]
   );
-  const failedTransactions = filteredTransactions.filter(
-    (tx) => tx.status === "CANCELLED"
+  
+  const failedTransactions = useMemo(() => 
+    sortedTransactions.filter(tx => tx.status === "CANCELLED"), 
+    [sortedTransactions]
   );
 
-  // Render transaction item with proper null checking
-  const renderTransactionItem = (tx: Transaction) => {
-    const date = new Date(Number(tx.timestamp));
-    const formattedDate = format(date, "MMM dd, yyyy HH:mm");
-    const isReceive = tx.type === "RECEIVE";
-    const isDeposit = tx.type === "DEPOSIT";
-    
-    // Safely get recipient address
-    const recipientAddress = tx.recipient && tx.recipient.length > 0 && tx.recipient[0]?.address
-      ? tx.recipient[0].address.substring(0, 10)
-      : "Unknown";
-    
-    return (
-      <div 
-        key={tx.txId} 
-        className="p-3 bg-white/10 rounded-lg flex justify-between items-center border border-white/5"
-      >
-        <div className="flex flex-col">
-          <span className="font-medium">
-            {tx.type} {isReceive || isDeposit ? "from" : "to"} {recipientAddress}...
-          </span>
-          <span className="text-xs text-gray-400">{formattedDate}</span>
-        </div>
-        <div className="text-right">
-          <span className={`font-bold ${isReceive || isDeposit ? "text-green-500" : "text-red-400"}`}>
-            {isReceive || isDeposit ? "+" : "-"}{tx.grossValue} {tx.grossCurrency}
-          </span>
-        </div>
-      </div>
-    );
+  const handleExpandTransaction = (txId: string) => {
+    setExpandedTxId(prevId => prevId === txId ? null : txId);
+  };
+
+  const clearFilters = () => {
+    setTransactionType("all");
+    setCurrency("all");
+    setStatus("all");
+    setDate(undefined);
+    setSearchTerm("");
+    setSortBy("newest");
   };
 
   const renderTransactionList = (transactions: Transaction[]) => {
@@ -157,7 +177,23 @@ const History = () => {
     
     return (
       <div className="space-y-3">
-        {transactions.map(renderTransactionItem)}
+        <AnimatePresence>
+          {transactions.map((tx) => (
+            <motion.div
+              key={tx.txId}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <TransactionHistoryItem
+                transaction={tx}
+                showBalance={true}
+                onExpand={() => handleExpandTransaction(tx.txId)}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     );
   };
@@ -188,11 +224,11 @@ const History = () => {
         <div className="space-y-6">
           <div className="flex flex-wrap gap-4">
             <Select 
-              defaultValue="all" 
               value={transactionType}
               onValueChange={setTransactionType}
             >
               <SelectTrigger className="w-[180px]">
+                <Filter className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Transaction Type" />
               </SelectTrigger>
               <SelectContent>
@@ -206,7 +242,6 @@ const History = () => {
             </Select>
 
             <Select 
-              defaultValue="all"
               value={currency}
               onValueChange={setCurrency}
             >
@@ -219,6 +254,22 @@ const History = () => {
                 <SelectItem value="ETH">Ethereum</SelectItem>
                 <SelectItem value="LTC">Litecoin</SelectItem>
                 <SelectItem value="CELO">Celo</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select 
+              value={sortBy}
+              onValueChange={setSortBy}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SortAsc className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Sort By" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="oldest">Oldest First</SelectItem>
+                <SelectItem value="highest">Highest Amount</SelectItem>
+                <SelectItem value="lowest">Lowest Amount</SelectItem>
               </SelectContent>
             </Select>
 
@@ -256,6 +307,16 @@ const History = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            
+            {(transactionType !== "all" || currency !== "all" || date || searchTerm) && (
+              <Button
+                variant="outline"
+                className="shrink-0"
+                onClick={clearFilters}
+              >
+                Clear Filters
+              </Button>
+            )}
           </div>
 
           <div className="glass-effect rounded-lg p-6">
@@ -279,7 +340,7 @@ const History = () => {
               ) : (
                 <>
                   <TabsContent value="all" className="space-y-4">
-                    {renderTransactionList(filteredTransactions)}
+                    {renderTransactionList(sortedTransactions)}
                   </TabsContent>
 
                   <TabsContent value="pending" className="space-y-4">
