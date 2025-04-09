@@ -1,4 +1,3 @@
-
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface Recipient {
@@ -29,7 +28,7 @@ export interface Transaction {
   grossCurrency: string;
   netValue: string;
   netCurrency: string;
-  fee: Fee[];
+  fee: Fee[] | Fee | null | undefined;
   status: "INPROGRESS" | "CONFIRMED" | "SETTLED" | "CANCELLED";
   timestamp: bigint;
   updatedAt: bigint;

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { Fee, Recipient, TxIds } from "@/lib/redux/slices/transactionSlice";
@@ -18,7 +17,7 @@ type TransactionHistoryItemProps = {
     grossCurrency: string;
     netValue: string;
     netCurrency: string;
-    fee: Fee[];
+    fee: Fee[] | Fee | null | undefined;
     status: "INPROGRESS" | "CONFIRMED" | "SETTLED" | "CANCELLED";
     timestamp: bigint;
     updatedAt: bigint;
@@ -36,11 +35,9 @@ const TransactionHistoryItem = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const { prices } = useAppSelector((state) => state.price);
   
-  // Get the user's default currency preferences - use USD as fallback
   const auth = useAppSelector((state) => state.auth);
   const userCurrency = auth.user?.currency || auth.merchant?.currency || "USD";
 
-  // Function to get transaction type color
   const getTransactionTypeColor = (type: string) => {
     switch (type) {
       case "SEND":
@@ -57,7 +54,6 @@ const TransactionHistoryItem = ({
     }
   };
 
-  // Function to get transaction status color
   const getStatusColor = (status: string) => {
     switch (status) {
       case "CONFIRMED":
@@ -75,11 +71,9 @@ const TransactionHistoryItem = ({
   const colors = getTransactionTypeColor(transaction.type);
   const isOutgoing = transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW";
 
-  // Safely handle recipient - ensure we have a valid recipient object or return a default
   const safeRecipient = transaction.recipient && transaction.recipient.length > 0 ? 
     transaction.recipient[0] : { address: 'Unknown' };
   
-  // Add a helper function to safely extract and truncate address strings
   const getSafeAddress = (address: string | undefined | null, length = 12) => {
     if (!address) return "Unknown";
     try {
@@ -90,7 +84,6 @@ const TransactionHistoryItem = ({
     }
   };
 
-  // Safe formatter for timestamp
   const safeFormatTimestamp = (timestamp: bigint | null | undefined) => {
     if (!timestamp) return "Unknown date";
     try {
@@ -101,14 +94,12 @@ const TransactionHistoryItem = ({
     }
   };
   
-  // Determine if both currencies are crypto
   const isCryptoCurrency = (currency: string) => {
     return ['BTC', 'ETH', 'LTC', 'CELO'].includes(currency);
   };
   
   const bothCrypto = isCryptoCurrency(transaction.grossCurrency) && isCryptoCurrency(transaction.netCurrency);
   
-  // Compute fiat equivalent
   const fiatEquivalent = isCryptoCurrency(transaction.grossCurrency) 
     ? estimateFiatValue(transaction.grossValue, transaction.grossCurrency, userCurrency, 
         prices.reduce((acc, price) => {
@@ -123,6 +114,30 @@ const TransactionHistoryItem = ({
     if (onExpand && !isExpanded) {
       onExpand();
     }
+  };
+
+  const renderFees = () => {
+    if (!transaction.fee) {
+      return null;
+    }
+    
+    if (Array.isArray(transaction.fee)) {
+      return transaction.fee.map((fee, index) => (
+        <div key={index} className="flex justify-between">
+          <span>Network Fee:</span>
+          <span>{fee.crypto ? formatCryptoValue(fee.crypto) : '0'} {transaction.grossCurrency}</span>
+        </div>
+      ));
+    }
+    
+    return (
+      <div className="flex justify-between">
+        <span>Network Fee:</span>
+        <span>
+          {transaction.fee.crypto ? formatCryptoValue(transaction.fee.crypto) : '0'} {transaction.grossCurrency}
+        </span>
+      </div>
+    );
   };
 
   return (
@@ -234,16 +249,11 @@ const TransactionHistoryItem = ({
                 {formatCryptoValue(transaction.netValue)} {transaction.netCurrency}
               </p>
             </div>
-            {transaction.fee && transaction.fee.length > 0 && (
+            {transaction.fee && (
               <div className="col-span-2">
                 <span className="text-gray-400 text-xs">Fees:</span>
                 <div className="mt-1 font-medium text-orange-300">
-                  {transaction.fee.map((fee, index) => (
-                    <div key={index} className="flex justify-between">
-                      <span>Network Fee:</span>
-                      <span>{fee.crypto ? formatCryptoValue(fee.crypto) : '0'} {transaction.grossCurrency}</span>
-                    </div>
-                  ))}
+                  {renderFees()}
                 </div>
               </div>
             )}
