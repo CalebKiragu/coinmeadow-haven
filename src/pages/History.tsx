@@ -89,10 +89,14 @@ const History = () => {
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       // Search in transaction ID, recipient address, or sender
+      const recipientAddresses = tx.recipient && tx.recipient.length > 0 
+        ? tx.recipient.map(r => r.address).filter(Boolean).join(' ').toLowerCase()
+        : '';
+      
       return (
         tx.txId.toLowerCase().includes(searchLower) ||
-        tx.recipient.some(r => r.address.toLowerCase().includes(searchLower)) ||
-        tx.sender.toLowerCase().includes(searchLower)
+        recipientAddresses.includes(searchLower) ||
+        (tx.sender && tx.sender.toLowerCase().includes(searchLower))
       );
     }
     
@@ -110,12 +114,17 @@ const History = () => {
     (tx) => tx.status === "CANCELLED"
   );
 
-  // Render transaction item
+  // Render transaction item with proper null checking
   const renderTransactionItem = (tx: Transaction) => {
     const date = new Date(Number(tx.timestamp));
     const formattedDate = format(date, "MMM dd, yyyy HH:mm");
     const isReceive = tx.type === "RECEIVE";
     const isDeposit = tx.type === "DEPOSIT";
+    
+    // Safely get recipient address
+    const recipientAddress = tx.recipient && tx.recipient.length > 0 && tx.recipient[0]?.address
+      ? tx.recipient[0].address.substring(0, 10)
+      : "Unknown";
     
     return (
       <div 
@@ -124,7 +133,7 @@ const History = () => {
       >
         <div className="flex flex-col">
           <span className="font-medium">
-            {tx.type} {isReceive || isDeposit ? "from" : "to"} {tx.recipient[0]?.address.substring(0, 10)}...
+            {tx.type} {isReceive || isDeposit ? "from" : "to"} {recipientAddress}...
           </span>
           <span className="text-xs text-gray-400">{formattedDate}</span>
         </div>
