@@ -66,9 +66,20 @@ const TransactionHistoryItem = ({
   const colors = getTransactionTypeColor(transaction.type);
   const isOutgoing = transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW";
 
-  // Safely handle recipient
+  // Safely handle recipient - ensure we have a valid recipient object or return a default
   const safeRecipient = transaction.recipient && transaction.recipient.length > 0 ? 
     transaction.recipient[0] : { address: 'Unknown' };
+  
+  // Add a helper function to safely extract and truncate address strings
+  const getSafeAddress = (address: string | undefined | null, length = 12) => {
+    if (!address) return "Unknown";
+    try {
+      return `${address.slice(0, length)}${address.length > length ? '...' : ''}`;
+    } catch (error) {
+      console.error("Error formatting address:", error);
+      return "Invalid address";
+    }
+  };
 
   // Safe formatter for timestamp
   const safeFormatTimestamp = (timestamp: bigint | null | undefined) => {
@@ -111,8 +122,8 @@ const TransactionHistoryItem = ({
             </span>
             <span className="text-sm text-gray-500">
               {isOutgoing
-                ? `To: ${safeRecipient.address?.slice(0, 12) || "Unknown"}...`
-                : `From: ${transaction.sender?.slice(0, 12) || "Unknown"}...`}
+                ? `To: ${getSafeAddress(safeRecipient.address)}`
+                : `From: ${getSafeAddress(transaction.sender)}`}
             </span>
           </div>
         </div>

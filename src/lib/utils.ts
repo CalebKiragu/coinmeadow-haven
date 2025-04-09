@@ -1,3 +1,4 @@
+
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -53,11 +54,24 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-// Format a bigint timestamp to a human-readable date string
-export const formatTimestamp = (timestamp: bigint): string => {
+// Format a bigint timestamp to a human-readable date string with improved error handling
+export const formatTimestamp = (timestamp: bigint | number | string | undefined | null): string => {
   try {
-    // Convert BigInt to number safely 
-    const dateNumber = Number(timestamp);
+    if (timestamp === undefined || timestamp === null) {
+      return "Invalid date";
+    }
+    
+    // Convert to number if needed
+    let dateNumber: number;
+    if (typeof timestamp === 'bigint') {
+      // Safely convert BigInt to number
+      dateNumber = Number(timestamp);
+    } else if (typeof timestamp === 'string') {
+      dateNumber = parseInt(timestamp, 10);
+    } else {
+      dateNumber = timestamp;
+    }
+    
     if (isNaN(dateNumber)) {
       console.error("Invalid timestamp format:", timestamp);
       return "Invalid date";
@@ -77,7 +91,7 @@ export const formatTimestamp = (timestamp: bigint): string => {
       minute: '2-digit'
     });
   } catch (error) {
-    console.error("Error formatting timestamp:", error);
+    console.error("Error formatting timestamp:", error, typeof timestamp);
     return "Error formatting date";
   }
 };
