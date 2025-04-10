@@ -27,6 +27,7 @@ import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import { logout } from "@/lib/redux/slices/authSlice";
 import KycBanner from "@/components/verification/KycBanner";
 import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
+import { ApiService } from "@/lib/services";
 
 const trendingOffers: Offer[] = [
   {
@@ -59,7 +60,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("wallet");
   const [showBalance, setShowBalance] = useState(false);
   
-  const { verifyPasskey } = usePasskeyAuth();
+  const { verifyPasskey, isPasskeyVerified } = usePasskeyAuth();
 
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
@@ -82,12 +83,27 @@ const Dashboard = () => {
       }
     };
     
+    // Prefetch transactions to ensure they're ready
+    const prefetchData = async () => {
+      try {
+        await ApiService.getTransactionHistory();
+      } catch (error) {
+        console.error("Error prefetching transaction data:", error);
+      }
+    };
+    
     initPasskeyAuth();
+    prefetchData();
   }, [isAuthenticated, navigate, verifyPasskey]);
 
   const handleLogout = () => {
     dispatch(logout());
     navigate("/", { replace: true });
+  };
+
+  // Handler to update both balance displays when either toggle is clicked
+  const handleBalanceToggle = (newValue: boolean) => {
+    setShowBalance(newValue);
   };
 
   return (
@@ -189,7 +205,7 @@ const Dashboard = () => {
               <div className="lg:col-span-2 space-y-8">
                 <BalanceCard
                   showBalance={showBalance}
-                  setShowBalance={setShowBalance}
+                  setShowBalance={handleBalanceToggle}
                 />
                 <h3 className="text-lg text-white/80 text-center">
                   What would you like to do today?
@@ -197,7 +213,7 @@ const Dashboard = () => {
                 <TransactionButtons />
                 <TransactionHistory
                   showBalance={showBalance}
-                  setShowBalance={setShowBalance}
+                  setShowBalance={handleBalanceToggle}
                 />
               </div>
               <div className="lg:col-span-1">

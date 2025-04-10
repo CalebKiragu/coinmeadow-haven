@@ -21,21 +21,17 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
   const [sortBy, setSortBy] = useState("date");
   const [filterType, setFilterType] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
+  const [forceRefresh, setForceRefresh] = useState(false);
   const dispatch = useAppDispatch();
   const { toast } = useToast();
-  const { verifyPasskey, isPasskeyVerified } = usePasskeyAuth();
+  const { verifyPasskey, isPasskeyVerified, isVerifying } = usePasskeyAuth();
 
   const { transactions } = useAppSelector((state) => state.transaction);
   
   // Memoize transactions fetching to prevent unnecessary requests
   useEffect(() => {
     const fetchTransactions = async () => {
-      // Check if we already have transactions
-      if (transactions.length > 0) {
-        console.log("TransactionHistory: Using cached transactions");
-        return;
-      }
-      
+      // Always fetch transactions on mount or when forceRefresh is triggered
       setIsLoading(true);
       try {
         console.log("TransactionHistory: Fetching transactions...");
@@ -49,7 +45,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
     };
 
     fetchTransactions();
-  }, [transactions.length]);
+  }, [forceRefresh]);
 
   // Memoize filtered and sorted transactions for performance
   const filteredAndSortedTransactions = useMemo(() => {
@@ -92,11 +88,16 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
   const hasMoreTransactions = filteredAndSortedTransactions.length > 3;
 
   const handleToggleBalance = async () => {
+    // Prevent multiple simultaneous verification attempts
+    if (isVerifying) return;
+    
     // If we're trying to show the balance and passkey hasn't been verified yet
     if (!showBalance && !isPasskeyVerified) {
       try {
-        await verifyPasskey();
-        setShowBalance(true);
+        const verified = await verifyPasskey();
+        if (verified) {
+          setShowBalance(true);
+        }
       } catch (error) {
         toast({
           title: "Authentication Failed",
@@ -120,6 +121,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
             size="sm"
             onClick={handleToggleBalance}
             className="flex items-center gap-1"
+            disabled={isVerifying}
           >
             {showBalance ? (
               <>
@@ -170,6 +172,13 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
       ) : recentTransactions.length === 0 ? (
         <div className="py-20 text-center text-gray-500">
           <p>No transactions to display</p>
+          <Button 
+            variant="outline" 
+            className="mt-4"
+            onClick={() => setForceRefresh(!forceRefresh)}
+          >
+            Refresh Transactions
+          </Button>
         </div>
       ) : (
         <>

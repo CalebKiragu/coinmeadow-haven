@@ -1,3 +1,4 @@
+
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { store } from "../redux/store";
 import { url } from "../utils";
@@ -8,7 +9,7 @@ import {
   Transaction,
 } from "../redux/slices/transactionSlice";
 
-// Replace with your actual API base URL
+// Get the API URL from utils
 const API_URL = url().BASE_URL;
 
 // Create an axios instance

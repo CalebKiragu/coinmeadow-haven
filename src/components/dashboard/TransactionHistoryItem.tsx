@@ -44,16 +44,16 @@ const TransactionHistoryItem = ({
   const getTransactionTypeColor = (type: string) => {
     switch (type) {
       case "SEND":
-        return { bg: "bg-red-100/80", text: "text-red-600", iconBg: "bg-red-500/10", gradient: "from-red-500/10 to-red-600/5" };
+        return { bg: "bg-red-100/80", text: "text-red-600 dark:text-red-400", iconBg: "bg-red-500/10", gradient: "from-red-500/10 to-red-600/5" };
       case "WITHDRAW":
       case "BCWITHDRAW":
-        return { bg: "bg-orange-100/80", text: "text-orange-600", iconBg: "bg-orange-500/10", gradient: "from-orange-500/10 to-orange-600/5" };
+        return { bg: "bg-orange-100/80", text: "text-orange-600 dark:text-orange-400", iconBg: "bg-orange-500/10", gradient: "from-orange-500/10 to-orange-600/5" };
       case "RECEIVE":
-        return { bg: "bg-green-100/80", text: "text-green-600", iconBg: "bg-green-500/10", gradient: "from-green-500/10 to-green-600/5" };
+        return { bg: "bg-green-100/80", text: "text-green-600 dark:text-green-400", iconBg: "bg-green-500/10", gradient: "from-green-500/10 to-green-600/5" };
       case "DEPOSIT":
-        return { bg: "bg-purple-100/80", text: "text-purple-600", iconBg: "bg-purple-500/10", gradient: "from-purple-500/10 to-purple-600/5" };
+        return { bg: "bg-purple-100/80", text: "text-purple-600 dark:text-purple-400", iconBg: "bg-purple-500/10", gradient: "from-purple-500/10 to-purple-600/5" };
       default:
-        return { bg: "bg-blue-100/80", text: "text-blue-600", iconBg: "bg-blue-500/10", gradient: "from-blue-500/10 to-blue-600/5" };
+        return { bg: "bg-blue-100/80", text: "text-blue-600 dark:text-blue-400", iconBg: "bg-blue-500/10", gradient: "from-blue-500/10 to-blue-600/5" };
     }
   };
 
@@ -67,7 +67,7 @@ const TransactionHistoryItem = ({
       case "INPROGRESS":
         return "text-amber-500";
       default:
-        return "text-gray-500";
+        return "text-gray-500 dark:text-gray-400";
     }
   };
 
@@ -111,13 +111,16 @@ const TransactionHistoryItem = ({
     
     try {
       // Build the rates lookup object
-      const ratesMap = prices.reduce((acc, price) => {
+      const ratesMap: Record<string, number> = {};
+      
+      prices.forEach(price => {
         if (price.currency && userCurrency) {
           const key = `${price.currency}-${userCurrency}`;
-          acc[key] = parseFloat(price.value);
+          if (price.value) {
+            ratesMap[key] = parseFloat(price.value);
+          }
         }
-        return acc;
-      }, {} as Record<string, number>);
+      });
       
       // Check if we have the necessary rate
       const rateKey = `${transaction.grossCurrency}-${userCurrency}`;
@@ -130,14 +133,14 @@ const TransactionHistoryItem = ({
       let grossValue: number;
       const valueStr = transaction.grossValue;
       
-      if (valueStr.includes('e')) {
+      if (typeof valueStr === 'string' && valueStr.includes('e')) {
         // Handle scientific notation
         const [base, exponent] = valueStr.split('e');
         const baseNum = parseFloat(base);
         const expNum = parseInt(exponent);
         grossValue = baseNum * Math.pow(10, expNum);
       } else {
-        grossValue = parseFloat(valueStr);
+        grossValue = parseFloat(String(valueStr));
       }
       
       // Check if parsing was successful
@@ -186,16 +189,17 @@ const TransactionHistoryItem = ({
           <span>{fee.crypto ? formatCryptoValue(fee.crypto) : '0'} {transaction.grossCurrency}</span>
         </div>
       ));
+    } else {
+      // Handle case where fee is a single object
+      return (
+        <div className="flex justify-between">
+          <span>Network Fee:</span>
+          <span>
+            {transaction.fee.crypto ? formatCryptoValue(transaction.fee.crypto) : '0'} {transaction.grossCurrency}
+          </span>
+        </div>
+      );
     }
-    
-    return (
-      <div className="flex justify-between">
-        <span>Network Fee:</span>
-        <span>
-          {transaction.fee.crypto ? formatCryptoValue(transaction.fee.crypto) : '0'} {transaction.grossCurrency}
-        </span>
-      </div>
-    );
   };
 
   // Get fiat equivalent once to avoid recalculation
@@ -218,7 +222,7 @@ const TransactionHistoryItem = ({
             )}
           </div>
           <div className="flex flex-col items-start">
-            <span className={`font-medium ${colors.text} dark:text-white text-gray-800`}>
+            <span className={`font-medium ${colors.text}`}>
               {transaction.type === "SEND" 
                 ? "Sent" 
                 : transaction.type === "WITHDRAW" 
@@ -229,7 +233,7 @@ const TransactionHistoryItem = ({
                 ? "Deposited"
                 : "Received"}
             </span>
-            <span className="text-sm text-gray-500 dark:text-gray-300">
+            <span className="text-sm text-gray-600 dark:text-gray-300">
               {isOutgoing
                 ? `To: ${getSafeAddress(safeRecipient.address)}`
                 : `From: ${getSafeAddress(transaction.sender)}`}
@@ -239,15 +243,15 @@ const TransactionHistoryItem = ({
 
         <div className="flex items-center">
           <div className={`text-right mr-2 ${!showBalance ? "blur-content" : ""}`}>
-            <div className={`font-medium ${isOutgoing ? "text-red-400" : "text-green-500"} dark:text-white text-gray-800`}>
+            <div className={`font-medium ${isOutgoing ? "text-red-500 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
               {isOutgoing ? "-" : "+"}{formatCryptoValue(transaction.grossValue)} {transaction.grossCurrency}
             </div>
             {fiatEquivalent && (
-              <div className="text-xs text-gray-500 dark:text-gray-300 font-medium">
+              <div className="text-xs text-gray-700 dark:text-gray-300 font-medium">
                 ≈ {fiatEquivalent}
               </div>
             )}
-            <div className="text-xs text-gray-400 dark:text-gray-400">
+            <div className="text-xs text-gray-600 dark:text-gray-400">
               {safeFormatTimestamp(transaction.timestamp)}
             </div>
           </div>
@@ -256,9 +260,9 @@ const TransactionHistoryItem = ({
             className="p-1 rounded-full hover:bg-white/10 dark:hover:bg-black/20"
           >
             {showBalance ? (
-              <Eye size={16} className="text-gray-500 dark:text-gray-300" />
+              <Eye size={16} className="text-gray-600 dark:text-gray-300" />
             ) : (
-              <EyeOff size={16} className="text-gray-500 dark:text-gray-300" />
+              <EyeOff size={16} className="text-gray-600 dark:text-gray-300" />
             )}
           </button>
         </div>
@@ -270,33 +274,33 @@ const TransactionHistoryItem = ({
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.3 }}
-          className="px-4 py-3 bg-white/10 dark:bg-black/20 backdrop-blur-sm rounded-b-lg -mt-1"
+          className="px-4 py-3 bg-white/50 dark:bg-black/50 backdrop-blur-sm rounded-b-lg -mt-1"
         >
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-500 dark:text-gray-400 text-xs">Transaction ID:</span>
-              <p className="font-medium text-gray-800 dark:text-white/90 bg-black/5 dark:bg-black/20 p-1 rounded mt-1 overflow-x-auto break-all">
+              <span className="text-gray-600 dark:text-gray-400 text-xs">Transaction ID:</span>
+              <p className="font-medium text-gray-800 dark:text-white/90 bg-black/5 dark:bg-black/30 p-1 rounded mt-1 overflow-x-auto break-all">
                 #{transaction.txId}
               </p>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400 text-xs">Date & Time:</span>
-              <p className="font-medium text-blue-600 dark:text-blue-200 mt-1">
+              <span className="text-gray-600 dark:text-gray-400 text-xs">Date & Time:</span>
+              <p className="font-medium text-blue-600 dark:text-blue-300 mt-1">
                 {safeFormatTimestamp(transaction.timestamp)}
               </p>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400 text-xs">
+              <span className="text-gray-600 dark:text-gray-400 text-xs">
                 {isOutgoing ? "Recipient" : "Sender"}:
               </span>
-              <p className="font-medium break-all text-gray-800 dark:text-white/90 bg-black/5 dark:bg-black/20 p-1 rounded mt-1 overflow-x-auto">
+              <p className="font-medium break-all text-gray-800 dark:text-white/90 bg-black/5 dark:bg-black/30 p-1 rounded mt-1 overflow-x-auto">
                 {isOutgoing
                   ? safeRecipient.address || "Unknown"
                   : transaction.sender || "Unknown"}
               </p>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400 text-xs">Status:</span>
+              <span className="text-gray-600 dark:text-gray-400 text-xs">Status:</span>
               <p className={`font-medium ${getStatusColor(transaction.status)} mt-1`}>
                 {transaction.status === "INPROGRESS" 
                   ? "In Progress" 
@@ -306,25 +310,25 @@ const TransactionHistoryItem = ({
               </p>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400 text-xs">Gross Amount:</span>
-              <p className={`font-medium ${isOutgoing ? "text-red-400" : "text-green-500"} mt-1`}>
+              <span className="text-gray-600 dark:text-gray-400 text-xs">Gross Amount:</span>
+              <p className={`font-medium ${isOutgoing ? "text-red-500 dark:text-red-400" : "text-green-600 dark:text-green-400"} mt-1`}>
                 {isOutgoing ? "-" : "+"}{formatCryptoValue(transaction.grossValue)} {transaction.grossCurrency}
                 {fiatEquivalent && (
-                  <span className="text-xs text-gray-500 dark:text-gray-300 ml-2">
+                  <span className="text-xs text-gray-700 dark:text-gray-300 ml-2">
                     ≈ {fiatEquivalent}
                   </span>
                 )}
               </p>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400 text-xs">Net Amount:</span>
+              <span className="text-gray-600 dark:text-gray-400 text-xs">Net Amount:</span>
               <p className="font-medium text-purple-600 dark:text-purple-300 mt-1">
                 {formatCryptoValue(transaction.netValue)} {transaction.netCurrency}
               </p>
             </div>
             {transaction.fee && (
               <div className="col-span-2">
-                <span className="text-gray-500 dark:text-gray-400 text-xs">Fees:</span>
+                <span className="text-gray-600 dark:text-gray-400 text-xs">Fees:</span>
                 <div className="mt-1 font-medium text-orange-600 dark:text-orange-300">
                   {renderFees()}
                 </div>

@@ -1,4 +1,3 @@
-
 import { ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -25,7 +24,6 @@ export const formatCryptoValue = (value: string | number | null | undefined): st
     let numValue: number;
     
     if (typeof value === "string") {
-      // Handle scientific notation
       if (value.includes('e')) {
         const [base, exponent] = value.split('e');
         numValue = parseFloat(base) * Math.pow(10, parseInt(exponent));
@@ -38,21 +36,15 @@ export const formatCryptoValue = (value: string | number | null | undefined): st
     
     if (isNaN(numValue)) return "0";
     
-    // Format based on the size of the number
     if (numValue < 0.000001) {
-      // Very small numbers - show in scientific notation with 8 significant digits
       return numValue.toExponential(6);
     } else if (numValue < 0.01) {
-      // Small numbers - show more decimal places
       return numValue.toFixed(8);
     } else if (numValue < 1) {
-      // Medium small numbers
       return numValue.toFixed(6);
     } else if (numValue < 1000) {
-      // Regular numbers
       return numValue.toFixed(4);
     } else {
-      // Large numbers
       return numValue.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
@@ -64,7 +56,6 @@ export const formatCryptoValue = (value: string | number | null | undefined): st
   }
 };
 
-// Function to estimate fiat value from crypto amount
 export const estimateFiatValue = (
   amount: string | number,
   cryptoCurrency: string,
@@ -75,7 +66,6 @@ export const estimateFiatValue = (
     let numAmount: number;
     
     if (typeof amount === "string") {
-      // Handle scientific notation
       if (amount.includes('e')) {
         const [base, exponent] = amount.split('e');
         numAmount = parseFloat(base) * Math.pow(10, parseInt(exponent));
@@ -105,44 +95,28 @@ export const estimateFiatValue = (
   }
 };
 
-// Mask sensitive data like email or phone
 export const maskSensitiveData = (data?: string): string => {
   if (!data) return "***";
   
   if (data.includes('@')) {
-    // Email masking
     const [username, domain] = data.split('@');
     const maskedUsername = username.charAt(0) + '*'.repeat(username.length - 2) + username.charAt(username.length - 1);
     return `${maskedUsername}@${domain}`;
   } else if (/^\d+$/.test(data)) {
-    // Phone number masking
     return data.slice(0, 3) + '*'.repeat(data.length - 6) + data.slice(-3);
   } else {
-    // Default masking for other types
     return data.charAt(0) + '*'.repeat(data.length - 2) + data.charAt(data.length - 1);
   }
 };
 
-// URL configuration for API endpoints
 export const url = () => {
-  const environment = import.meta.env.VITE_APP_ENV || 'development';
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/';
   
-  const urls = {
-    development: {
-      BASE_URL: 'https://api-dev.example.com/',
-    },
-    staging: {
-      BASE_URL: 'https://api-staging.example.com/',
-    },
-    production: {
-      BASE_URL: 'https://api.example.com/',
-    },
+  return {
+    BASE_URL: baseUrl,
   };
-  
-  return urls[environment as keyof typeof urls] || urls.development;
 };
 
-// AWS configuration
 export const aws = () => {
   return {
     s3: {

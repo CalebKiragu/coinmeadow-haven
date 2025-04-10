@@ -20,10 +20,14 @@ import {
 } from "@/lib/redux/slices/walletSlice";
 import { ApiService } from "@/lib/services";
 import { Skeleton } from "../ui/skeleton";
+import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const BalanceCard = ({ showBalance, setShowBalance }) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const { toast } = useToast();
+  const { verifyPasskey, isPasskeyVerified, isVerifying } = usePasskeyAuth();
 
   const { prices } = useAppSelector((state) => state.price);
   const { user, merchant } = useAppSelector((state) => state.auth);
@@ -110,6 +114,30 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
     navigate("/portfolio", { state: { selectedCrypto } });
   };
 
+  const handleToggleBalance = async () => {
+    // Prevent multiple simultaneous verification attempts
+    if (isVerifying) return;
+    
+    // If we're trying to show the balance and passkey hasn't been verified yet
+    if (!showBalance && !isPasskeyVerified) {
+      try {
+        const verified = await verifyPasskey();
+        if (verified) {
+          setShowBalance(true);
+        }
+      } catch (error) {
+        toast({
+          title: "Authentication Failed",
+          description: "Unable to verify your identity",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // If passkey is already verified or we're hiding the balance
+      setShowBalance(!showBalance);
+    }
+  };
+
   const greetName = user?.firstName || merchant?.merchantName || "";
   const merchantNo = merchant?.merchantNo;
 
@@ -142,8 +170,9 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
           <div className="flex justify-between items-center">
             <h1 className="text-base sm:text-lg font-semibold">{greeting(greetName)}</h1>
             <button
-              onClick={() => setShowBalance(!showBalance)}
+              onClick={handleToggleBalance}
               className="text-gray-600 hover:text-gray-800 transition-colors"
+              disabled={isVerifying}
             >
               {showBalance ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
@@ -194,7 +223,7 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
             {formatPrice(calculateTotalBalance())}
           </div>
 
-          <div className="flex flex-wrap gap-1 items-center justify-between text-xs sm:text-sm text-gray-600">
+          <div className="flex flex-wrap gap-1 items-center justify-between text-xs sm:text-sm text-gray-600 dark:text-gray-300">
             <div className="flex items-center gap-2">
               <span className={!showBalance ? "blur-content" : ""}>
                 {selectedCrypto === "ALL" ? "Total balance across all wallets" : 

@@ -1,10 +1,12 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useToast } from './use-toast';
 
 export const usePasskeyAuth = () => {
   const [isPasskeyVerified, setIsPasskeyVerified] = useState(false);
   const [lastVerifiedTime, setLastVerifiedTime] = useState<number | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const toastShownRef = useRef(false);
   const { toast } = useToast();
   
   // Check if passkey is still valid (verified within the last 3 minutes)
@@ -16,6 +18,7 @@ export const usePasskeyAuth = () => {
       
       if (timeElapsed > threeMinutesInMs) {
         setIsPasskeyVerified(false);
+        toastShownRef.current = false;
       }
     }
   }, [lastVerifiedTime]);
@@ -23,7 +26,25 @@ export const usePasskeyAuth = () => {
   // Mock implementation for the passkey verification
   // In a real app, this would use the Web Authentication API
   const verifyPasskey = async (): Promise<boolean> => {
+    // Prevent multiple simultaneous verification attempts
+    if (isVerifying) {
+      return isPasskeyVerified;
+    }
+    
+    // If already verified and within time limit, return true without showing toast
+    if (isPasskeyVerified && lastVerifiedTime) {
+      const currentTime = Date.now();
+      const timeElapsed = currentTime - lastVerifiedTime;
+      const threeMinutesInMs = 3 * 60 * 1000;
+      
+      if (timeElapsed <= threeMinutesInMs) {
+        return true;
+      }
+    }
+    
     return new Promise((resolve, reject) => {
+      setIsVerifying(true);
+      
       // Simulate passkey authentication
       // In a real implementation, this would use navigator.credentials.get()
       try {
@@ -33,12 +54,17 @@ export const usePasskeyAuth = () => {
           setTimeout(() => {
             setIsPasskeyVerified(true);
             setLastVerifiedTime(Date.now());
+            setIsVerifying(false);
             
-            toast({
-              title: "Authentication Successful",
-              description: "Your identity has been verified",
-              variant: "default",
-            });
+            // Only show toast if it hasn't been shown recently
+            if (!toastShownRef.current) {
+              toast({
+                title: "Authentication Successful",
+                description: "Your identity has been verified",
+                variant: "default",
+              });
+              toastShownRef.current = true;
+            }
             
             resolve(true);
           }, 1000);
@@ -52,15 +78,21 @@ export const usePasskeyAuth = () => {
             if (pin === "1234") { // Example PIN verification
               setIsPasskeyVerified(true);
               setLastVerifiedTime(Date.now());
+              setIsVerifying(false);
               
-              toast({
-                title: "Authentication Successful",
-                description: "Your identity has been verified using PIN",
-                variant: "default",
-              });
+              // Only show toast if it hasn't been shown recently
+              if (!toastShownRef.current) {
+                toast({
+                  title: "Authentication Successful",
+                  description: "Your identity has been verified using PIN",
+                  variant: "default",
+                });
+                toastShownRef.current = true;
+              }
               
               resolve(true);
             } else {
+              setIsVerifying(false);
               toast({
                 title: "Authentication Failed",
                 description: "Incorrect PIN",
@@ -70,10 +102,12 @@ export const usePasskeyAuth = () => {
               reject(new Error("Incorrect PIN"));
             }
           } else {
+            setIsVerifying(false);
             reject(new Error("Authentication cancelled"));
           }
         }
       } catch (error) {
+        setIsVerifying(false);
         toast({
           title: "Authentication Error",
           description: "There was a problem verifying your identity",
@@ -88,5 +122,6 @@ export const usePasskeyAuth = () => {
   return {
     isPasskeyVerified,
     verifyPasskey,
+    isVerifying,
   };
 };
