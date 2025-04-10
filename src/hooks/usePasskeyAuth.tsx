@@ -6,6 +6,7 @@ export const usePasskeyAuth = () => {
   const [isPasskeyVerified, setIsPasskeyVerified] = useState(false);
   const [lastVerifiedTime, setLastVerifiedTime] = useState<number | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  // Use this ref to prevent showing multiple toasts
   const toastShownRef = useRef(false);
   const { toast } = useToast();
   
@@ -18,6 +19,7 @@ export const usePasskeyAuth = () => {
       
       if (timeElapsed > threeMinutesInMs) {
         setIsPasskeyVerified(false);
+        // Reset the toast shown flag so we can show it again on next verification
         toastShownRef.current = false;
       }
     }

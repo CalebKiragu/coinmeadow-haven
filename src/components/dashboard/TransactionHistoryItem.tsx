@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { ArrowUpRight, ArrowDownLeft, Eye, EyeOff } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { Fee, Recipient, TxIds } from "@/lib/redux/slices/transactionSlice";
 import { formatTimestamp, formatCryptoValue, estimateFiatValue } from "@/lib/utils";
 import { useAppSelector } from "@/lib/redux/hooks";
@@ -26,14 +26,12 @@ type TransactionHistoryItemProps = {
   };
   showBalance: boolean;
   onExpand?: () => void;
-  onToggleBalance?: () => void;
 };
 
 const TransactionHistoryItem = ({
   transaction,
   showBalance,
   onExpand,
-  onToggleBalance,
 }: TransactionHistoryItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const { prices } = useAppSelector((state) => state.price);
@@ -169,13 +167,6 @@ const TransactionHistoryItem = ({
       onExpand();
     }
   };
-  
-  const toggleBalanceVisibility = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent click from expanding the transaction
-    if (onToggleBalance) {
-      onToggleBalance();
-    }
-  };
 
   const renderFees = () => {
     if (!transaction.fee) {
@@ -184,17 +175,17 @@ const TransactionHistoryItem = ({
     
     if (Array.isArray(transaction.fee)) {
       return transaction.fee.map((fee, index) => (
-        <div key={index} className="flex justify-between">
-          <span>Network Fee:</span>
-          <span>{fee.crypto ? formatCryptoValue(fee.crypto) : '0'} {transaction.grossCurrency}</span>
+        <div key={index} className="flex justify-between items-center">
+          <span className="mr-2">Network Fee:</span>
+          <span className="font-medium">{fee.crypto ? formatCryptoValue(fee.crypto) : '0'} {transaction.grossCurrency}</span>
         </div>
       ));
     } else {
       // Handle case where fee is a single object
       return (
-        <div className="flex justify-between">
-          <span>Network Fee:</span>
-          <span>
+        <div className="flex justify-between items-center">
+          <span className="mr-2">Network Fee:</span>
+          <span className="font-medium">
             {transaction.fee.crypto ? formatCryptoValue(transaction.fee.crypto) : '0'} {transaction.grossCurrency}
           </span>
         </div>
@@ -241,30 +232,18 @@ const TransactionHistoryItem = ({
           </div>
         </div>
 
-        <div className="flex items-center">
-          <div className={`text-right mr-2 ${!showBalance ? "blur-content" : ""}`}>
-            <div className={`font-medium ${isOutgoing ? "text-red-500 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
-              {isOutgoing ? "-" : "+"}{formatCryptoValue(transaction.grossValue)} {transaction.grossCurrency}
-            </div>
-            {fiatEquivalent && (
-              <div className="text-xs text-gray-700 dark:text-gray-300 font-medium">
-                ≈ {fiatEquivalent}
-              </div>
-            )}
-            <div className="text-xs text-gray-600 dark:text-gray-400">
-              {safeFormatTimestamp(transaction.timestamp)}
-            </div>
+        <div className="text-right">
+          <div className={`font-medium ${!showBalance ? "blur-content" : ""} ${isOutgoing ? "text-red-500 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+            {isOutgoing ? "-" : "+"}{formatCryptoValue(transaction.grossValue)} {transaction.grossCurrency}
           </div>
-          <button 
-            onClick={toggleBalanceVisibility}
-            className="p-1 rounded-full hover:bg-white/10 dark:hover:bg-black/20"
-          >
-            {showBalance ? (
-              <Eye size={16} className="text-gray-600 dark:text-gray-300" />
-            ) : (
-              <EyeOff size={16} className="text-gray-600 dark:text-gray-300" />
-            )}
-          </button>
+          {fiatEquivalent && (
+            <div className={`text-xs text-gray-700 dark:text-gray-300 font-medium ${!showBalance ? "blur-content" : ""}`}>
+              ≈ {fiatEquivalent}
+            </div>
+          )}
+          <div className="text-xs text-gray-600 dark:text-gray-400">
+            {safeFormatTimestamp(transaction.timestamp)}
+          </div>
         </div>
       </div>
 
@@ -311,7 +290,7 @@ const TransactionHistoryItem = ({
             </div>
             <div>
               <span className="text-gray-600 dark:text-gray-400 text-xs">Gross Amount:</span>
-              <p className={`font-medium ${isOutgoing ? "text-red-500 dark:text-red-400" : "text-green-600 dark:text-green-400"} mt-1`}>
+              <p className={`font-medium ${isOutgoing ? "text-red-500 dark:text-red-400" : "text-green-600 dark:text-green-400"} mt-1 ${!showBalance ? "blur-content" : ""}`}>
                 {isOutgoing ? "-" : "+"}{formatCryptoValue(transaction.grossValue)} {transaction.grossCurrency}
                 {fiatEquivalent && (
                   <span className="text-xs text-gray-700 dark:text-gray-300 ml-2">
@@ -322,14 +301,14 @@ const TransactionHistoryItem = ({
             </div>
             <div>
               <span className="text-gray-600 dark:text-gray-400 text-xs">Net Amount:</span>
-              <p className="font-medium text-purple-600 dark:text-purple-300 mt-1">
+              <p className={`font-medium text-purple-600 dark:text-purple-300 mt-1 ${!showBalance ? "blur-content" : ""}`}>
                 {formatCryptoValue(transaction.netValue)} {transaction.netCurrency}
               </p>
             </div>
             {transaction.fee && (
               <div className="col-span-2">
                 <span className="text-gray-600 dark:text-gray-400 text-xs">Fees:</span>
-                <div className="mt-1 font-medium text-orange-600 dark:text-orange-300">
+                <div className={`mt-1 font-medium text-orange-600 dark:text-orange-300 ${!showBalance ? "blur-content" : ""}`}>
                   {renderFees()}
                 </div>
               </div>

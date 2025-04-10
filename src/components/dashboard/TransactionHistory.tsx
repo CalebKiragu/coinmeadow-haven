@@ -118,21 +118,15 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
           <h2 className="text-xl font-semibold">Transaction History</h2>
           <Button 
             variant="ghost" 
-            size="sm"
+            size="icon"
             onClick={handleToggleBalance}
-            className="flex items-center gap-1"
+            className="flex items-center"
             disabled={isVerifying}
           >
             {showBalance ? (
-              <>
-                <Eye className="h-4 w-4" />
-                <span className="text-sm">Hide Amounts</span>
-              </>
+              <EyeOff className="h-4 w-4" />
             ) : (
-              <>
-                <EyeOff className="h-4 w-4" />
-                <span className="text-sm">Show Amounts</span>
-              </>
+              <Eye className="h-4 w-4" />
             )}
           </Button>
         </div>
@@ -188,7 +182,6 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
                 key={tx.txId}
                 transaction={tx}
                 showBalance={showBalance}
-                onToggleBalance={handleToggleBalance}
               />
             ))}
           </div>

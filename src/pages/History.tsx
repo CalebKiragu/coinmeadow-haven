@@ -28,12 +28,14 @@ import TransactionHistoryItem from "@/components/dashboard/TransactionHistoryIte
 import { motion, AnimatePresence } from "framer-motion";
 import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const History = () => {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { transactions, isLoading } = useAppSelector((state) => state.transaction);
   const { toast } = useToast();
-  const { verifyPasskey, isPasskeyVerified } = usePasskeyAuth();
+  const { verifyPasskey, isPasskeyVerified, isVerifying } = usePasskeyAuth();
   
   const [date, setDate] = useState<Date | undefined>();
   const [transactionType, setTransactionType] = useState("all");
@@ -43,6 +45,31 @@ const History = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
   const [showBalance, setShowBalance] = useState(false);
+  
+  // Check for passkey verification when the component mounts
+  useEffect(() => {
+    const checkPasskeyVerification = async () => {
+      if (!isPasskeyVerified) {
+        try {
+          const verified = await verifyPasskey();
+          setShowBalance(verified);
+        } catch (error) {
+          toast({
+            title: "Authentication Required",
+            description: "Please verify your identity to view transaction details",
+            variant: "default",
+          });
+          
+          // Optionally redirect if authentication fails
+          // navigate("/dashboard");
+        }
+      } else {
+        setShowBalance(true);
+      }
+    };
+    
+    checkPasskeyVerification();
+  }, [isPasskeyVerified, verifyPasskey, toast]);
   
   // Memoize transactions fetching to prevent unnecessary requests
   useEffect(() => {
@@ -199,8 +226,10 @@ const History = () => {
     // If we're trying to show the balance and passkey hasn't been verified yet
     if (!showBalance && !isPasskeyVerified) {
       try {
-        await verifyPasskey();
-        setShowBalance(true);
+        const verified = await verifyPasskey();
+        if (verified) {
+          setShowBalance(true);
+        }
       } catch (error) {
         toast({
           title: "Authentication Failed",
@@ -238,7 +267,6 @@ const History = () => {
                 transaction={tx}
                 showBalance={showBalance}
                 onExpand={() => handleExpandTransaction(tx.txId)}
-                onToggleBalance={handleToggleBalance}
               />
             </motion.div>
           ))}
@@ -362,8 +390,9 @@ const History = () => {
               size="icon"
               className="h-10 w-10 bg-white dark:bg-gray-800"
               onClick={handleToggleBalance}
+              disabled={isVerifying}
             >
-              {showBalance ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
             
             {(transactionType !== "all" || currency !== "all" || date || searchTerm) && (

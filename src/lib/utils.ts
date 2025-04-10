@@ -1,3 +1,4 @@
+
 import { ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -110,10 +111,8 @@ export const maskSensitiveData = (data?: string): string => {
 };
 
 export const url = () => {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/';
-  
   return {
-    BASE_URL: baseUrl,
+    BASE_URL: 'https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/',
   };
 };
 
