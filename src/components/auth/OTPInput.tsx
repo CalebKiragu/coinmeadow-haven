@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import {
   InputOTP,
   InputOTPGroup,
@@ -13,6 +13,15 @@ type OTPInputProps = {
 };
 
 const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Focus on the input field when component mounts
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-foreground/80 text-center font-medium">
@@ -24,10 +33,17 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
           onChange={onChange}
           maxLength={4}
           pattern="\d{4}"
+          autoFocus
+          ref={inputRef}
           render={({ slots }) => (
             <InputOTPGroup className="gap-3">
               {slots.map((slot, index) => (
-                <InputOTPSlot key={index} {...slot} index={index} />
+                <InputOTPSlot 
+                  key={index} 
+                  {...slot} 
+                  index={index} 
+                  className="cursor-text focus:ring-2 focus:ring-primary"
+                />
               ))}
             </InputOTPGroup>
           )}

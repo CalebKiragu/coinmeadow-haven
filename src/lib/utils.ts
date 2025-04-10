@@ -126,3 +126,42 @@ export const aws = () => {
     }
   };
 };
+
+/**
+ * Helper to handle environment branching for different deployment environments
+ */
+export const getEnvironmentConfig = () => {
+  const env = import.meta.env.VITE_APP_ENV || 'development';
+  
+  const configs = {
+    development: {
+      apiUrl: 'https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Dev/',
+      s3Bucket: 'pesatoken-kyc-dev',
+      featureFlags: {
+        enableBiometrics: true,
+        showDebugInfo: true,
+        mockTransactions: false
+      }
+    },
+    staging: {
+      apiUrl: 'https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Stage/',
+      s3Bucket: 'pesatoken-kyc-staging',
+      featureFlags: {
+        enableBiometrics: true,
+        showDebugInfo: false,
+        mockTransactions: false
+      }
+    },
+    production: {
+      apiUrl: 'https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/',
+      s3Bucket: 'pesatoken-kyc',
+      featureFlags: {
+        enableBiometrics: true,
+        showDebugInfo: false,
+        mockTransactions: false
+      }
+    }
+  };
+  
+  return configs[env as keyof typeof configs] || configs.development;
+};

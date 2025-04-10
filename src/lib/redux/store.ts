@@ -10,13 +10,13 @@ import notificationReducer from './slices/notificationSlice';
 
 // Create a transform to handle non-serializable values like BigInt
 const bigIntTransform = createTransform(
-  // transform state going to storage
+  // transform state going to storage - convert BigInt to string
   (inboundState, key) => {
-    return JSON.parse(JSON.stringify(inboundState, (_, value) => 
+    return JSON.parse(JSON.stringify(inboundState, (key, value) => 
       typeof value === 'bigint' ? value.toString() : value
     ));
   },
-  // transform state coming from storage
+  // transform state coming from storage - convert string back to BigInt
   (outboundState, key) => {
     if (key === 'transaction') {
       // If we're dealing with transactions, convert timestamp strings back to bigint

@@ -16,8 +16,9 @@ import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import { ApiService } from "@/lib/services";
 import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { useToast } from "@/hooks/use-toast";
+import { setShowBalance, toggleShowBalance } from "@/lib/redux/slices/walletSlice";
 
-const TransactionHistory = ({ showBalance, setShowBalance }) => {
+const TransactionHistory = () => {
   const [sortBy, setSortBy] = useState("date");
   const [filterType, setFilterType] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +28,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
   const { verifyPasskey, isPasskeyVerified, isVerifying } = usePasskeyAuth();
 
   const { transactions } = useAppSelector((state) => state.transaction);
+  const { showBalance } = useAppSelector((state) => state.wallet);
   
   // Memoize transactions fetching to prevent unnecessary requests
   useEffect(() => {
@@ -96,7 +98,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
       try {
         const verified = await verifyPasskey();
         if (verified) {
-          setShowBalance(true);
+          dispatch(setShowBalance(true));
         }
       } catch (error) {
         toast({
@@ -106,8 +108,8 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
         });
       }
     } else {
-      // If passkey is already verified or we're hiding the balance
-      setShowBalance(!showBalance);
+      // Toggle the balance visibility state
+      dispatch(toggleShowBalance());
     }
   };
 
@@ -122,6 +124,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
             onClick={handleToggleBalance}
             className="flex items-center"
             disabled={isVerifying}
+            aria-label={showBalance ? "Hide Balance" : "Show Balance"}
           >
             {showBalance ? (
               <EyeOff className="h-4 w-4" />

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "./use-toast";
 
@@ -5,8 +6,6 @@ export const usePasskeyAuth = () => {
   const [isPasskeyVerified, setIsPasskeyVerified] = useState(false);
   const [lastVerifiedTime, setLastVerifiedTime] = useState<number | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  // Use this ref to prevent showing multiple toasts
-  const toastShownRef = useRef(false);
   const { toast } = useToast();
 
   // Check if passkey is still valid (verified within the last 3 minutes)
@@ -18,8 +17,6 @@ export const usePasskeyAuth = () => {
 
       if (timeElapsed > threeMinutesInMs) {
         setIsPasskeyVerified(false);
-        // Reset the toast shown flag so we can show it again on next verification
-        toastShownRef.current = false;
       }
     }
   }, [lastVerifiedTime]);
@@ -46,20 +43,21 @@ export const usePasskeyAuth = () => {
     return new Promise((resolve, reject) => {
       setIsVerifying(true);
 
-      // Simulate passkey authentication
-      // In a real implementation, this would use navigator.credentials.get()
+      // Simulate passkey authentication with biometrics where supported
       try {
         // Check if Web Authentication API is available
         if (window.PublicKeyCredential) {
+          // In a real implementation, this would check if biometrics are available
+          const hasBiometrics = 'credentials' in navigator && 
+                               typeof navigator.credentials.get === 'function';
+          
           // Simulate successful verification
           setTimeout(() => {
             setIsPasskeyVerified(true);
             setLastVerifiedTime(Date.now());
             setIsVerifying(false);
-
-            // No longer show success toast - removed this code block
-            toastShownRef.current = true;
-
+            
+            // No success toast - removed per requirements
             resolve(true);
           }, 1000);
         } else {
@@ -74,10 +72,8 @@ export const usePasskeyAuth = () => {
               setIsPasskeyVerified(true);
               setLastVerifiedTime(Date.now());
               setIsVerifying(false);
-
-              // No longer show success toast - removed this code block
-              toastShownRef.current = true;
-
+              
+              // No success toast - removed per requirements
               resolve(true);
             }, 1000);
           } else {

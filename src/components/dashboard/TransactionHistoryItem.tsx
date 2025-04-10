@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { Fee, Recipient, TxIds } from "@/lib/redux/slices/transactionSlice";
@@ -39,7 +38,7 @@ const TransactionHistoryItem = ({
   const auth = useAppSelector((state) => state.auth);
   const userCurrency = auth.user?.currency || auth.merchant?.currency || "USD";
 
-  const getTransactionTypeColor = (type: string) => {
+  function getTransactionTypeColor(type: string) {
     switch (type) {
       case "SEND":
         return { bg: "bg-red-100/80", text: "text-red-600 dark:text-red-400", iconBg: "bg-red-500/10", gradient: "from-red-500/10 to-red-600/5" };
@@ -53,9 +52,9 @@ const TransactionHistoryItem = ({
       default:
         return { bg: "bg-blue-100/80", text: "text-blue-600 dark:text-blue-400", iconBg: "bg-blue-500/10", gradient: "from-blue-500/10 to-blue-600/5" };
     }
-  };
+  }
 
-  const getStatusColor = (status: string) => {
+  function getStatusColor(status: string) {
     switch (status) {
       case "CONFIRMED":
       case "SETTLED":
@@ -67,15 +66,9 @@ const TransactionHistoryItem = ({
       default:
         return "text-gray-500 dark:text-gray-400";
     }
-  };
+  }
 
-  const colors = getTransactionTypeColor(transaction.type);
-  const isOutgoing = transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW";
-
-  const safeRecipient = transaction.recipient && transaction.recipient.length > 0 ? 
-    transaction.recipient[0] : { address: 'Unknown' };
-  
-  const getSafeAddress = (address: string | undefined | null, length = 12) => {
+  function getSafeAddress(address: string | undefined | null, length = 12) {
     if (!address) return "Unknown";
     try {
       return `${address.slice(0, length)}${address.length > length ? '...' : ''}`;
@@ -83,9 +76,9 @@ const TransactionHistoryItem = ({
       console.error("Error formatting address:", error);
       return "Invalid address";
     }
-  };
+  }
 
-  const safeFormatTimestamp = (timestamp: bigint | null | undefined) => {
+  function safeFormatTimestamp(timestamp: bigint | null | undefined) {
     if (!timestamp) return "Unknown date";
     try {
       return formatTimestamp(timestamp);
@@ -93,22 +86,20 @@ const TransactionHistoryItem = ({
       console.error("Error formatting timestamp:", error);
       return "Invalid date";
     }
-  };
-  
+  }
+
   const isCryptoCurrency = (currency: string) => {
     return ['BTC', 'ETH', 'LTC', 'CELO'].includes(currency);
   };
   
   const bothCrypto = isCryptoCurrency(transaction.grossCurrency) && isCryptoCurrency(transaction.netCurrency);
   
-  // Fix for the conversion issue for crypto-to-crypto transactions
   const getFiatEquivalent = () => {
     if (!isCryptoCurrency(transaction.grossCurrency)) {
       return "";
     }
     
     try {
-      // Build the rates lookup object
       const ratesMap: Record<string, number> = {};
       
       prices.forEach(price => {
@@ -120,19 +111,16 @@ const TransactionHistoryItem = ({
         }
       });
       
-      // Check if we have the necessary rate
       const rateKey = `${transaction.grossCurrency}-${userCurrency}`;
       if (!ratesMap[rateKey]) {
         console.warn(`No conversion rate found for ${rateKey}`);
         return "";
       }
       
-      // Parse the gross value with special handling for scientific notation
       let grossValue: number;
       const valueStr = transaction.grossValue;
       
       if (typeof valueStr === 'string' && valueStr.includes('e')) {
-        // Handle scientific notation
         const [base, exponent] = valueStr.split('e');
         const baseNum = parseFloat(base);
         const expNum = parseInt(exponent);
@@ -141,16 +129,13 @@ const TransactionHistoryItem = ({
         grossValue = parseFloat(String(valueStr));
       }
       
-      // Check if parsing was successful
       if (isNaN(grossValue)) {
         console.warn(`Failed to parse gross value: ${transaction.grossValue}`);
         return "";
       }
       
-      // Calculate the fiat value
       const fiatValue = grossValue * ratesMap[rateKey];
       
-      // Format the output - Fixed to 2 decimal places for fiat values
       return `${fiatValue.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
@@ -181,10 +166,9 @@ const TransactionHistoryItem = ({
         </div>
       ));
     } else {
-      // Handle case where fee is a single object
       return (
-        <div className="flex items-center">
-          <span className="mr-2">Network Fee:</span>
+        <div className="flex items-center gap-1">
+          <span>Network Fee:</span>
           <span className="font-medium">
             {transaction.fee.crypto ? formatCryptoValue(transaction.fee.crypto) : '0'} {transaction.grossCurrency}
           </span>
@@ -193,27 +177,26 @@ const TransactionHistoryItem = ({
     }
   };
 
-  // Get fiat equivalent once to avoid recalculation
   const fiatEquivalent = getFiatEquivalent();
 
   return (
     <div className="group transition-all duration-200">
       <div 
-        className={`flex items-center justify-between p-3 hover:bg-gradient-to-r ${colors.gradient} rounded-lg cursor-pointer`}
+        className={`flex items-center justify-between p-3 hover:bg-gradient-to-r ${transaction.type ? getTransactionTypeColor(transaction.type).gradient : "from-blue-500/10 to-blue-600/5"} rounded-lg cursor-pointer`}
         onClick={toggleExpand}
       >
         <div className="flex items-center space-x-3">
           <div
-            className={`p-1.5 rounded-full ${colors.bg} ${colors.text}`}
+            className={`p-1.5 rounded-full ${transaction.type ? getTransactionTypeColor(transaction.type).bg : "bg-blue-100/80"} ${transaction.type ? getTransactionTypeColor(transaction.type).text : "text-blue-600 dark:text-blue-400"}`}
           >
-            {isOutgoing ? (
+            {(transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW") ? (
               <ArrowUpRight size={16} />
             ) : (
               <ArrowDownLeft size={16} />
             )}
           </div>
           <div className="flex flex-col items-start">
-            <span className={`font-medium ${colors.text}`}>
+            <span className={`font-medium ${transaction.type ? getTransactionTypeColor(transaction.type).text : "text-blue-600 dark:text-blue-400"}`}>
               {transaction.type === "SEND" 
                 ? "Sent" 
                 : transaction.type === "WITHDRAW" 
@@ -225,16 +208,16 @@ const TransactionHistoryItem = ({
                 : "Received"}
             </span>
             <span className="text-sm text-gray-600 dark:text-gray-300">
-              {isOutgoing
-                ? `To: ${getSafeAddress(safeRecipient.address)}`
+              {(transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW")
+                ? `To: ${getSafeAddress(transaction.recipient && transaction.recipient.length > 0 ? transaction.recipient[0].address : 'Unknown')}`
                 : `From: ${getSafeAddress(transaction.sender)}`}
             </span>
           </div>
         </div>
 
         <div className="text-right">
-          <div className={`font-medium ${!showBalance ? "blur-content" : ""} ${isOutgoing ? "text-red-500 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
-            {isOutgoing ? "-" : "+"}{formatCryptoValue(transaction.grossValue)} {transaction.grossCurrency}
+          <div className={`font-medium ${!showBalance ? "blur-content" : ""} ${(transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW") ? "text-red-500 dark:text-red-400" : "text-green-600 dark:text-green-400"}`}>
+            {(transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW") ? "-" : "+"}{formatCryptoValue(transaction.grossValue)} {transaction.grossCurrency}
           </div>
           {fiatEquivalent && (
             <div className={`text-xs text-gray-700 dark:text-gray-300 font-medium ${!showBalance ? "blur-content" : ""}`}>
@@ -270,11 +253,11 @@ const TransactionHistoryItem = ({
             </div>
             <div>
               <span className="text-gray-600 dark:text-gray-400 text-xs">
-                {isOutgoing ? "Recipient" : "Sender"}:
+                {(transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW") ? "Recipient" : "Sender"}:
               </span>
               <p className="font-medium break-all text-gray-800 dark:text-white/90 bg-black/5 dark:bg-black/30 p-1 rounded mt-1 overflow-x-auto">
-                {isOutgoing
-                  ? safeRecipient.address || "Unknown"
+                {(transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW")
+                  ? (transaction.recipient && transaction.recipient.length > 0 ? transaction.recipient[0].address : "Unknown")
                   : transaction.sender || "Unknown"}
               </p>
             </div>
@@ -290,8 +273,8 @@ const TransactionHistoryItem = ({
             </div>
             <div>
               <span className="text-gray-600 dark:text-gray-400 text-xs">Gross Amount:</span>
-              <p className={`font-medium ${isOutgoing ? "text-red-500 dark:text-red-400" : "text-green-600 dark:text-green-400"} mt-1 ${!showBalance ? "blur-content" : ""}`}>
-                {isOutgoing ? "-" : "+"}{formatCryptoValue(transaction.grossValue)} {transaction.grossCurrency}
+              <p className={`font-medium ${(transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW") ? "text-red-500 dark:text-red-400" : "text-green-600 dark:text-green-400"} mt-1 ${!showBalance ? "blur-content" : ""}`}>
+                {(transaction.type === "SEND" || transaction.type === "WITHDRAW" || transaction.type === "BCWITHDRAW") ? "-" : "+"}{formatCryptoValue(transaction.grossValue)} {transaction.grossCurrency}
                 {fiatEquivalent && (
                   <span className="text-xs text-gray-700 dark:text-gray-300 ml-2">
                     ≈ {fiatEquivalent}

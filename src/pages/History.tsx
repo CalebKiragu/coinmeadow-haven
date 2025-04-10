@@ -29,13 +29,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-
-// Shared state for balance visibility across the app
-import { useAppSelector as useSharedState } from "@/lib/redux/hooks";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const History = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const isMobile = useIsMobile();
   const { transactions, isLoading } = useAppSelector((state) => state.transaction);
   const { toast } = useToast();
   const { verifyPasskey, isPasskeyVerified, isVerifying } = usePasskeyAuth();
@@ -48,9 +47,8 @@ const History = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
   
-  // Get the global showBalance state from Dashboard
-  const { selectedFiat } = useAppSelector((state) => state.wallet);
-  const [showBalance, setShowBalance] = useState(false);
+  // Get the global showBalance state from the wallet slice
+  const { showBalance } = useAppSelector((state) => state.wallet);
   
   // Check for passkey verification when the component mounts
   useEffect(() => {
@@ -58,7 +56,10 @@ const History = () => {
       if (!isPasskeyVerified) {
         try {
           const verified = await verifyPasskey();
-          setShowBalance(verified);
+          if (!verified) {
+            // Redirect if authentication fails
+            navigate("/dashboard");
+          }
         } catch (error) {
           toast({
             title: "Authentication Required",
@@ -69,8 +70,6 @@ const History = () => {
           // Redirect if authentication fails
           navigate("/dashboard");
         }
-      } else {
-        setShowBalance(true);
       }
     };
     
@@ -109,9 +108,22 @@ const History = () => {
         return false;
       }
       
-      // Filter by currency
-      if (currency !== "all" && tx.grossCurrency !== currency) {
-        return false;
+      // Filter by currency - check both grossCurrency and currencies in inOut field
+      if (currency !== "all") {
+        // Check grossCurrency
+        if (tx.grossCurrency !== currency) {
+          // If grossCurrency doesn't match, check inOut field
+          if (tx.inOut) {
+            // Split inOut by dash to check for currencies
+            const currencies = tx.inOut.split('-');
+            // If none of the currencies match, filter out this transaction
+            if (!currencies.some(c => c.trim() === currency)) {
+              return false;
+            }
+          } else {
+            return false;
+          }
+        }
       }
       
       // Filter by status
@@ -284,12 +296,13 @@ const History = () => {
         <NavigationHeader title="Transaction History" />
         
         <div className="space-y-6">
-          <div className="flex flex-wrap gap-4">
+          {/* Improved mobile layout - 2 columns on mobile, more rows */}
+          <div className={`grid ${isMobile ? 'grid-cols-2' : 'flex flex-wrap'} gap-4`}>
             <Select 
               value={transactionType}
               onValueChange={setTransactionType}
             >
-              <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800">
+              <SelectTrigger className={`${isMobile ? 'w-full' : 'w-[180px]'} bg-white dark:bg-gray-800`}>
                 <Filter className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Transaction Type" />
               </SelectTrigger>
@@ -307,7 +320,7 @@ const History = () => {
               value={currency}
               onValueChange={setCurrency}
             >
-              <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800">
+              <SelectTrigger className={`${isMobile ? 'w-full' : 'w-[180px]'} bg-white dark:bg-gray-800`}>
                 <SelectValue placeholder="Currency" />
               </SelectTrigger>
               <SelectContent>
@@ -316,6 +329,8 @@ const History = () => {
                 <SelectItem value="ETH">Ethereum</SelectItem>
                 <SelectItem value="LTC">Litecoin</SelectItem>
                 <SelectItem value="CELO">Celo</SelectItem>
+                <SelectItem value="USD">US Dollar</SelectItem>
+                <SelectItem value="EUR">Euro</SelectItem>
               </SelectContent>
             </Select>
 
@@ -323,7 +338,7 @@ const History = () => {
               value={sortBy}
               onValueChange={setSortBy}
             >
-              <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800">
+              <SelectTrigger className={`${isMobile ? 'w-full' : 'w-[180px]'} bg-white dark:bg-gray-800`}>
                 <SortAsc className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Sort By" />
               </SelectTrigger>
@@ -340,7 +355,7 @@ const History = () => {
                 <Button
                   variant={"outline"}
                   className={cn(
-                    "w-[180px] justify-start text-left font-normal bg-white dark:bg-gray-800",
+                    `${isMobile ? 'w-full' : 'w-[180px]'} justify-start text-left font-normal bg-white dark:bg-gray-800`,
                     !date && "text-muted-foreground"
                   )}
                 >
@@ -360,7 +375,19 @@ const History = () => {
               </PopoverContent>
             </Popover>
 
-            <div className="relative w-full md:w-auto md:flex-1">
+            {/* Clear filters button, full width on mobile */}
+            {(transactionType !== "all" || currency !== "all" || date || searchTerm) && (
+              <Button
+                variant="outline"
+                className={`${isMobile ? 'col-span-2' : ''} shrink-0 bg-white dark:bg-gray-800`}
+                onClick={clearFilters}
+              >
+                Clear Filters
+              </Button>
+            )}
+            
+            {/* Search input, full width on mobile, in its own row */}
+            <div className={`relative ${isMobile ? 'col-span-2' : 'w-auto flex-1'}`}>
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search transactions..."
@@ -369,18 +396,6 @@ const History = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            
-            {/* Removed eye icon toggle button */}
-            
-            {(transactionType !== "all" || currency !== "all" || date || searchTerm) && (
-              <Button
-                variant="outline"
-                className="shrink-0 bg-white dark:bg-gray-800"
-                onClick={clearFilters}
-              >
-                Clear Filters
-              </Button>
-            )}
           </div>
 
           <div className="glass-effect rounded-lg p-6">
