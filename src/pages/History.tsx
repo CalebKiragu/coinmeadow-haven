@@ -18,7 +18,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Search, Filter, SortAsc, Eye, EyeOff } from "lucide-react";
+import { Calendar as CalendarIcon, Search, Filter, SortAsc } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,6 +29,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+
+// Shared state for balance visibility across the app
+import { useAppSelector as useSharedState } from "@/lib/redux/hooks";
 
 const History = () => {
   const navigate = useNavigate();
@@ -44,6 +47,9 @@ const History = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
+  
+  // Get the global showBalance state from Dashboard
+  const { selectedFiat } = useAppSelector((state) => state.wallet);
   const [showBalance, setShowBalance] = useState(false);
   
   // Check for passkey verification when the component mounts
@@ -60,8 +66,8 @@ const History = () => {
             variant: "default",
           });
           
-          // Optionally redirect if authentication fails
-          // navigate("/dashboard");
+          // Redirect if authentication fails
+          navigate("/dashboard");
         }
       } else {
         setShowBalance(true);
@@ -69,7 +75,7 @@ const History = () => {
     };
     
     checkPasskeyVerification();
-  }, [isPasskeyVerified, verifyPasskey, toast]);
+  }, [isPasskeyVerified, verifyPasskey, toast, navigate]);
   
   // Memoize transactions fetching to prevent unnecessary requests
   useEffect(() => {
@@ -222,27 +228,6 @@ const History = () => {
     setSortBy("newest");
   };
 
-  const handleToggleBalance = async () => {
-    // If we're trying to show the balance and passkey hasn't been verified yet
-    if (!showBalance && !isPasskeyVerified) {
-      try {
-        const verified = await verifyPasskey();
-        if (verified) {
-          setShowBalance(true);
-        }
-      } catch (error) {
-        toast({
-          title: "Authentication Failed",
-          description: "Unable to verify your identity",
-          variant: "destructive",
-        });
-      }
-    } else {
-      // If passkey is already verified or we're hiding the balance
-      setShowBalance(!showBalance);
-    }
-  };
-
   const renderTransactionList = (transactions: Transaction[]) => {
     if (transactions.length === 0) {
       return (
@@ -385,15 +370,7 @@ const History = () => {
               />
             </div>
             
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-10 w-10 bg-white dark:bg-gray-800"
-              onClick={handleToggleBalance}
-              disabled={isVerifying}
-            >
-              {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
+            {/* Removed eye icon toggle button */}
             
             {(transactionType !== "all" || currency !== "all" || date || searchTerm) && (
               <Button

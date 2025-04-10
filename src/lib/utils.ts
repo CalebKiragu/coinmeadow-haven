@@ -86,6 +86,7 @@ export const estimateFiatValue = (
     
     const fiatValue = numAmount * rate;
     
+    // Always format fiat values with exactly 2 decimal places
     return fiatValue.toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2

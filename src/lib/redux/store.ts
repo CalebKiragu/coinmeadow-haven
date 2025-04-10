@@ -12,16 +12,24 @@ import notificationReducer from './slices/notificationSlice';
 const bigIntTransform = createTransform(
   // transform state going to storage
   (inboundState, key) => {
-    if (key === 'price') {
-      // Create a copy of the state and convert BigInt to strings
-      return JSON.parse(JSON.stringify(inboundState, (_, value) => 
-        typeof value === 'bigint' ? value.toString() : value
-      ));
-    }
-    return inboundState;
+    return JSON.parse(JSON.stringify(inboundState, (_, value) => 
+      typeof value === 'bigint' ? value.toString() : value
+    ));
   },
   // transform state coming from storage
   (outboundState, key) => {
+    if (key === 'transaction') {
+      // If we're dealing with transactions, convert timestamp strings back to bigint
+      const transformedState = {...outboundState};
+      if (transformedState.transactions) {
+        transformedState.transactions = transformedState.transactions.map(tx => ({
+          ...tx,
+          timestamp: typeof tx.timestamp === 'string' ? BigInt(tx.timestamp) : tx.timestamp,
+          updatedAt: typeof tx.updatedAt === 'string' ? BigInt(tx.updatedAt) : tx.updatedAt
+        }));
+      }
+      return transformedState;
+    }
     return outboundState;
   }
 );
@@ -51,9 +59,13 @@ export const store = configureStore({
         // Ignore these action types
         ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE', 'persist/REGISTER'],
         // Ignore these field paths in all actions
-        ignoredActionPaths: ['meta.arg', 'payload.timestamp'],
+        ignoredActionPaths: ['meta.arg', 'payload.timestamp', 'payload.updatedAt'],
         // Ignore these paths in the state
-        ignoredPaths: ['price.prices'],
+        ignoredPaths: [
+          'transaction.transactions.timestamp', 
+          'transaction.transactions.updatedAt',
+          'price.prices'
+        ],
       },
     }),
 });

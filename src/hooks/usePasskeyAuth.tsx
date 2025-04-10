@@ -58,15 +58,8 @@ export const usePasskeyAuth = () => {
             setLastVerifiedTime(Date.now());
             setIsVerifying(false);
             
-            // Only show toast if it hasn't been shown recently
-            if (!toastShownRef.current) {
-              toast({
-                title: "Authentication Successful",
-                description: "Your identity has been verified",
-                variant: "default",
-              });
-              toastShownRef.current = true;
-            }
+            // No longer show success toast - removed this code block
+            toastShownRef.current = true;
             
             resolve(true);
           }, 1000);
@@ -82,15 +75,8 @@ export const usePasskeyAuth = () => {
               setLastVerifiedTime(Date.now());
               setIsVerifying(false);
               
-              // Only show toast if it hasn't been shown recently
-              if (!toastShownRef.current) {
-                toast({
-                  title: "Authentication Successful",
-                  description: "Your identity has been verified using PIN",
-                  variant: "default",
-                });
-                toastShownRef.current = true;
-              }
+              // No longer show success toast - removed this code block
+              toastShownRef.current = true;
               
               resolve(true);
             } else {

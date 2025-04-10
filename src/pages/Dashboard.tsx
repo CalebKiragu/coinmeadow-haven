@@ -74,9 +74,9 @@ const Dashboard = () => {
     // Request passkey authentication when the component mounts
     const initPasskeyAuth = async () => {
       try {
-        // Try to verify passkey on initial load
-        await verifyPasskey();
-        setShowBalance(true);
+        // Try to verify passkey on initial load without showing toast notifications
+        const verified = await verifyPasskey();
+        setShowBalance(verified);
       } catch (error) {
         // User declined or authentication failed, balance will remain hidden
         console.log("Initial passkey verification skipped or failed");

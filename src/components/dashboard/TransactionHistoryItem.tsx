@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { Fee, Recipient, TxIds } from "@/lib/redux/slices/transactionSlice";
-import { formatTimestamp, formatCryptoValue, estimateFiatValue } from "@/lib/utils";
+import { formatTimestamp, formatCryptoValue } from "@/lib/utils";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { motion } from "framer-motion";
 
@@ -150,7 +150,7 @@ const TransactionHistoryItem = ({
       // Calculate the fiat value
       const fiatValue = grossValue * ratesMap[rateKey];
       
-      // Format the output
+      // Format the output - Fixed to 2 decimal places for fiat values
       return `${fiatValue.toLocaleString(undefined, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
@@ -175,7 +175,7 @@ const TransactionHistoryItem = ({
     
     if (Array.isArray(transaction.fee)) {
       return transaction.fee.map((fee, index) => (
-        <div key={index} className="flex justify-between items-center">
+        <div key={index} className="flex items-center">
           <span className="mr-2">Network Fee:</span>
           <span className="font-medium">{fee.crypto ? formatCryptoValue(fee.crypto) : '0'} {transaction.grossCurrency}</span>
         </div>
@@ -183,7 +183,7 @@ const TransactionHistoryItem = ({
     } else {
       // Handle case where fee is a single object
       return (
-        <div className="flex justify-between items-center">
+        <div className="flex items-center">
           <span className="mr-2">Network Fee:</span>
           <span className="font-medium">
             {transaction.fee.crypto ? formatCryptoValue(transaction.fee.crypto) : '0'} {transaction.grossCurrency}
