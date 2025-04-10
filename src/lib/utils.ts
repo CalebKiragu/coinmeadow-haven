@@ -1,3 +1,4 @@
+
 import { ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -102,4 +103,52 @@ export const estimateFiatValue = (
     console.error("Error estimating fiat value:", error);
     return "";
   }
+};
+
+// Mask sensitive data like email or phone
+export const maskSensitiveData = (data?: string): string => {
+  if (!data) return "***";
+  
+  if (data.includes('@')) {
+    // Email masking
+    const [username, domain] = data.split('@');
+    const maskedUsername = username.charAt(0) + '*'.repeat(username.length - 2) + username.charAt(username.length - 1);
+    return `${maskedUsername}@${domain}`;
+  } else if (/^\d+$/.test(data)) {
+    // Phone number masking
+    return data.slice(0, 3) + '*'.repeat(data.length - 6) + data.slice(-3);
+  } else {
+    // Default masking for other types
+    return data.charAt(0) + '*'.repeat(data.length - 2) + data.charAt(data.length - 1);
+  }
+};
+
+// URL configuration for API endpoints
+export const url = () => {
+  const environment = import.meta.env.VITE_APP_ENV || 'development';
+  
+  const urls = {
+    development: {
+      BASE_URL: 'https://api-dev.example.com/',
+    },
+    staging: {
+      BASE_URL: 'https://api-staging.example.com/',
+    },
+    production: {
+      BASE_URL: 'https://api.example.com/',
+    },
+  };
+  
+  return urls[environment as keyof typeof urls] || urls.development;
+};
+
+// AWS configuration
+export const aws = () => {
+  return {
+    s3: {
+      REGION: import.meta.env.VITE_AWS_REGION || 'us-east-1',
+      BUCKET_NAME: import.meta.env.VITE_S3_BUCKET_NAME || 'pesatoken-kyc',
+      IDENTITY_POOL_ID: import.meta.env.VITE_IDENTITY_POOL_ID || 'us-east-1:12345678-1234-1234-1234-123456789012'
+    }
+  };
 };

@@ -33,6 +33,14 @@ type SendPayContextType = {
   blockchainPin: string;
   setBlockchainPin: (value: string) => void;
   
+  // State management
+  isLoading: boolean;
+  setIsLoading: (value: boolean) => void;
+  isSuccess: boolean;
+  setIsSuccess: (value: boolean) => void;
+  error: string | null;
+  setError: (value: string | null) => void;
+  
   // Currency settings
   selectedCryptoCurrency: string;
   setSelectedCryptoCurrency: (value: string) => void;
@@ -55,7 +63,6 @@ type SendPayContextType = {
   resetMerchantFlow: () => void;
   resetBlockchainFlow: () => void;
   rates: CurrencyRates;
-  isLoading: boolean;
 };
 
 const SendPayContext = createContext<SendPayContextType | undefined>(undefined);
@@ -82,6 +89,11 @@ export const SendPayProvider = ({
   const [blockchainAmount, setBlockchainAmount] = useState("");
   const [blockchainPin, setBlockchainPin] = useState("");
   
+  // Transaction state
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   // Currency settings
   const [selectedCryptoCurrency, setSelectedCryptoCurrency] = useState("BTC");
   const [selectedFiatCurrency, setSelectedFiatCurrency] = useState("USD");
@@ -93,7 +105,7 @@ export const SendPayProvider = ({
   // Use our currency conversion hook
   const { 
     rates, 
-    isLoading, 
+    isLoading: ratesLoading, 
     convertCryptoToFiat, 
     convertFiatToCrypto, 
     getCurrentRate 
@@ -144,6 +156,12 @@ export const SendPayProvider = ({
         setBlockchainAmount,
         blockchainPin,
         setBlockchainPin,
+        isLoading,
+        setIsLoading,
+        isSuccess,
+        setIsSuccess,
+        error,
+        setError,
         selectedCryptoCurrency,
         setSelectedCryptoCurrency,
         selectedFiatCurrency,
@@ -159,7 +177,6 @@ export const SendPayProvider = ({
         resetMerchantFlow,
         resetBlockchainFlow,
         rates,
-        isLoading,
       }}
     >
       {children}
