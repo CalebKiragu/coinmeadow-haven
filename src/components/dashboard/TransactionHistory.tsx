@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useMemo } from "react";
-import { Calendar, Filter, ChevronRight } from "lucide-react";
+import { Calendar, Filter, ChevronRight, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   Select,
@@ -14,12 +14,16 @@ import GlassCard from "../ui/GlassCard";
 import TransactionHistoryItem from "./TransactionHistoryItem";
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import { ApiService } from "@/lib/services";
+import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const TransactionHistory = ({ showBalance, setShowBalance }) => {
   const [sortBy, setSortBy] = useState("date");
   const [filterType, setFilterType] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
   const dispatch = useAppDispatch();
+  const { toast } = useToast();
+  const { verifyPasskey, isPasskeyVerified } = usePasskeyAuth();
 
   const { transactions } = useAppSelector((state) => state.transaction);
   
@@ -60,22 +64,76 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
       if (sortBy === "date") {
         return Number(b.timestamp) - Number(a.timestamp);
       } else if (sortBy === "amount") {
-        const aValue = parseFloat(a.grossValue.replace(/[^0-9.-]+/g, ""));
-        const bValue = parseFloat(b.grossValue.replace(/[^0-9.-]+/g, ""));
+        // Safely parse numeric values from strings that might be in scientific notation
+        const parseAmount = (val: string) => {
+          try {
+            if (val.includes('e')) {
+              const [base, exponent] = val.split('e');
+              return parseFloat(base) * Math.pow(10, parseInt(exponent));
+            }
+            return parseFloat(val.replace(/[^0-9.-]+/g, ""));
+          } catch (error) {
+            console.error("Error parsing amount:", error);
+            return 0;
+          }
+        };
+        
+        const aValue = parseAmount(a.grossValue);
+        const bValue = parseAmount(b.grossValue);
+        
         return bValue - aValue;
       }
       return 0;
     });
   }, [transactions, filterType, sortBy]);
 
-  // Show only the most recent 5 transactions for dashboard
-  const recentTransactions = filteredAndSortedTransactions.slice(0, 5);
-  const hasMoreTransactions = filteredAndSortedTransactions.length > 5;
+  // Show only the most recent 3 transactions for dashboard
+  const recentTransactions = filteredAndSortedTransactions.slice(0, 3);
+  const hasMoreTransactions = filteredAndSortedTransactions.length > 3;
+
+  const handleToggleBalance = async () => {
+    // If we're trying to show the balance and passkey hasn't been verified yet
+    if (!showBalance && !isPasskeyVerified) {
+      try {
+        await verifyPasskey();
+        setShowBalance(true);
+      } catch (error) {
+        toast({
+          title: "Authentication Failed",
+          description: "Unable to verify your identity",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // If passkey is already verified or we're hiding the balance
+      setShowBalance(!showBalance);
+    }
+  };
 
   return (
     <GlassCard className="animate-fade-in">
       <div className="flex flex-col gap-4 mb-6">
-        <h2 className="text-xl font-semibold">Transaction History</h2>
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Transaction History</h2>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleToggleBalance}
+            className="flex items-center gap-1"
+          >
+            {showBalance ? (
+              <>
+                <Eye className="h-4 w-4" />
+                <span className="text-sm">Hide Amounts</span>
+              </>
+            ) : (
+              <>
+                <EyeOff className="h-4 w-4" />
+                <span className="text-sm">Show Amounts</span>
+              </>
+            )}
+          </Button>
+        </div>
         <div className="flex flex-col sm:flex-row gap-4">
           <Select value={filterType} onValueChange={setFilterType}>
             <SelectTrigger className="w-full sm:w-[180px]">
@@ -121,6 +179,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }) => {
                 key={tx.txId}
                 transaction={tx}
                 showBalance={showBalance}
+                onToggleBalance={handleToggleBalance}
               />
             ))}
           </div>

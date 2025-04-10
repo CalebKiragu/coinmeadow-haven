@@ -9,7 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { cryptoCurrencies } from "@/types/currency";
+import { TransactionService } from "@/lib/services/transactionService";
+import { useAppSelector } from "@/lib/redux/hooks";
 
 export const BlockchainTransfer = ({
   currentStep,
@@ -27,16 +30,106 @@ export const BlockchainTransfer = ({
     setSelectedCryptoCurrency,
     convertCryptoToFiat,
     selectedFiatCurrency,
-    rates
+    rates,
+    setIsLoading,
+    setIsSuccess,
+    setError
   } = useSendPay();
   
+  const { toast } = useToast();
   const [isAddressValid, setIsAddressValid] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const auth = useAppSelector(state => state.auth);
+  const userPhone = auth.user?.phone || "";
+  const userFirstName = auth.user?.firstName || "";
+  const userLastName = auth.user?.lastName || "";
   
   // Basic validation for blockchain address
   useEffect(() => {
     // This is a very basic validation - in a real app, this would be more sophisticated
     setIsAddressValid(blockchainAddress.length > 25);
   }, [blockchainAddress]);
+  
+  // Function to handle blockchain transfer
+  const handleBlockchainTransfer = async () => {
+    if (!blockchainAddress || !blockchainAmount || !blockchainPin || !selectedCryptoCurrency) {
+      toast({
+        title: "Missing information",
+        description: "Please fill out all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!isAddressValid) {
+      toast({
+        title: "Invalid address",
+        description: "Please enter a valid blockchain address",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setIsLoading(true);
+    
+    try {
+      const response = await TransactionService.sendBlockchain({
+        txType: "BCWITHDRAW",
+        initiator: userPhone,
+        senderFirstName: userFirstName,
+        senderLastName: userLastName,
+        recipientFirstName: "Recipient", // Default values since we don't collect these
+        recipientLastName: "User",
+        inOut: `${selectedCryptoCurrency}-${selectedCryptoCurrency}`,
+        phone: userPhone,
+        pin: blockchainPin,
+        recipient: blockchainAddress,
+        amount: blockchainAmount,
+        currency: selectedCryptoCurrency.toLowerCase()
+      });
+      
+      if (response.success) {
+        setIsSuccess(true);
+        toast({
+          title: "Transfer Initiated",
+          description: "Your blockchain withdrawal has been submitted successfully",
+        });
+      } else {
+        setError(response.error || "Transaction failed");
+        toast({
+          title: "Transaction Failed",
+          description: response.error || "There was an error processing your transaction",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Blockchain transfer error:", error);
+      let errorMessage = "An unexpected error occurred";
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+      toast({
+        title: "Transaction Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+      setIsLoading(false);
+    }
+  };
+  
+  // Submit on the final step
+  useEffect(() => {
+    if (currentStep === 3 && blockchainPin.length === 4) {
+      handleBlockchainTransfer();
+    }
+  }, [currentStep, blockchainPin]);
   
   if (currentStep === 1) {
     return (
@@ -110,7 +203,14 @@ export const BlockchainTransfer = ({
           onChange={(e) => setBlockchainPin(e.target.value)}
           maxLength={4}
           required
+          disabled={isSubmitting}
         />
+        {isSubmitting && (
+          <div className="text-center">
+            <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
+            <p className="text-sm text-gray-400 mt-2">Processing your transaction...</p>
+          </div>
+        )}
       </div>
     );
   }

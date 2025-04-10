@@ -1,0 +1,92 @@
+
+import { useState, useEffect } from 'react';
+import { useToast } from './use-toast';
+
+export const usePasskeyAuth = () => {
+  const [isPasskeyVerified, setIsPasskeyVerified] = useState(false);
+  const [lastVerifiedTime, setLastVerifiedTime] = useState<number | null>(null);
+  const { toast } = useToast();
+  
+  // Check if passkey is still valid (verified within the last 3 minutes)
+  useEffect(() => {
+    if (lastVerifiedTime) {
+      const currentTime = Date.now();
+      const timeElapsed = currentTime - lastVerifiedTime;
+      const threeMinutesInMs = 3 * 60 * 1000;
+      
+      if (timeElapsed > threeMinutesInMs) {
+        setIsPasskeyVerified(false);
+      }
+    }
+  }, [lastVerifiedTime]);
+  
+  // Mock implementation for the passkey verification
+  // In a real app, this would use the Web Authentication API
+  const verifyPasskey = async (): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+      // Simulate passkey authentication
+      // In a real implementation, this would use navigator.credentials.get()
+      try {
+        // Check if Web Authentication API is available
+        if (window.PublicKeyCredential) {
+          // Simulate successful verification
+          setTimeout(() => {
+            setIsPasskeyVerified(true);
+            setLastVerifiedTime(Date.now());
+            
+            toast({
+              title: "Authentication Successful",
+              description: "Your identity has been verified",
+              variant: "default",
+            });
+            
+            resolve(true);
+          }, 1000);
+        } else {
+          // Fallback for browsers that don't support WebAuthn
+          const confirmation = window.confirm("Passkey not supported in this browser. Authenticate with PIN instead?");
+          
+          if (confirmation) {
+            const pin = prompt("Enter your PIN:");
+            
+            if (pin === "1234") { // Example PIN verification
+              setIsPasskeyVerified(true);
+              setLastVerifiedTime(Date.now());
+              
+              toast({
+                title: "Authentication Successful",
+                description: "Your identity has been verified using PIN",
+                variant: "default",
+              });
+              
+              resolve(true);
+            } else {
+              toast({
+                title: "Authentication Failed",
+                description: "Incorrect PIN",
+                variant: "destructive",
+              });
+              
+              reject(new Error("Incorrect PIN"));
+            }
+          } else {
+            reject(new Error("Authentication cancelled"));
+          }
+        }
+      } catch (error) {
+        toast({
+          title: "Authentication Error",
+          description: "There was a problem verifying your identity",
+          variant: "destructive",
+        });
+        
+        reject(error);
+      }
+    });
+  };
+  
+  return {
+    isPasskeyVerified,
+    verifyPasskey,
+  };
+};

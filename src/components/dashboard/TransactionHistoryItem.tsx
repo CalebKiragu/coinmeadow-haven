@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Eye, EyeOff } from "lucide-react";
 import { Fee, Recipient, TxIds } from "@/lib/redux/slices/transactionSlice";
 import { formatTimestamp, formatCryptoValue, estimateFiatValue } from "@/lib/utils";
 import { useAppSelector } from "@/lib/redux/hooks";
@@ -25,12 +26,14 @@ type TransactionHistoryItemProps = {
   };
   showBalance: boolean;
   onExpand?: () => void;
+  onToggleBalance?: () => void;
 };
 
 const TransactionHistoryItem = ({
   transaction,
   showBalance,
   onExpand,
+  onToggleBalance,
 }: TransactionHistoryItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const { prices } = useAppSelector((state) => state.price);
@@ -100,19 +103,74 @@ const TransactionHistoryItem = ({
   
   const bothCrypto = isCryptoCurrency(transaction.grossCurrency) && isCryptoCurrency(transaction.netCurrency);
   
-  const fiatEquivalent = isCryptoCurrency(transaction.grossCurrency) 
-    ? estimateFiatValue(transaction.grossValue, transaction.grossCurrency, userCurrency, 
-        prices.reduce((acc, price) => {
-          acc[`${price.currency}-${userCurrency}`] = parseFloat(price.value);
-          return acc;
-        }, {} as Record<string, number>)
-      )
-    : "";
+  // Fix for the conversion issue for crypto-to-crypto transactions
+  const getFiatEquivalent = () => {
+    if (!isCryptoCurrency(transaction.grossCurrency)) {
+      return "";
+    }
+    
+    try {
+      // Build the rates lookup object
+      const ratesMap = prices.reduce((acc, price) => {
+        if (price.currency && userCurrency) {
+          const key = `${price.currency}-${userCurrency}`;
+          acc[key] = parseFloat(price.value);
+        }
+        return acc;
+      }, {} as Record<string, number>);
+      
+      // Check if we have the necessary rate
+      const rateKey = `${transaction.grossCurrency}-${userCurrency}`;
+      if (!ratesMap[rateKey]) {
+        console.warn(`No conversion rate found for ${rateKey}`);
+        return "";
+      }
+      
+      // Parse the gross value with special handling for scientific notation
+      let grossValue: number;
+      const valueStr = transaction.grossValue;
+      
+      if (valueStr.includes('e')) {
+        // Handle scientific notation
+        const [base, exponent] = valueStr.split('e');
+        const baseNum = parseFloat(base);
+        const expNum = parseInt(exponent);
+        grossValue = baseNum * Math.pow(10, expNum);
+      } else {
+        grossValue = parseFloat(valueStr);
+      }
+      
+      // Check if parsing was successful
+      if (isNaN(grossValue)) {
+        console.warn(`Failed to parse gross value: ${transaction.grossValue}`);
+        return "";
+      }
+      
+      // Calculate the fiat value
+      const fiatValue = grossValue * ratesMap[rateKey];
+      
+      // Format the output
+      return `${fiatValue.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })} ${userCurrency}`;
+    } catch (error) {
+      console.error("Error calculating fiat equivalent:", error);
+      return "";
+    }
+  };
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
     if (onExpand && !isExpanded) {
       onExpand();
+    }
+  };
+  
+  const toggleBalanceVisibility = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent click from expanding the transaction
+    if (onToggleBalance) {
+      onToggleBalance();
     }
   };
 
@@ -140,6 +198,9 @@ const TransactionHistoryItem = ({
     );
   };
 
+  // Get fiat equivalent once to avoid recalculation
+  const fiatEquivalent = getFiatEquivalent();
+
   return (
     <div className="group transition-all duration-200">
       <div 
@@ -157,7 +218,7 @@ const TransactionHistoryItem = ({
             )}
           </div>
           <div className="flex flex-col items-start">
-            <span className={`font-medium ${colors.text}`}>
+            <span className={`font-medium ${colors.text} dark:text-white text-gray-800`}>
               {transaction.type === "SEND" 
                 ? "Sent" 
                 : transaction.type === "WITHDRAW" 
@@ -168,7 +229,7 @@ const TransactionHistoryItem = ({
                 ? "Deposited"
                 : "Received"}
             </span>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-gray-500 dark:text-gray-300">
               {isOutgoing
                 ? `To: ${getSafeAddress(safeRecipient.address)}`
                 : `From: ${getSafeAddress(transaction.sender)}`}
@@ -176,18 +237,30 @@ const TransactionHistoryItem = ({
           </div>
         </div>
 
-        <div className={`text-right ${!showBalance ? "blur-content" : ""}`}>
-          <div className={`font-medium ${isOutgoing ? "text-red-400" : "text-green-500"}`}>
-            {isOutgoing ? "-" : "+"}{formatCryptoValue(transaction.grossValue)} {transaction.grossCurrency}
-          </div>
-          {fiatEquivalent && (
-            <div className="text-xs text-gray-500 font-medium">
-              ≈ {fiatEquivalent}
+        <div className="flex items-center">
+          <div className={`text-right mr-2 ${!showBalance ? "blur-content" : ""}`}>
+            <div className={`font-medium ${isOutgoing ? "text-red-400" : "text-green-500"} dark:text-white text-gray-800`}>
+              {isOutgoing ? "-" : "+"}{formatCryptoValue(transaction.grossValue)} {transaction.grossCurrency}
             </div>
-          )}
-          <div className="text-xs text-gray-400">
-            {safeFormatTimestamp(transaction.timestamp)}
+            {fiatEquivalent && (
+              <div className="text-xs text-gray-500 dark:text-gray-300 font-medium">
+                ≈ {fiatEquivalent}
+              </div>
+            )}
+            <div className="text-xs text-gray-400 dark:text-gray-400">
+              {safeFormatTimestamp(transaction.timestamp)}
+            </div>
           </div>
+          <button 
+            onClick={toggleBalanceVisibility}
+            className="p-1 rounded-full hover:bg-white/10 dark:hover:bg-black/20"
+          >
+            {showBalance ? (
+              <Eye size={16} className="text-gray-500 dark:text-gray-300" />
+            ) : (
+              <EyeOff size={16} className="text-gray-500 dark:text-gray-300" />
+            )}
+          </button>
         </div>
       </div>
 
@@ -201,29 +274,29 @@ const TransactionHistoryItem = ({
         >
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-400 text-xs">Transaction ID:</span>
-              <p className="font-medium text-white/90 bg-black/20 p-1 rounded mt-1 overflow-x-auto break-all">
+              <span className="text-gray-500 dark:text-gray-400 text-xs">Transaction ID:</span>
+              <p className="font-medium text-gray-800 dark:text-white/90 bg-black/5 dark:bg-black/20 p-1 rounded mt-1 overflow-x-auto break-all">
                 #{transaction.txId}
               </p>
             </div>
             <div>
-              <span className="text-gray-400 text-xs">Date & Time:</span>
-              <p className="font-medium text-blue-200 mt-1">
+              <span className="text-gray-500 dark:text-gray-400 text-xs">Date & Time:</span>
+              <p className="font-medium text-blue-600 dark:text-blue-200 mt-1">
                 {safeFormatTimestamp(transaction.timestamp)}
               </p>
             </div>
             <div>
-              <span className="text-gray-400 text-xs">
+              <span className="text-gray-500 dark:text-gray-400 text-xs">
                 {isOutgoing ? "Recipient" : "Sender"}:
               </span>
-              <p className="font-medium break-all text-white/90 bg-black/20 p-1 rounded mt-1 overflow-x-auto">
+              <p className="font-medium break-all text-gray-800 dark:text-white/90 bg-black/5 dark:bg-black/20 p-1 rounded mt-1 overflow-x-auto">
                 {isOutgoing
                   ? safeRecipient.address || "Unknown"
                   : transaction.sender || "Unknown"}
               </p>
             </div>
             <div>
-              <span className="text-gray-400 text-xs">Status:</span>
+              <span className="text-gray-500 dark:text-gray-400 text-xs">Status:</span>
               <p className={`font-medium ${getStatusColor(transaction.status)} mt-1`}>
                 {transaction.status === "INPROGRESS" 
                   ? "In Progress" 
@@ -233,26 +306,26 @@ const TransactionHistoryItem = ({
               </p>
             </div>
             <div>
-              <span className="text-gray-400 text-xs">Gross Amount:</span>
+              <span className="text-gray-500 dark:text-gray-400 text-xs">Gross Amount:</span>
               <p className={`font-medium ${isOutgoing ? "text-red-400" : "text-green-500"} mt-1`}>
                 {isOutgoing ? "-" : "+"}{formatCryptoValue(transaction.grossValue)} {transaction.grossCurrency}
                 {fiatEquivalent && (
-                  <span className="text-xs text-gray-300 ml-2">
+                  <span className="text-xs text-gray-500 dark:text-gray-300 ml-2">
                     ≈ {fiatEquivalent}
                   </span>
                 )}
               </p>
             </div>
             <div>
-              <span className="text-gray-400 text-xs">Net Amount:</span>
-              <p className="font-medium text-purple-300 mt-1">
+              <span className="text-gray-500 dark:text-gray-400 text-xs">Net Amount:</span>
+              <p className="font-medium text-purple-600 dark:text-purple-300 mt-1">
                 {formatCryptoValue(transaction.netValue)} {transaction.netCurrency}
               </p>
             </div>
             {transaction.fee && (
               <div className="col-span-2">
-                <span className="text-gray-400 text-xs">Fees:</span>
-                <div className="mt-1 font-medium text-orange-300">
+                <span className="text-gray-500 dark:text-gray-400 text-xs">Fees:</span>
+                <div className="mt-1 font-medium text-orange-600 dark:text-orange-300">
                   {renderFees()}
                 </div>
               </div>

@@ -18,7 +18,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Search, Filter, SortAsc } from "lucide-react";
+import { Calendar as CalendarIcon, Search, Filter, SortAsc, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,10 +26,14 @@ import { Transaction } from "@/lib/redux/slices/transactionSlice";
 import { ApiService } from "@/lib/services";
 import TransactionHistoryItem from "@/components/dashboard/TransactionHistoryItem";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const History = () => {
   const dispatch = useAppDispatch();
   const { transactions, isLoading } = useAppSelector((state) => state.transaction);
+  const { toast } = useToast();
+  const { verifyPasskey, isPasskeyVerified } = usePasskeyAuth();
   
   const [date, setDate] = useState<Date | undefined>();
   const [transactionType, setTransactionType] = useState("all");
@@ -38,6 +42,7 @@ const History = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
+  const [showBalance, setShowBalance] = useState(false);
   
   // Memoize transactions fetching to prevent unnecessary requests
   useEffect(() => {
@@ -52,11 +57,16 @@ const History = () => {
         await ApiService.getTransactionHistory();
       } catch (error) {
         console.error("Error fetching transactions:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load transaction history",
+          variant: "destructive",
+        });
       }
     };
     
     fetchTransactions();
-  }, [transactions.length, dispatch]);
+  }, [transactions.length, dispatch, toast]);
 
   // Memoize filtered transactions for better performance
   const filteredTransactions = useMemo(() => {
@@ -85,13 +95,18 @@ const History = () => {
       
       // Filter by date if selected
       if (date) {
-        const txDate = new Date(Number(tx.timestamp));
-        const selectedDate = new Date(date);
-        if (
-          txDate.getDate() !== selectedDate.getDate() ||
-          txDate.getMonth() !== selectedDate.getMonth() ||
-          txDate.getFullYear() !== selectedDate.getFullYear()
-        ) {
+        try {
+          const txDate = new Date(Number(tx.timestamp));
+          const selectedDate = new Date(date);
+          if (
+            txDate.getDate() !== selectedDate.getDate() ||
+            txDate.getMonth() !== selectedDate.getMonth() ||
+            txDate.getFullYear() !== selectedDate.getFullYear()
+          ) {
+            return false;
+          }
+        } catch (error) {
+          console.error("Error comparing dates:", error);
           return false;
         }
       }
@@ -124,12 +139,26 @@ const History = () => {
         case "oldest":
           return Number(a.timestamp) - Number(b.timestamp);
         case "highest":
-          const aValue = parseFloat(a.grossValue.replace(/[^0-9.-]+/g, ""));
-          const bValue = parseFloat(b.grossValue.replace(/[^0-9.-]+/g, ""));
+          // Handle scientific notation
+          const parseAmount = (val: string) => {
+            try {
+              if (val.includes('e')) {
+                const [base, exponent] = val.split('e');
+                return parseFloat(base) * Math.pow(10, parseInt(exponent));
+              }
+              return parseFloat(val.replace(/[^0-9.-]+/g, ""));
+            } catch (error) {
+              console.error("Error parsing amount:", error);
+              return 0;
+            }
+          };
+          
+          const aValue = parseAmount(a.grossValue);
+          const bValue = parseAmount(b.grossValue);
           return bValue - aValue;
         case "lowest":
-          const aVal = parseFloat(a.grossValue.replace(/[^0-9.-]+/g, ""));
-          const bVal = parseFloat(b.grossValue.replace(/[^0-9.-]+/g, ""));
+          const aVal = parseAmount(a.grossValue);
+          const bVal = parseAmount(b.grossValue);
           return aVal - bVal;
         default:
           return Number(b.timestamp) - Number(a.timestamp);
@@ -166,6 +195,25 @@ const History = () => {
     setSortBy("newest");
   };
 
+  const handleToggleBalance = async () => {
+    // If we're trying to show the balance and passkey hasn't been verified yet
+    if (!showBalance && !isPasskeyVerified) {
+      try {
+        await verifyPasskey();
+        setShowBalance(true);
+      } catch (error) {
+        toast({
+          title: "Authentication Failed",
+          description: "Unable to verify your identity",
+          variant: "destructive",
+        });
+      }
+    } else {
+      // If passkey is already verified or we're hiding the balance
+      setShowBalance(!showBalance);
+    }
+  };
+
   const renderTransactionList = (transactions: Transaction[]) => {
     if (transactions.length === 0) {
       return (
@@ -188,8 +236,9 @@ const History = () => {
             >
               <TransactionHistoryItem
                 transaction={tx}
-                showBalance={true}
+                showBalance={showBalance}
                 onExpand={() => handleExpandTransaction(tx.txId)}
+                onToggleBalance={handleToggleBalance}
               />
             </motion.div>
           ))}
@@ -227,7 +276,7 @@ const History = () => {
               value={transactionType}
               onValueChange={setTransactionType}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800">
                 <Filter className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Transaction Type" />
               </SelectTrigger>
@@ -245,7 +294,7 @@ const History = () => {
               value={currency}
               onValueChange={setCurrency}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800">
                 <SelectValue placeholder="Currency" />
               </SelectTrigger>
               <SelectContent>
@@ -261,7 +310,7 @@ const History = () => {
               value={sortBy}
               onValueChange={setSortBy}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800">
                 <SortAsc className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Sort By" />
               </SelectTrigger>
@@ -278,7 +327,7 @@ const History = () => {
                 <Button
                   variant={"outline"}
                   className={cn(
-                    "w-[180px] justify-start text-left font-normal",
+                    "w-[180px] justify-start text-left font-normal bg-white dark:bg-gray-800",
                     !date && "text-muted-foreground"
                   )}
                 >
@@ -302,16 +351,25 @@ const History = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search transactions..."
-                className="w-full pl-10"
+                className="w-full pl-10 bg-white dark:bg-gray-800"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 bg-white dark:bg-gray-800"
+              onClick={handleToggleBalance}
+            >
+              {showBalance ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            </Button>
+            
             {(transactionType !== "all" || currency !== "all" || date || searchTerm) && (
               <Button
                 variant="outline"
-                className="shrink-0"
+                className="shrink-0 bg-white dark:bg-gray-800"
                 onClick={clearFilters}
               >
                 Clear Filters

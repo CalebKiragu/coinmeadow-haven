@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import { logout } from "@/lib/redux/slices/authSlice";
 import KycBanner from "@/components/verification/KycBanner";
+import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 
 const trendingOffers: Offer[] = [
   {
@@ -57,6 +58,8 @@ const Dashboard = () => {
   const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState("wallet");
   const [showBalance, setShowBalance] = useState(false);
+  
+  const { verifyPasskey } = usePasskeyAuth();
 
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
@@ -67,14 +70,20 @@ const Dashboard = () => {
       return;
     }
 
-    // Start price updates
-    // const intervalId = startPriceUpdates();
-
-    // Clean up on unmount
-    return () => {
-      // clearInterval(intervalId);
+    // Request passkey authentication when the component mounts
+    const initPasskeyAuth = async () => {
+      try {
+        // Try to verify passkey on initial load
+        await verifyPasskey();
+        setShowBalance(true);
+      } catch (error) {
+        // User declined or authentication failed, balance will remain hidden
+        console.log("Initial passkey verification skipped or failed");
+      }
     };
-  }, [isAuthenticated, navigate]);
+    
+    initPasskeyAuth();
+  }, [isAuthenticated, navigate, verifyPasskey]);
 
   const handleLogout = () => {
     dispatch(logout());

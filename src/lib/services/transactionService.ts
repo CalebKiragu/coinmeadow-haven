@@ -1,4 +1,3 @@
-
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { store } from "../redux/store";
 import { url } from "../utils";
@@ -53,7 +52,47 @@ interface DepositAddressResponse {
   error?: string;
 }
 
+interface BlockchainTransferParams {
+  txType: string;
+  initiator: string;
+  senderFirstName: string;
+  senderLastName: string;
+  recipientFirstName: string;
+  recipientLastName: string;
+  inOut: string;
+  phone: string;
+  pin: string;
+  recipient: string;
+  amount: string;
+  currency: string;
+}
+
 export const TransactionService = {
+  // Send to blockchain address
+  sendBlockchain: async (params: BlockchainTransferParams): Promise<TransferResponse> => {
+    try {
+      console.log("Sending blockchain transaction:", params);
+      const response: AxiosResponse<ApiResponse<TransferResponse>> =
+        await api.post("v1/transact/blockchain/send", params);
+      
+      console.log("Blockchain transaction response:", response.data);
+      
+      if (response.data.error) {
+        return { success: false, error: response.data.error };
+      }
+      
+      return response.data.data || { success: true };
+    } catch (error) {
+      console.error("Error sending blockchain transaction:", error);
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      const errorMessage = 
+        axiosError.response?.data?.message ||
+        axiosError.response?.data?.error ||
+        "Error processing blockchain transaction";
+      return { success: false, error: errorMessage };
+    }
+  },
+
   // Transfer funds between users
   transferFunds: async (data: any): Promise<TransferResponse> => {
     try {
@@ -220,7 +259,6 @@ export const TransactionService = {
       );
       
       console.log("Transaction history response status:", response.status);
-      console.log("Transaction history response data:", response.data);
       
       if (!response.data.data) {
         console.log("No transaction data returned, using empty array");
