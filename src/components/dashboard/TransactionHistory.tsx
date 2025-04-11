@@ -16,7 +16,7 @@ import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import { ApiService } from "@/lib/services";
 import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { useToast } from "@/hooks/use-toast";
-import { setShowBalance } from "@/lib/redux/slices/walletSlice";
+import { setShowBalance as setShowBalanceAction } from "@/lib/redux/slices/walletSlice";
 
 interface TransactionHistoryProps {
   showBalance: boolean;
@@ -104,8 +104,8 @@ const TransactionHistory = ({ showBalance, setShowBalance }: TransactionHistoryP
         if (verified) {
           // Use the parent component's setShowBalance function
           setShowBalance(true);
-          // Dispatch the action to update Redux state - Fix: Use the action creator properly
-          dispatch(setShowBalance(true));
+          // Dispatch the action to update Redux state - correctly use the renamed action creator
+          dispatch(setShowBalanceAction(true));
         }
       } catch (error) {
         toast({
@@ -117,8 +117,8 @@ const TransactionHistory = ({ showBalance, setShowBalance }: TransactionHistoryP
     } else {
       // Toggle the balance visibility state using the prop function
       setShowBalance(!showBalance);
-      // Dispatch the action to update Redux state - Fix: Use the action creator properly
-      dispatch(setShowBalance(!showBalance));
+      // Dispatch the action to update Redux state - correctly use the renamed action creator
+      dispatch(setShowBalanceAction(!showBalance));
     }
   };
 
