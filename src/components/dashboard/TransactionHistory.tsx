@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Calendar, Filter, ChevronRight, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -15,7 +16,7 @@ import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import { ApiService } from "@/lib/services";
 import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { useToast } from "@/hooks/use-toast";
-import { setShowBalance, toggleShowBalance } from "@/lib/redux/slices/walletSlice";
+import { setShowBalance } from "@/lib/redux/slices/walletSlice";
 
 interface TransactionHistoryProps {
   showBalance: boolean;
@@ -101,6 +102,9 @@ const TransactionHistory = ({ showBalance, setShowBalance }: TransactionHistoryP
       try {
         const verified = await verifyPasskey();
         if (verified) {
+          // Use the parent component's setShowBalance function instead of dispatching
+          setShowBalance(true);
+          // Also update the Redux state
           dispatch(setShowBalance(true));
         }
       } catch (error) {
@@ -111,8 +115,10 @@ const TransactionHistory = ({ showBalance, setShowBalance }: TransactionHistoryP
         });
       }
     } else {
-      // Toggle the balance visibility state
-      dispatch(toggleShowBalance());
+      // Toggle the balance visibility state using the prop function
+      setShowBalance(!showBalance);
+      // Also update the Redux state
+      dispatch(setShowBalance(!showBalance));
     }
   };
 
