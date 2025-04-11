@@ -102,9 +102,9 @@ const TransactionHistory = ({ showBalance, setShowBalance }: TransactionHistoryP
       try {
         const verified = await verifyPasskey();
         if (verified) {
-          // Use the parent component's setShowBalance function instead of dispatching
+          // Use the parent component's setShowBalance function
           setShowBalance(true);
-          // Also update the Redux state
+          // Dispatch the action to update Redux state
           dispatch(setShowBalance(true));
         }
       } catch (error) {
@@ -117,7 +117,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }: TransactionHistoryP
     } else {
       // Toggle the balance visibility state using the prop function
       setShowBalance(!showBalance);
-      // Also update the Redux state
+      // Dispatch the action to update Redux state
       dispatch(setShowBalance(!showBalance));
     }
   };
