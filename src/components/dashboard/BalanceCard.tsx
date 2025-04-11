@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -17,13 +16,19 @@ import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import {
   setSelectedCrypto,
   setSelectedFiat,
+  Currency
 } from "@/lib/redux/slices/walletSlice";
 import { ApiService } from "@/lib/services";
 import { Skeleton } from "../ui/skeleton";
 import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { useToast } from "@/hooks/use-toast";
 
-const BalanceCard = ({ showBalance, setShowBalance }) => {
+interface BalanceCardProps {
+  showBalance: boolean;
+  setShowBalance: (value: boolean) => void;
+}
+
+const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { toast } = useToast();
@@ -63,7 +68,7 @@ const BalanceCard = ({ showBalance, setShowBalance }) => {
   };
 
   const handleSelectFiat = (value: string) => {
-    dispatch(setSelectedFiat(value));
+    dispatch(setSelectedFiat(value as Currency));
   };
 
   // Get the selected crypto data

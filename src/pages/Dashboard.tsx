@@ -64,25 +64,20 @@ const Dashboard = () => {
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    // Redirect to login if not authenticated
     if (!isAuthenticated) {
       navigate("/", { replace: true });
       return;
     }
 
-    // Request passkey authentication when the component mounts
     const initPasskeyAuth = async () => {
       try {
-        // Try to verify passkey on initial load without showing toast notifications
         const verified = await verifyPasskey();
         setShowBalance(verified);
       } catch (error) {
-        // User declined or authentication failed, balance will remain hidden
         console.log("Initial passkey verification skipped or failed");
       }
     };
     
-    // Prefetch transactions to ensure they're ready
     const prefetchData = async () => {
       try {
         await ApiService.getTransactionHistory();
@@ -100,7 +95,6 @@ const Dashboard = () => {
     navigate("/", { replace: true });
   };
 
-  // Handler to update both balance displays when either toggle is clicked
   const handleBalanceToggle = (newValue: boolean) => {
     setShowBalance(newValue);
   };
@@ -176,7 +170,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* KYC verification banner */}
         <KycBanner />
 
         <Tabs

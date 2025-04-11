@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Calendar, Filter, ChevronRight, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -18,7 +17,12 @@ import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { useToast } from "@/hooks/use-toast";
 import { setShowBalance, toggleShowBalance } from "@/lib/redux/slices/walletSlice";
 
-const TransactionHistory = () => {
+interface TransactionHistoryProps {
+  showBalance: boolean;
+  setShowBalance: (value: boolean) => void;
+}
+
+const TransactionHistory = ({ showBalance, setShowBalance }: TransactionHistoryProps) => {
   const [sortBy, setSortBy] = useState("date");
   const [filterType, setFilterType] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
@@ -28,7 +32,6 @@ const TransactionHistory = () => {
   const { verifyPasskey, isPasskeyVerified, isVerifying } = usePasskeyAuth();
 
   const { transactions } = useAppSelector((state) => state.transaction);
-  const { showBalance } = useAppSelector((state) => state.wallet);
   
   // Memoize transactions fetching to prevent unnecessary requests
   useEffect(() => {
