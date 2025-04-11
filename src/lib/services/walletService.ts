@@ -109,14 +109,15 @@ export const WalletService = {
           })
         );
 
-      if (!walletResponse.data.data.length)
-        store.dispatch(fetchWalletFailure(walletResponse.data.data.toString()));
-      if (walletResponse.data.data.length > 0)
+      if (!walletResponse.data.data?.length) {
+        store.dispatch(fetchWalletFailure("No wallet data found"));
+      } else {
         store.dispatch(fetchWalletSuccess(walletResponse.data.data));
+      }
 
       return {
-        wallets: walletResponse.data.data,
-        prices: pricesResponse.data.data,
+        wallets: walletResponse.data.data || [],
+        prices: pricesResponse.data.data || [],
       };
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
