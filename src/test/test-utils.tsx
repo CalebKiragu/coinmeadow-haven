@@ -45,7 +45,6 @@ const customRender = (
   };
 };
 
-// Re-export everything from @testing-library/react and userEvent
+// Re-export everything
 export * from '@testing-library/react';
-export { customRender as render, userEvent };
-export { screen, fireEvent, waitFor };
+export { customRender as render, userEvent, screen, fireEvent, waitFor };

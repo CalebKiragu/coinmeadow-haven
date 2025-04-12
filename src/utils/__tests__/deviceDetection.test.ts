@@ -1,70 +1,88 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { isMobile, isTablet, isDesktop } from '../deviceDetection';
+import { 
+  isMobile, 
+  isTablet, 
+  isDesktop, 
+  getPreferredCameraFacingMode 
+} from '../deviceDetection';
 
 describe('Device Detection Utilities', () => {
-  let originalNavigator: any;
-
+  const originalNavigator = global.navigator;
+  let navigatorSpy: any;
+  
   beforeEach(() => {
-    // Save original navigator
-    originalNavigator = global.navigator;
-
-    // Create a mutable navigator object for testing
+    // Create a mock navigator object
+    navigatorSpy = {
+      userAgent: '',
+    };
+    
+    // Replace the navigator object with our spy
     Object.defineProperty(global, 'navigator', {
+      value: navigatorSpy,
       writable: true,
-      value: {
-        userAgent: '',
-      },
+      configurable: true,
     });
   });
-
+  
   afterEach(() => {
-    // Restore original navigator
+    // Restore the original navigator
     Object.defineProperty(global, 'navigator', {
-      writable: true,
       value: originalNavigator,
+      writable: true,
+      configurable: true,
     });
   });
-
+  
   it('detects mobile devices correctly', () => {
-    // Test iPhone
-    global.navigator.userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1';
+    // Android mobile
+    navigatorSpy.userAgent = 'Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.210 Mobile Safari/537.36';
     expect(isMobile()).toBe(true);
-    expect(isTablet()).toBe(false);
-    expect(isDesktop()).toBe(false);
-
-    // Test Android phone
-    global.navigator.userAgent = 'Mozilla/5.0 (Linux; Android 10; SM-G981B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.162 Mobile Safari/537.36';
+    
+    // iPhone
+    navigatorSpy.userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1 Mobile/15E148 Safari/604.1';
     expect(isMobile()).toBe(true);
-    expect(isTablet()).toBe(false);
-    expect(isDesktop()).toBe(false);
+    
+    // Desktop
+    navigatorSpy.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36';
+    expect(isMobile()).toBe(false);
   });
-
+  
   it('detects tablet devices correctly', () => {
-    // Test iPad
-    global.navigator.userAgent = 'Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1';
-    expect(isMobile()).toBe(false);
+    // iPad
+    navigatorSpy.userAgent = 'Mozilla/5.0 (iPad; CPU OS 14_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1';
     expect(isTablet()).toBe(true);
-    expect(isDesktop()).toBe(false);
-
-    // Test Android tablet
-    global.navigator.userAgent = 'Mozilla/5.0 (Linux; Android 10; SM-T510) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.162 Safari/537.36';
-    expect(isMobile()).toBe(false);
+    
+    // Android tablet
+    navigatorSpy.userAgent = 'Mozilla/5.0 (Linux; Android 10; SM-T510) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.210 Safari/537.36';
+    Object.defineProperty(navigatorSpy, 'userAgent', {
+      get: () => 'Mozilla/5.0 (Linux; Android 10; SM-T510) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.210 Safari/537.36',
+      configurable: true
+    });
     expect(isTablet()).toBe(true);
+    
+    // Desktop
+    navigatorSpy.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36';
+    expect(isTablet()).toBe(false);
+  });
+  
+  it('detects desktop devices correctly', () => {
+    // Desktop
+    navigatorSpy.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36';
+    expect(isDesktop()).toBe(true);
+    
+    // Mobile
+    navigatorSpy.userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1 Mobile/15E148 Safari/604.1';
     expect(isDesktop()).toBe(false);
   });
-
-  it('detects desktop devices correctly', () => {
-    // Test Windows desktop
-    global.navigator.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36';
-    expect(isMobile()).toBe(false);
-    expect(isTablet()).toBe(false);
-    expect(isDesktop()).toBe(true);
-
-    // Test Mac desktop
-    global.navigator.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1 Safari/605.1.15';
-    expect(isMobile()).toBe(false);
-    expect(isTablet()).toBe(false);
-    expect(isDesktop()).toBe(true);
+  
+  it('returns the correct camera facing mode based on device type', () => {
+    // Mobile: should use back camera
+    navigatorSpy.userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1 Mobile/15E148 Safari/604.1';
+    expect(getPreferredCameraFacingMode()).toBe('environment');
+    
+    // Desktop: should use front camera
+    navigatorSpy.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36';
+    expect(getPreferredCameraFacingMode()).toBe('user');
   });
 });

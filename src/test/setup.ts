@@ -7,10 +7,16 @@ import * as matchers from '@testing-library/jest-dom/matchers';
 expect.extend(matchers);
 
 // Mock fetch for API testing
-vi.stubGlobal('fetch', vi.fn());
+global.fetch = vi.fn();
 
 // Clear the DOM after each test
 afterEach(() => {
   cleanup();
   vi.resetAllMocks();
 });
+
+// Make afterEach available globally
+globalThis.afterEach = afterEach;
+
+// Make vi available globally
+globalThis.vi = vi;
