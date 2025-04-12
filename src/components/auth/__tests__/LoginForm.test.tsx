@@ -1,5 +1,5 @@
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from '../../../test/test-imports';
 import { render, screen, fireEvent, waitFor } from '../../../test/test-utils';
 import userEvent from '@testing-library/user-event';
 import LoginForm from '../LoginForm';

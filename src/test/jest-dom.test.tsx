@@ -1,7 +1,7 @@
 
 import { render, screen } from '@testing-library/react';
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from './test-imports';
 
 describe('Jest DOM Matchers', () => {
   it('should have Jest DOM matchers available', () => {

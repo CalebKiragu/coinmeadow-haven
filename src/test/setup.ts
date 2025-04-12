@@ -1,5 +1,5 @@
 
-import { expect, afterEach, vi } from 'vitest';
+import { expect, afterEach } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import matchers from '@testing-library/jest-dom/matchers';
 
@@ -8,23 +8,23 @@ expect.extend(matchers);
 
 // Fix the global type declarations to avoid circular references
 declare global {
-  // Define vi functions without self-references
+  // Define vi as a simple object type without self-references
   var vi: {
-    fn: typeof vi.fn;
-    mock: typeof vi.mock;
-    spyOn: typeof vi.spyOn;
-    resetAllMocks: typeof vi.resetAllMocks;
+    fn: (implementation?: any) => any;
+    mock: (path: string, factory?: any) => any;
+    spyOn: (object: any, method: string | number | symbol) => any;
+    resetAllMocks: () => void;
   }
   
   // Define afterEach without self-reference
   var afterEach: (fn: () => void) => void;
   
-  // Define expect without self-reference
-  var expect: {
-    <T>(actual: T): import('@testing-library/jest-dom').JestMatchers<T>;
-    extend: (matchers: any) => void;
-  }
+  // Define expect without self-reference to testing-library
+  var expect: any;
 }
+
+// Import the actual vi object from vitest
+import { vi } from 'vitest';
 
 // Make vi available globally
 globalThis.vi = vi;
