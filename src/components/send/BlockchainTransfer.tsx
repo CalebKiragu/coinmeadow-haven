@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { useSendPay } from "@/contexts/SendPayContext";
@@ -9,10 +8,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { QrCode } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cryptoCurrencies } from "@/types/currency";
 import { TransactionService } from "@/lib/services/transactionService";
 import { useAppSelector } from "@/lib/redux/hooks";
+import { QRScannerModal } from "@/components/shared/QRScannerModal";
 
 export const BlockchainTransfer = ({
   currentStep,
@@ -39,6 +41,7 @@ export const BlockchainTransfer = ({
   const { toast } = useToast();
   const [isAddressValid, setIsAddressValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   
   const auth = useAppSelector(state => state.auth);
   const userPhone = auth.user?.phone || "";
@@ -130,21 +133,43 @@ export const BlockchainTransfer = ({
       handleBlockchainTransfer();
     }
   }, [currentStep, blockchainPin]);
+
+  const handleQRScan = (data: string) => {
+    setBlockchainAddress(data);
+    console.log("QR Code scanned:", data);
+  };
   
   if (currentStep === 1) {
     return (
       <div className="space-y-4 animate-fade-in">
-        <Input
-          type="text"
-          placeholder="Enter blockchain address"
-          value={blockchainAddress}
-          onChange={(e) => setBlockchainAddress(e.target.value)}
-          className={`${!isAddressValid && blockchainAddress ? 'border-red-500' : ''}`}
-          required
-        />
+        <div className="flex gap-2">
+          <Input
+            type="text"
+            placeholder="Enter blockchain address"
+            value={blockchainAddress}
+            onChange={(e) => setBlockchainAddress(e.target.value)}
+            className={`flex-1 ${!isAddressValid && blockchainAddress ? 'border-red-500' : ''}`}
+            required
+          />
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => setIsQRScannerOpen(true)}
+            type="button"
+            className="flex-shrink-0"
+          >
+            <QrCode size={20} />
+          </Button>
+        </div>
         {!isAddressValid && blockchainAddress && (
           <p className="text-xs text-red-500 mt-1">Please enter a valid blockchain address</p>
         )}
+
+        <QRScannerModal 
+          isOpen={isQRScannerOpen}
+          onClose={() => setIsQRScannerOpen(false)}
+          onScan={handleQRScan}
+        />
       </div>
     );
   }
