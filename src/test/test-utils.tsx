@@ -1,6 +1,7 @@
 
 import React, { ReactElement } from 'react';
-import { render, RenderOptions } from '@testing-library/react';
+import { render, RenderOptions, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { BrowserRouter } from 'react-router-dom';
@@ -44,6 +45,7 @@ const customRender = (
   };
 };
 
-// Re-export everything from @testing-library/react
+// Re-export everything from @testing-library/react and userEvent
 export * from '@testing-library/react';
-export { customRender as render };
+export { customRender as render, userEvent };
+export { screen, fireEvent, waitFor };

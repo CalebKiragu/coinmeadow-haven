@@ -1,48 +1,58 @@
 
 /**
- * Basic utility for detecting mobile devices
- * @returns boolean indicating if the current device is a mobile device
+ * Device detection utilities
+ * Helps determine the type of device being used to access the application
+ */
+
+/**
+ * Checks if the current device is a mobile phone
+ * @returns boolean indicating if the device is a mobile phone
  */
 export const isMobile = (): boolean => {
-  // Check if window is available (for SSR compatibility)
-  if (typeof window === 'undefined') {
-    return false;
-  }
+  // Check if navigator exists (for SSR compatibility)
+  if (typeof navigator === 'undefined') return false;
   
-  // Use either navigator.userAgentData (modern approach) or userAgent (fallback)
-  const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-    navigator.userAgent
-  );
+  const userAgent = navigator.userAgent;
   
-  // Can also use screen width as an additional check
-  const isSmallScreen = window.innerWidth <= 768;
+  // Regular expression for mobile devices
+  const mobileRegex = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i;
   
-  // Using our hook from useIsMobile as a fallback reference
-  return isMobileDevice || isSmallScreen;
+  // Check if it's mobile but not tablet
+  return mobileRegex.test(userAgent) && !isTablet();
 };
 
 /**
- * Checks if the device has a camera
- * @returns Promise<boolean> resolving to true if device has a camera
+ * Checks if the current device is a tablet
+ * @returns boolean indicating if the device is a tablet
  */
-export const hasCamera = async (): Promise<boolean> => {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-    return false;
-  }
+export const isTablet = (): boolean => {
+  // Check if navigator exists (for SSR compatibility)
+  if (typeof navigator === 'undefined') return false;
   
-  try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    return devices.some(device => device.kind === 'videoinput');
-  } catch (error) {
-    console.error('Error checking for camera:', error);
-    return false;
-  }
+  const userAgent = navigator.userAgent;
+  
+  // iPad specific check
+  const isIPad = /iPad/i.test(userAgent) || 
+                 (/Macintosh/i.test(userAgent) && 'ontouchend' in document);
+  
+  // Android tablet check
+  const isAndroidTablet = /Android/i.test(userAgent) && !/Mobile/i.test(userAgent);
+  
+  return isIPad || isAndroidTablet;
+};
+
+/**
+ * Checks if the current device is a desktop computer
+ * @returns boolean indicating if the device is a desktop
+ */
+export const isDesktop = (): boolean => {
+  return !isMobile() && !isTablet();
 };
 
 /**
  * Gets the preferred camera facing mode based on device type
- * @returns string representing the camera facing mode ('user' or 'environment')
+ * @returns 'environment' for mobile (rear camera) or 'user' for desktop (front camera)
  */
-export const getPreferredCameraFacingMode = (): string => {
+export const getPreferredCameraFacingMode = (): 'environment' | 'user' => {
   return isMobile() ? 'environment' : 'user';
 };
