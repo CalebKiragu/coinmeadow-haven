@@ -8,6 +8,13 @@ import { Camera, FileUp, X } from "lucide-react";
 import { processQRCodeFromFile } from '@/utils/qrCodeScanner';
 import { useToast } from '@/hooks/use-toast';
 
+// Define the interface for detected barcodes based on the library's types
+interface IDetectedBarcode {
+  rawValue: string;
+  format?: string;
+  // Add other properties that might be in the IDetectedBarcode type
+}
+
 interface QRScannerModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -23,8 +30,11 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
-  const handleScan = (data: string) => {
-    if (data) {
+  // Modified to accept an array of detected barcodes
+  const handleScan = (detectedCodes: IDetectedBarcode[]) => {
+    // Process the first detected code if available
+    if (detectedCodes && detectedCodes.length > 0 && detectedCodes[0].rawValue) {
+      const data = detectedCodes[0].rawValue;
       onScan(data);
       onClose();
       toast({

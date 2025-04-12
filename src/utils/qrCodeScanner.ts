@@ -1,6 +1,4 @@
 
-import { Scanner } from '@yudiel/react-qr-scanner';
-
 /**
  * Processes an image file and attempts to extract QR code data from it
  * @param file The image file to process
