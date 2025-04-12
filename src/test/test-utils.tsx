@@ -1,6 +1,6 @@
 
 import React, { ReactElement } from 'react';
-import { render, RenderOptions, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render as rtlRender, RenderOptions, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
@@ -41,10 +41,10 @@ const customRender = (
   
   return {
     store,
-    ...render(ui, { wrapper: AllTheProviders, ...renderOptions }),
+    ...rtlRender(ui, { wrapper: AllTheProviders, ...renderOptions }),
   };
 };
 
-// Re-export everything
+// Re-export everything from testing-library
 export * from '@testing-library/react';
-export { customRender as render, userEvent, screen, fireEvent, waitFor };
+export { customRender as render, userEvent };
