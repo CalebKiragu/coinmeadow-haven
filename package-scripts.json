@@ -1,8 +1,11 @@
 
 {
   "scripts": {
-    "test:auth": "node scripts/test.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:auth": "node scripts/test.js",
+    "test:unit": "vitest run --config vitest.config.ts",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
   }
 }
