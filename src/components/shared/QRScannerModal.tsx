@@ -112,7 +112,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
         {scanMode === 'camera' ? (
           <div className="w-full aspect-square max-h-[300px] overflow-hidden rounded-md">
             <Scanner
-              onResult={handleScan}
+              onScan={handleScan}
               onError={handleError}
               scanDelay={500}
               constraints={{
