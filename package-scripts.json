@@ -1,0 +1,8 @@
+
+{
+  "scripts": {
+    "test:auth": "node scripts/test.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  }
+}
