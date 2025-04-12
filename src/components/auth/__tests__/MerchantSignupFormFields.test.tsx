@@ -1,5 +1,5 @@
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from '../../../test/test-imports';
 import { render, screen } from '../../../test/test-utils';
 import userEvent from '@testing-library/user-event';
 import MerchantSignupFormFields from '../MerchantSignupFormFields';
