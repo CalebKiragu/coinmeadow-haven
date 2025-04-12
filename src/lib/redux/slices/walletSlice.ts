@@ -1,7 +1,6 @@
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-export type Currency = 'USD' | 'EUR' | 'GBP' | 'KES' | 'NGN' | 'ZAR';
+export type Currency = "USD" | "EUR" | "GBP" | "KES" | "NGN" | "ZAR";
 
 export interface Wallet {
   currency: string;
@@ -31,19 +30,19 @@ const initialState: WalletState = {
   walletLoaded: false,
   walletError: null,
   balance: {
-    available: '0',
-    pending: '0',
-    total: '0',
+    available: "0",
+    pending: "0",
+    total: "0",
   },
-  selectedFiat: 'USD',
-  selectedCrypto: 'BTC',
+  selectedFiat: "USD",
+  selectedCrypto: "BTC",
   wallets: [],
   lastUpdated: null,
-  showBalance: false,
+  showBalance: true,
 };
 
 const walletSlice = createSlice({
-  name: 'wallet',
+  name: "wallet",
   initialState,
   reducers: {
     fetchWalletStart: (state) => {
@@ -55,23 +54,29 @@ const walletSlice = createSlice({
       state.wallets = action.payload;
       state.lastUpdated = new Date().toISOString();
       state.walletError = null;
-      
+
       // Calculate total balance values
-      const totalAvailable = state.wallets.reduce(
-        (sum, wallet) => sum + parseFloat(wallet.balance.availableBalance), 
-        0
-      ).toString();
-      
-      const totalPending = state.wallets.reduce(
-        (sum, wallet) => sum + parseFloat(wallet.balance.pendingBalance), 
-        0
-      ).toString();
-      
-      const totalBalance = state.wallets.reduce(
-        (sum, wallet) => sum + parseFloat(wallet.balance.totalBalance), 
-        0
-      ).toString();
-      
+      const totalAvailable = state.wallets
+        .reduce(
+          (sum, wallet) => sum + parseFloat(wallet.balance.availableBalance),
+          0
+        )
+        .toString();
+
+      const totalPending = state.wallets
+        .reduce(
+          (sum, wallet) => sum + parseFloat(wallet.balance.pendingBalance),
+          0
+        )
+        .toString();
+
+      const totalBalance = state.wallets
+        .reduce(
+          (sum, wallet) => sum + parseFloat(wallet.balance.totalBalance),
+          0
+        )
+        .toString();
+
       state.balance = {
         available: totalAvailable,
         pending: totalPending,

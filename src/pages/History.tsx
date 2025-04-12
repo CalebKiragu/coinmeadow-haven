@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,7 +17,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Search, Filter, SortAsc } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  Search,
+  Filter,
+  SortAsc,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,15 +34,18 @@ import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { setShowBalance } from "@/lib/redux/slices/walletSlice";
 
 const History = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const isMobile = useIsMobile();
-  const { transactions, isLoading } = useAppSelector((state) => state.transaction);
+  const { transactions, isLoading } = useAppSelector(
+    (state) => state.transaction
+  );
   const { toast } = useToast();
   const { verifyPasskey, isPasskeyVerified, isVerifying } = usePasskeyAuth();
-  
+
   const [date, setDate] = useState<Date | undefined>();
   const [transactionType, setTransactionType] = useState("all");
   const [currency, setCurrency] = useState("all");
@@ -46,36 +53,38 @@ const History = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [expandedTxId, setExpandedTxId] = useState<string | null>(null);
-  
+
   // Get the global showBalance state from the wallet slice
   const { showBalance } = useAppSelector((state) => state.wallet);
-  
+
   // Check for passkey verification when the component mounts
   useEffect(() => {
     const checkPasskeyVerification = async () => {
       if (!isPasskeyVerified) {
         try {
           const verified = await verifyPasskey();
+          dispatch(setShowBalance(true));
           if (!verified) {
             // Redirect if authentication fails
-            navigate("/dashboard");
+            // navigate("/dashboard");
           }
         } catch (error) {
           toast({
             title: "Authentication Required",
-            description: "Please verify your identity to view transaction details",
+            description:
+              "Please verify your identity to view transaction details",
             variant: "default",
           });
-          
+
           // Redirect if authentication fails
           navigate("/dashboard");
         }
       }
     };
-    
+
     checkPasskeyVerification();
   }, [isPasskeyVerified, verifyPasskey, toast, navigate]);
-  
+
   // Memoize transactions fetching to prevent unnecessary requests
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -84,7 +93,7 @@ const History = () => {
         console.log("History: Using cached transactions");
         return;
       }
-      
+
       try {
         await ApiService.getTransactionHistory();
       } catch (error) {
@@ -96,7 +105,7 @@ const History = () => {
         });
       }
     };
-    
+
     fetchTransactions();
   }, [transactions.length, dispatch, toast]);
 
@@ -107,7 +116,7 @@ const History = () => {
       if (transactionType !== "all" && tx.type !== transactionType) {
         return false;
       }
-      
+
       // Filter by currency - check both grossCurrency and currencies in inOut field
       if (currency !== "all") {
         // Check grossCurrency
@@ -115,9 +124,9 @@ const History = () => {
           // If grossCurrency doesn't match, check inOut field
           if (tx.inOut) {
             // Split inOut by dash to check for currencies
-            const currencies = tx.inOut.split('-');
+            const currencies = tx.inOut.split("-");
             // If none of the currencies match, filter out this transaction
-            if (!currencies.some(c => c.trim() === currency)) {
+            if (!currencies.some((c) => c.trim() === currency)) {
               return false;
             }
           } else {
@@ -125,19 +134,21 @@ const History = () => {
           }
         }
       }
-      
+
       // Filter by status
       if (status !== "all") {
         const txStatus = tx.status.toLowerCase();
         if (
           (status === "pending" && txStatus !== "inprogress") ||
-          (status === "completed" && (txStatus !== "confirmed" && txStatus !== "settled")) ||
+          (status === "completed" &&
+            txStatus !== "confirmed" &&
+            txStatus !== "settled") ||
           (status === "failed" && txStatus !== "cancelled")
         ) {
           return false;
         }
       }
-      
+
       // Filter by date if selected
       if (date) {
         try {
@@ -155,22 +166,27 @@ const History = () => {
           return false;
         }
       }
-      
+
       // Filter by search term
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
         // Search in transaction ID, recipient address, or sender
-        const recipientAddresses = tx.recipient && tx.recipient.length > 0 
-          ? tx.recipient.map(r => r.address).filter(Boolean).join(' ').toLowerCase()
-          : '';
-        
+        const recipientAddresses =
+          tx.recipient && tx.recipient.length > 0
+            ? tx.recipient
+                .map((r) => r.address)
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase()
+            : "";
+
         return (
           tx.txId.toLowerCase().includes(searchLower) ||
           recipientAddresses.includes(searchLower) ||
           (tx.sender && tx.sender.toLowerCase().includes(searchLower))
         );
       }
-      
+
       return true;
     });
   }, [transactions, transactionType, currency, status, date, searchTerm]);
@@ -187,8 +203,8 @@ const History = () => {
           // Handle scientific notation
           const parseAmount = (val: string) => {
             try {
-              if (val.includes('e')) {
-                const [base, exponent] = val.split('e');
+              if (val.includes("e")) {
+                const [base, exponent] = val.split("e");
                 return parseFloat(base) * Math.pow(10, parseInt(exponent));
               }
               return parseFloat(val.replace(/[^0-9.-]+/g, ""));
@@ -197,7 +213,7 @@ const History = () => {
               return 0;
             }
           };
-          
+
           const aValue = parseAmount(a.grossValue);
           const bValue = parseAmount(b.grossValue);
           return bValue - aValue;
@@ -212,23 +228,26 @@ const History = () => {
   }, [filteredTransactions, sortBy]);
 
   // Group sorted transactions by status for the tabs
-  const pendingTransactions = useMemo(() => 
-    sortedTransactions.filter(tx => tx.status === "INPROGRESS"), 
+  const pendingTransactions = useMemo(
+    () => sortedTransactions.filter((tx) => tx.status === "INPROGRESS"),
     [sortedTransactions]
   );
-  
-  const completedTransactions = useMemo(() => 
-    sortedTransactions.filter(tx => tx.status === "CONFIRMED" || tx.status === "SETTLED"), 
+
+  const completedTransactions = useMemo(
+    () =>
+      sortedTransactions.filter(
+        (tx) => tx.status === "CONFIRMED" || tx.status === "SETTLED"
+      ),
     [sortedTransactions]
   );
-  
-  const failedTransactions = useMemo(() => 
-    sortedTransactions.filter(tx => tx.status === "CANCELLED"), 
+
+  const failedTransactions = useMemo(
+    () => sortedTransactions.filter((tx) => tx.status === "CANCELLED"),
     [sortedTransactions]
   );
 
   const handleExpandTransaction = (txId: string) => {
-    setExpandedTxId(prevId => prevId === txId ? null : txId);
+    setExpandedTxId((prevId) => (prevId === txId ? null : txId));
   };
 
   const clearFilters = () => {
@@ -248,7 +267,7 @@ const History = () => {
         </div>
       );
     }
-    
+
     return (
       <div className="space-y-3">
         <AnimatePresence>
@@ -276,7 +295,10 @@ const History = () => {
     return (
       <div className="space-y-3">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="p-3 bg-white/10 rounded-lg flex justify-between items-center">
+          <div
+            key={i}
+            className="p-3 bg-white/10 rounded-lg flex justify-between items-center"
+          >
             <div className="flex flex-col gap-2 w-2/3">
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-3 w-1/2" />
@@ -294,15 +316,20 @@ const History = () => {
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <NavigationHeader title="Transaction History" />
-        
+
         <div className="space-y-6">
           {/* Improved mobile layout - 2 columns on mobile, more rows */}
-          <div className={`grid ${isMobile ? 'grid-cols-2' : 'flex flex-wrap'} gap-4`}>
-            <Select 
-              value={transactionType}
-              onValueChange={setTransactionType}
-            >
-              <SelectTrigger className={`${isMobile ? 'w-full' : 'w-[180px]'} bg-white dark:bg-gray-800`}>
+          <div
+            className={`grid ${
+              isMobile ? "grid-cols-2" : "flex flex-wrap"
+            } gap-4`}
+          >
+            <Select value={transactionType} onValueChange={setTransactionType}>
+              <SelectTrigger
+                className={`${
+                  isMobile ? "w-full" : "w-[180px]"
+                } bg-white dark:bg-gray-800`}
+              >
                 <Filter className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Transaction Type" />
               </SelectTrigger>
@@ -316,11 +343,12 @@ const History = () => {
               </SelectContent>
             </Select>
 
-            <Select 
-              value={currency}
-              onValueChange={setCurrency}
-            >
-              <SelectTrigger className={`${isMobile ? 'w-full' : 'w-[180px]'} bg-white dark:bg-gray-800`}>
+            <Select value={currency} onValueChange={setCurrency}>
+              <SelectTrigger
+                className={`${
+                  isMobile ? "w-full" : "w-[180px]"
+                } bg-white dark:bg-gray-800`}
+              >
                 <SelectValue placeholder="Currency" />
               </SelectTrigger>
               <SelectContent>
@@ -334,11 +362,12 @@ const History = () => {
               </SelectContent>
             </Select>
 
-            <Select 
-              value={sortBy}
-              onValueChange={setSortBy}
-            >
-              <SelectTrigger className={`${isMobile ? 'w-full' : 'w-[180px]'} bg-white dark:bg-gray-800`}>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger
+                className={`${
+                  isMobile ? "w-full" : "w-[180px]"
+                } bg-white dark:bg-gray-800`}
+              >
                 <SortAsc className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Sort By" />
               </SelectTrigger>
@@ -355,7 +384,9 @@ const History = () => {
                 <Button
                   variant={"outline"}
                   className={cn(
-                    `${isMobile ? 'w-full' : 'w-[180px]'} justify-start text-left font-normal bg-white dark:bg-gray-800`,
+                    `${
+                      isMobile ? "w-full" : "w-[180px]"
+                    } justify-start text-left font-normal bg-white dark:bg-gray-800`,
                     !date && "text-muted-foreground"
                   )}
                 >
@@ -376,18 +407,27 @@ const History = () => {
             </Popover>
 
             {/* Clear filters button, full width on mobile */}
-            {(transactionType !== "all" || currency !== "all" || date || searchTerm) && (
+            {(transactionType !== "all" ||
+              currency !== "all" ||
+              date ||
+              searchTerm) && (
               <Button
                 variant="outline"
-                className={`${isMobile ? 'col-span-2' : ''} shrink-0 bg-white dark:bg-gray-800`}
+                className={`${
+                  isMobile ? "col-span-2" : ""
+                } shrink-0 bg-white dark:bg-gray-800`}
                 onClick={clearFilters}
               >
                 Clear Filters
               </Button>
             )}
-            
+
             {/* Search input, full width on mobile, in its own row */}
-            <div className={`relative ${isMobile ? 'col-span-2' : 'w-auto flex-1'}`}>
+            <div
+              className={`relative ${
+                isMobile ? "col-span-2" : "w-auto flex-1"
+              }`}
+            >
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search transactions..."
@@ -399,8 +439,8 @@ const History = () => {
           </div>
 
           <div className="glass-effect rounded-lg p-6">
-            <Tabs 
-              defaultValue="all" 
+            <Tabs
+              defaultValue="all"
               value={status}
               onValueChange={setStatus}
               className="w-full"
@@ -413,9 +453,7 @@ const History = () => {
               </TabsList>
 
               {isLoading ? (
-                <div className="space-y-4">
-                  {renderSkeletonLoader()}
-                </div>
+                <div className="space-y-4">{renderSkeletonLoader()}</div>
               ) : (
                 <>
                   <TabsContent value="all" className="space-y-4">

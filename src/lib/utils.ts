@@ -1,4 +1,3 @@
-
 import { ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -18,15 +17,17 @@ export const formatTimestamp = (timestamp: bigint): string => {
   });
 };
 
-export const formatCryptoValue = (value: string | number | null | undefined): string => {
+export const formatCryptoValue = (
+  value: string | number | null | undefined
+): string => {
   if (value === null || value === undefined) return "0";
-  
+
   try {
     let numValue: number;
-    
+
     if (typeof value === "string") {
-      if (value.includes('e')) {
-        const [base, exponent] = value.split('e');
+      if (value.includes("e")) {
+        const [base, exponent] = value.split("e");
         numValue = parseFloat(base) * Math.pow(10, parseInt(exponent));
       } else {
         numValue = parseFloat(value);
@@ -34,9 +35,9 @@ export const formatCryptoValue = (value: string | number | null | undefined): st
     } else {
       numValue = value;
     }
-    
+
     if (isNaN(numValue)) return "0";
-    
+
     if (numValue < 0.000001) {
       return numValue.toExponential(6);
     } else if (numValue < 0.01) {
@@ -48,7 +49,7 @@ export const formatCryptoValue = (value: string | number | null | undefined): st
     } else {
       return numValue.toLocaleString(undefined, {
         minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+        maximumFractionDigits: 2,
       });
     }
   } catch (error) {
@@ -65,10 +66,10 @@ export const estimateFiatValue = (
 ): string => {
   try {
     let numAmount: number;
-    
+
     if (typeof amount === "string") {
-      if (amount.includes('e')) {
-        const [base, exponent] = amount.split('e');
+      if (amount.includes("e")) {
+        const [base, exponent] = amount.split("e");
         numAmount = parseFloat(base) * Math.pow(10, parseInt(exponent));
       } else {
         numAmount = parseFloat(amount);
@@ -76,20 +77,20 @@ export const estimateFiatValue = (
     } else {
       numAmount = amount;
     }
-    
+
     if (isNaN(numAmount)) return "";
-    
+
     const rateKey = `${cryptoCurrency}-${fiatCurrency}`;
     const rate = rates[rateKey];
-    
+
     if (!rate) return "";
-    
+
     const fiatValue = numAmount * rate;
-    
+
     // Always format fiat values with exactly 2 decimal places
     return fiatValue.toLocaleString(undefined, {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     });
   } catch (error) {
     console.error("Error estimating fiat value:", error);
@@ -99,31 +100,40 @@ export const estimateFiatValue = (
 
 export const maskSensitiveData = (data?: string): string => {
   if (!data) return "***";
-  
-  if (data.includes('@')) {
-    const [username, domain] = data.split('@');
-    const maskedUsername = username.charAt(0) + '*'.repeat(username.length - 2) + username.charAt(username.length - 1);
+
+  if (data.includes("@")) {
+    const [username, domain] = data.split("@");
+    const maskedUsername =
+      username.charAt(0) +
+      "*".repeat(username.length - 2) +
+      username.charAt(username.length - 1);
     return `${maskedUsername}@${domain}`;
   } else if (/^\d+$/.test(data)) {
-    return data.slice(0, 3) + '*'.repeat(data.length - 6) + data.slice(-3);
+    return data.slice(0, 3) + "*".repeat(data.length - 6) + data.slice(-3);
   } else {
-    return data.charAt(0) + '*'.repeat(data.length - 2) + data.charAt(data.length - 1);
+    return (
+      data.charAt(0) +
+      "*".repeat(data.length - 2) +
+      data.charAt(data.length - 1)
+    );
   }
 };
 
 export const url = () => {
   return {
-    BASE_URL: 'https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/',
+    BASE_URL: "https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/",
   };
 };
 
 export const aws = () => {
   return {
     s3: {
-      REGION: import.meta.env.VITE_AWS_REGION || 'us-east-1',
-      BUCKET_NAME: import.meta.env.VITE_S3_BUCKET_NAME || 'pesatoken-kyc',
-      IDENTITY_POOL_ID: import.meta.env.VITE_IDENTITY_POOL_ID || 'us-east-1:12345678-1234-1234-1234-123456789012'
-    }
+      REGION: import.meta.env.VITE_AWS_REGION || "us-east-1",
+      BUCKET_NAME: import.meta.env.VITE_S3_BUCKET_NAME || "pesatoken-kyc",
+      IDENTITY_POOL_ID:
+        import.meta.env.VITE_IDENTITY_POOL_ID ||
+        "us-east-1:539c38cd-87a4-4563-bb9e-16e23aa013f5",
+    },
   };
 };
 
@@ -131,37 +141,37 @@ export const aws = () => {
  * Helper to handle environment branching for different deployment environments
  */
 export const getEnvironmentConfig = () => {
-  const env = import.meta.env.VITE_APP_ENV || 'development';
-  
+  const env = import.meta.env.VITE_APP_ENV || "development";
+
   const configs = {
     development: {
-      apiUrl: 'https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Dev/',
-      s3Bucket: 'pesatoken-kyc-dev',
+      apiUrl: "https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Dev/",
+      s3Bucket: "pesatoken-kyc-dev",
       featureFlags: {
         enableBiometrics: true,
         showDebugInfo: true,
-        mockTransactions: false
-      }
+        mockTransactions: false,
+      },
     },
     staging: {
-      apiUrl: 'https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Stage/',
-      s3Bucket: 'pesatoken-kyc-staging',
+      apiUrl: "https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Stage/",
+      s3Bucket: "pesatoken-kyc-staging",
       featureFlags: {
         enableBiometrics: true,
         showDebugInfo: false,
-        mockTransactions: false
-      }
+        mockTransactions: false,
+      },
     },
     production: {
-      apiUrl: 'https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/',
-      s3Bucket: 'pesatoken-kyc',
+      apiUrl: "https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/",
+      s3Bucket: "pesatoken-kyc",
       featureFlags: {
         enableBiometrics: true,
         showDebugInfo: false,
-        mockTransactions: false
-      }
-    }
+        mockTransactions: false,
+      },
+    },
   };
-  
+
   return configs[env as keyof typeof configs] || configs.development;
 };

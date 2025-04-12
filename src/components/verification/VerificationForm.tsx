@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { uploadToS3, generateKycFilename } from "@/lib/s3Uploader";
 import { useAppSelector } from "@/lib/redux/hooks";
-import { ApiService } from "@/lib/services";
 
 interface VerificationFormProps {
   onSubmit: (data: any) => void;
@@ -82,6 +81,9 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
         throw new Error("Failed to upload one or more files");
       }
 
+      console.log("====================================");
+      console.log(user, merchant);
+      console.log("====================================");
       // Prepare verification submission data
       const verificationData = {
         firstName: formData.firstName,
@@ -95,6 +97,8 @@ const VerificationForm = ({ onSubmit }: VerificationFormProps) => {
         location: ["0.0", "0.0"], // Default location if geolocation is not available
         isMerchant: !!merchant,
       };
+
+      console.log("verification data >> ", verificationData);
 
       // Try to get user's geolocation
       if (navigator.geolocation) {

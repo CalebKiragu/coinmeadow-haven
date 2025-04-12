@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Calendar, Filter, ChevronRight, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -9,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button"; 
+import { Button } from "@/components/ui/button";
 import GlassCard from "../ui/GlassCard";
 import TransactionHistoryItem from "./TransactionHistoryItem";
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
@@ -23,7 +22,10 @@ interface TransactionHistoryProps {
   setShowBalance: (value: boolean) => void;
 }
 
-const TransactionHistory = ({ showBalance, setShowBalance }: TransactionHistoryProps) => {
+const TransactionHistory = ({
+  showBalance,
+  setShowBalance,
+}: TransactionHistoryProps) => {
   const [sortBy, setSortBy] = useState("date");
   const [filterType, setFilterType] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +35,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }: TransactionHistoryP
   const { verifyPasskey, isPasskeyVerified, isVerifying } = usePasskeyAuth();
 
   const { transactions } = useAppSelector((state) => state.transaction);
-  
+
   // Memoize transactions fetching to prevent unnecessary requests
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -44,7 +46,10 @@ const TransactionHistory = ({ showBalance, setShowBalance }: TransactionHistoryP
         await ApiService.getTransactionHistory();
         console.log("TransactionHistory: Fetched transactions successfully");
       } catch (error) {
-        console.error("TransactionHistory: Error fetching transactions:", error);
+        console.error(
+          "TransactionHistory: Error fetching transactions:",
+          error
+        );
       } finally {
         setIsLoading(false);
       }
@@ -69,8 +74,8 @@ const TransactionHistory = ({ showBalance, setShowBalance }: TransactionHistoryP
         // Safely parse numeric values from strings that might be in scientific notation
         const parseAmount = (val: string) => {
           try {
-            if (val.includes('e')) {
-              const [base, exponent] = val.split('e');
+            if (val.includes("e")) {
+              const [base, exponent] = val.split("e");
               return parseFloat(base) * Math.pow(10, parseInt(exponent));
             }
             return parseFloat(val.replace(/[^0-9.-]+/g, ""));
@@ -79,10 +84,10 @@ const TransactionHistory = ({ showBalance, setShowBalance }: TransactionHistoryP
             return 0;
           }
         };
-        
+
         const aValue = parseAmount(a.grossValue);
         const bValue = parseAmount(b.grossValue);
-        
+
         return bValue - aValue;
       }
       return 0;
@@ -96,7 +101,7 @@ const TransactionHistory = ({ showBalance, setShowBalance }: TransactionHistoryP
   const handleToggleBalance = async () => {
     // Prevent multiple simultaneous verification attempts
     if (isVerifying) return;
-    
+
     // If we're trying to show the balance and passkey hasn't been verified yet
     if (!showBalance && !isPasskeyVerified) {
       try {
@@ -127,8 +132,8 @@ const TransactionHistory = ({ showBalance, setShowBalance }: TransactionHistoryP
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold">Transaction History</h2>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
             onClick={handleToggleBalance}
             className="flex items-center"
@@ -178,8 +183,8 @@ const TransactionHistory = ({ showBalance, setShowBalance }: TransactionHistoryP
       ) : recentTransactions.length === 0 ? (
         <div className="py-20 text-center text-gray-500">
           <p>No transactions to display</p>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="mt-4"
             onClick={() => setForceRefresh(!forceRefresh)}
           >
@@ -197,11 +202,14 @@ const TransactionHistory = ({ showBalance, setShowBalance }: TransactionHistoryP
               />
             ))}
           </div>
-          
+
           {hasMoreTransactions && (
             <div className="mt-4 text-center">
               <Link to="/history">
-                <Button variant="ghost" className="text-primary hover:text-primary-dark group">
+                <Button
+                  variant="ghost"
+                  className="text-primary hover:text-primary-dark group"
+                >
                   See All Transactions
                   <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
