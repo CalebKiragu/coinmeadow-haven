@@ -1,5 +1,5 @@
 
-import { QrScanner } from '@yudiel/react-qr-scanner';
+import { Scanner } from '@yudiel/react-qr-scanner';
 
 /**
  * Processes an image file and attempts to extract QR code data from it
@@ -66,4 +66,3 @@ export const processQRCodeFromFile = async (file: File): Promise<string | null> 
     reader.readAsDataURL(file);
   });
 };
-

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { QrScanner } from '@yudiel/react-qr-scanner';
+import { Scanner } from '@yudiel/react-qr-scanner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,7 +111,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
 
         {scanMode === 'camera' ? (
           <div className="w-full aspect-square max-h-[300px] overflow-hidden rounded-md">
-            <QrScanner
+            <Scanner
               onDecode={handleScan}
               onError={handleError}
               scanDelay={500}
