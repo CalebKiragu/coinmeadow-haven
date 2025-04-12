@@ -6,10 +6,18 @@ import matchers from '@testing-library/jest-dom/matchers';
 // Extend Vitest's expect method with methods from react-testing-library
 expect.extend(matchers);
 
-// Extend global types for TypeScript
+// Fix the global type declarations to avoid circular references
 declare global {
-  var vitest: typeof import('vitest');
-  var afterEach: typeof afterEach;
+  // Use interfaces to avoid self-references in type annotations
+  interface ViMethods {
+    fn: typeof vi.fn;
+    mock: typeof vi.mock;
+    spyOn: typeof vi.spyOn;
+    resetAllMocks: typeof vi.resetAllMocks;
+  }
+  
+  var vi: ViMethods;
+  var afterEach: (fn: () => void) => void;
   var expect: typeof expect;
 }
 
