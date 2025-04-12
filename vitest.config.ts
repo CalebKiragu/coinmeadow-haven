@@ -21,5 +21,6 @@ export default defineConfig({
     deps: {
       inline: ['vitest-canvas-mock'],
     },
+    css: false,
   },
 });

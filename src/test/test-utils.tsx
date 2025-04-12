@@ -6,6 +6,7 @@ import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { BrowserRouter } from 'react-router-dom';
 import authReducer from '@/lib/redux/slices/authSlice';
+import '@testing-library/jest-dom';
 
 // Create a test store with required reducers
 const createTestStore = (preloadedState = {}) => {

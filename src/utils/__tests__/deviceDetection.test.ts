@@ -9,7 +9,7 @@ import {
 
 describe('Device Detection Utilities', () => {
   const originalNavigator = global.navigator;
-  let userAgentGetter: jest.SpyInstance;
+  let userAgentGetter: ReturnType<typeof vi.spyOn>;
   
   beforeEach(() => {
     // Create a mock for navigator.userAgent getter
