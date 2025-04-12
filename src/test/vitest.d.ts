@@ -18,6 +18,8 @@ declare global {
 
   // Make vi available globally
   const vi: typeof import('vitest')['vi'];
+  const expect: typeof import('vitest')['expect'];
+  const afterEach: typeof import('vitest')['afterEach'];
 }
 
 export {};

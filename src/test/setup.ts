@@ -7,9 +7,10 @@ import matchers from '@testing-library/jest-dom/matchers';
 expect.extend(matchers);
 
 // Make vi, afterEach, and expect available globally
-globalThis.vi = vi;
-globalThis.afterEach = afterEach;
-globalThis.expect = expect;
+// We need to use declaration merging here with globalThis
+(globalThis as any).vi = vi;
+(globalThis as any).afterEach = afterEach;
+(globalThis as any).expect = expect;
 
 // Mock fetch for API testing
 global.fetch = vi.fn();
