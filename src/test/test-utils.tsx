@@ -47,4 +47,4 @@ const customRender = (
 
 // Re-export everything from testing-library
 export * from '@testing-library/react';
-export { customRender as render, userEvent };
+export { customRender as render, userEvent, screen, fireEvent, waitFor };

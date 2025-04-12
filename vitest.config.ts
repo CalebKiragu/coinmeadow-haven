@@ -15,5 +15,11 @@ export default defineConfig({
       exclude: ['node_modules/', 'src/test/**/*'],
     },
     alias: [{ find: '@', replacement: path.resolve(__dirname, 'src') }],
+    typecheck: {
+      tsconfig: './tsconfig.json',
+    },
+    deps: {
+      inline: ['vitest-canvas-mock'],
+    },
   },
 });
