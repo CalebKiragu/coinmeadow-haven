@@ -49,7 +49,7 @@ describe('MerchantSignupForm Component', () => {
   });
 
   it('progresses through merchant email signup flow', async () => {
-    const mockVerifyEmail = ApiService.verifyMerchantEmail as vi.Mock;
+    const mockVerifyEmail = ApiService.verifyMerchantEmail as unknown as ReturnType<typeof vi.fn>;
     mockVerifyEmail.mockResolvedValue({ otpId: '123' });
     
     render(<MerchantSignupForm />);
@@ -83,7 +83,7 @@ describe('MerchantSignupForm Component', () => {
   });
 
   it('validates merchant signup PIN matching in final step', async () => {
-    const mockVerifyEmail = ApiService.verifyMerchantEmail as vi.Mock;
+    const mockVerifyEmail = ApiService.verifyMerchantEmail as unknown as ReturnType<typeof vi.fn>;
     mockVerifyEmail.mockResolvedValue({ otpId: '123' });
     
     render(<MerchantSignupForm />);

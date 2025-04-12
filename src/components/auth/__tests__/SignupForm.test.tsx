@@ -49,7 +49,7 @@ describe('SignupForm Component', () => {
   });
 
   it('progresses through email signup flow', async () => {
-    const mockVerifyEmail = ApiService.verifyUserEmail as vi.Mock;
+    const mockVerifyEmail = ApiService.verifyUserEmail as unknown as ReturnType<typeof vi.fn>;
     mockVerifyEmail.mockResolvedValue({ otpId: '123' });
     
     render(<SignupForm />);
@@ -83,7 +83,7 @@ describe('SignupForm Component', () => {
   });
 
   it('handles signup errors correctly', async () => {
-    const mockVerifyEmail = ApiService.verifyUserEmail as vi.Mock;
+    const mockVerifyEmail = ApiService.verifyUserEmail as unknown as ReturnType<typeof vi.fn>;
     mockVerifyEmail.mockRejectedValueOnce(new Error('Invalid email'));
     
     const { store } = render(<SignupForm />);
@@ -99,7 +99,7 @@ describe('SignupForm Component', () => {
   });
 
   it('validates PIN matching in final step', async () => {
-    const mockVerifyEmail = ApiService.verifyUserEmail as vi.Mock;
+    const mockVerifyEmail = ApiService.verifyUserEmail as unknown as ReturnType<typeof vi.fn>;
     mockVerifyEmail.mockResolvedValue({ otpId: '123' });
     
     render(<SignupForm />);

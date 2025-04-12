@@ -1,21 +1,14 @@
 
-import { expect, afterEach } from 'vitest';
+import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import matchers from '@testing-library/jest-dom/matchers';
 
 // Extend Vitest's expect method with methods from react-testing-library
 expect.extend(matchers);
 
-// Import the actual vi object from vitest
-import { vi } from 'vitest';
-
-// Make vi available globally
+// Make vi, afterEach, and expect available globally
 globalThis.vi = vi;
-
-// Make afterEach available globally
 globalThis.afterEach = afterEach;
-
-// Make expect available globally
 globalThis.expect = expect;
 
 // Mock fetch for API testing

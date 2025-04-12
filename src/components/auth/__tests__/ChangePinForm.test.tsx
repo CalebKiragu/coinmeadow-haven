@@ -17,7 +17,9 @@ vi.mock('@/lib/services', () => ({
 
 // Mock the use-toast hook
 vi.mock('@/hooks/use-toast', () => ({
-  toast: vi.fn(),
+  useToast: () => ({
+    toast: vi.fn(),
+  }),
 }));
 
 describe('ChangePinForm Component', () => {
@@ -44,7 +46,7 @@ describe('ChangePinForm Component', () => {
   });
 
   it('progresses through reset PIN flow for users', async () => {
-    const mockResetUserPin = ApiService.resetUserPin as vi.Mock;
+    const mockResetUserPin = ApiService.resetUserPin as unknown as ReturnType<typeof vi.fn>;
     mockResetUserPin.mockResolvedValue({ otpId: '123' });
     
     const mockOnClose = vi.fn();
@@ -89,7 +91,7 @@ describe('ChangePinForm Component', () => {
   });
 
   it('handles errors in PIN change flow', async () => {
-    const mockChangeUserPin = ApiService.changeUserPin as vi.Mock;
+    const mockChangeUserPin = ApiService.changeUserPin as unknown as ReturnType<typeof vi.fn>;
     mockChangeUserPin.mockRejectedValueOnce(new Error('Invalid current PIN'));
     
     render(<ChangePinForm onClose={() => {}} />);

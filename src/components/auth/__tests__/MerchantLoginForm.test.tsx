@@ -61,7 +61,7 @@ describe('MerchantLoginForm Component', () => {
   });
 
   it('submits merchant login form with email and PIN', async () => {
-    const mockLoginMerchant = ApiService.loginMerchant as vi.Mock;
+    const mockLoginMerchant = ApiService.loginMerchant as unknown as ReturnType<typeof vi.fn>;
     mockLoginMerchant.mockResolvedValueOnce({ merchant: { merchantName: 'Test Shop' }, otp: { otpId: '123' } });
     
     render(<MerchantLoginForm />);
@@ -84,7 +84,7 @@ describe('MerchantLoginForm Component', () => {
   });
 
   it('shows OTP verification screen after successful merchant login', async () => {
-    const mockLoginMerchant = ApiService.loginMerchant as vi.Mock;
+    const mockLoginMerchant = ApiService.loginMerchant as unknown as ReturnType<typeof vi.fn>;
     mockLoginMerchant.mockResolvedValueOnce({ merchant: { merchantName: 'Test Shop' }, otp: { otpId: '123' } });
     
     render(<MerchantLoginForm />);

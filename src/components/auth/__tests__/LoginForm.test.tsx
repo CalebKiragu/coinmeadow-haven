@@ -75,7 +75,7 @@ describe('LoginForm Component', () => {
   });
 
   it('submits the form with email and PIN', async () => {
-    const mockLoginUser = ApiService.loginUser as vi.Mock;
+    const mockLoginUser = ApiService.loginUser as unknown as ReturnType<typeof vi.fn>;
     mockLoginUser.mockResolvedValueOnce({ user: { firstName: 'Test' }, otp: { otpId: '123' } });
     
     render(<LoginForm />);
@@ -98,7 +98,7 @@ describe('LoginForm Component', () => {
   });
 
   it('shows OTP verification screen after successful login', async () => {
-    const mockLoginUser = ApiService.loginUser as vi.Mock;
+    const mockLoginUser = ApiService.loginUser as unknown as ReturnType<typeof vi.fn>;
     mockLoginUser.mockResolvedValueOnce({ user: { firstName: 'Test' }, otp: { otpId: '123' } });
     
     render(<LoginForm />);
@@ -115,7 +115,7 @@ describe('LoginForm Component', () => {
   });
 
   it('handles login errors correctly', async () => {
-    const mockLoginUser = ApiService.loginUser as vi.Mock;
+    const mockLoginUser = ApiService.loginUser as unknown as ReturnType<typeof vi.fn>;
     mockLoginUser.mockRejectedValueOnce(new Error('Invalid credentials'));
     
     const { store } = render(<LoginForm />);
