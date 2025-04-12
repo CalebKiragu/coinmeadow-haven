@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Camera, FileUp, X } from "lucide-react";
 import { processQRCodeFromFile } from '@/utils/qrCodeScanner';
 import { useToast } from '@/hooks/use-toast';
+import { isMobile } from '@/utils/deviceDetection';
 
 // Define the interface for detected barcodes based on the library's types
 interface IDetectedBarcode {
@@ -28,6 +29,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
 }) => {
   const [scanMode, setScanMode] = useState<'camera' | 'upload'>('camera');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isScanning, setIsScanning] = useState(false);
   const { toast } = useToast();
   
   // Modified to accept an array of detected barcodes
@@ -59,7 +61,9 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
     if (!file) return;
     
     try {
+      setIsScanning(true);
       const result = await processQRCodeFromFile(file);
+      setIsScanning(false);
       
       if (result) {
         onScan(result);
@@ -76,6 +80,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
         });
       }
     } catch (error) {
+      setIsScanning(false);
       console.error("Error processing file:", error);
       toast({
         title: "Processing Error",
@@ -83,6 +88,16 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
         variant: "destructive",
       });
     }
+  };
+
+  // Determine the best camera facing mode based on device
+  const getFacingMode = () => {
+    // For mobile devices, prefer the back camera
+    if (isMobile()) {
+      return "environment"; // This selects the back camera on mobile devices
+    }
+    // For desktop, use whatever camera is available (typically front camera)
+    return "user";
   };
 
   return (
@@ -126,7 +141,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
               onError={handleError}
               scanDelay={500}
               constraints={{
-                facingMode: "environment"
+                facingMode: getFacingMode()
               }}
             />
           </div>
@@ -136,15 +151,23 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({
             <p className="mb-4 text-center text-sm text-gray-500">
               Upload an image containing a QR code
             </p>
-            <Button onClick={() => fileInputRef.current?.click()}>
-              Choose Image
-            </Button>
+            {isScanning ? (
+              <div className="flex flex-col items-center">
+                <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mb-2"></div>
+                <p>Scanning image...</p>
+              </div>
+            ) : (
+              <Button onClick={() => fileInputRef.current?.click()}>
+                Choose Image
+              </Button>
+            )}
             <Input
               ref={fileInputRef}
               type="file"
               accept="image/*"
               className="hidden"
               onChange={handleFileUpload}
+              disabled={isScanning}
             />
           </div>
         )}
