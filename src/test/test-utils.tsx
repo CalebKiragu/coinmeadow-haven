@@ -7,6 +7,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { BrowserRouter } from 'react-router-dom';
 import authReducer from '@/lib/redux/slices/authSlice';
 import '@testing-library/jest-dom';
+import { vi, expect } from 'vitest';
 
 // Create a test store with required reducers
 const createTestStore = (preloadedState = {}) => {
@@ -48,4 +49,4 @@ const customRender = (
 
 // Re-export everything from testing-library
 export * from '@testing-library/react';
-export { customRender as render, userEvent, screen, fireEvent, waitFor };
+export { customRender as render, userEvent, screen, fireEvent, waitFor, vi, expect };

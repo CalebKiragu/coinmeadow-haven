@@ -8,17 +8,22 @@ expect.extend(matchers);
 
 // Fix the global type declarations to avoid circular references
 declare global {
-  // Use interfaces to avoid self-references in type annotations
-  interface ViMethods {
+  // Define vi functions without self-references
+  var vi: {
     fn: typeof vi.fn;
     mock: typeof vi.mock;
     spyOn: typeof vi.spyOn;
     resetAllMocks: typeof vi.resetAllMocks;
   }
   
-  var vi: ViMethods;
+  // Define afterEach without self-reference
   var afterEach: (fn: () => void) => void;
-  var expect: typeof expect;
+  
+  // Define expect without self-reference
+  var expect: {
+    <T>(actual: T): import('@testing-library/jest-dom').JestMatchers<T>;
+    extend: (matchers: any) => void;
+  }
 }
 
 // Make vi available globally
