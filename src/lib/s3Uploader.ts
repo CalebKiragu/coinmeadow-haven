@@ -1,4 +1,4 @@
-import { aws } from "./utils";
+import { getEnvironmentConfig } from "./utils";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { fromCognitoIdentityPool } from "@aws-sdk/credential-providers";
 
@@ -8,7 +8,7 @@ interface UploadResult {
   error?: string;
 }
 
-const AWS = aws();
+const AWS = getEnvironmentConfig().aws;
 
 /**
  * Uploads a file to AWS S3 using a presigned URL

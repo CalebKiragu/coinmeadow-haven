@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { store } from "../redux/store";
-import { url } from "../utils";
+import { getEnvironmentConfig } from "../utils";
 import {
   VerificationStatus,
   setVerificationStatus,
@@ -8,7 +8,7 @@ import {
 } from "../redux/slices/authSlice";
 
 // Replace with your actual API base URL
-const API_URL = url().BASE_URL;
+const API_URL = getEnvironmentConfig().apiUrl;
 
 // Create an axios instance
 const api = axios.create({

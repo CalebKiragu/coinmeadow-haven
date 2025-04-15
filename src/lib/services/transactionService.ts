@@ -1,7 +1,6 @@
-
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { store } from "../redux/store";
-import { url } from "../utils";
+import { getEnvironmentConfig } from "../utils";
 import {
   fetchTransactionsStart,
   fetchTransactionsSuccess,
@@ -10,7 +9,7 @@ import {
 } from "../redux/slices/transactionSlice";
 
 // Get the API URL from utils
-const API_URL = url().BASE_URL;
+const API_URL = getEnvironmentConfig().apiUrl;
 
 // Create an axios instance
 const api = axios.create({
@@ -70,23 +69,25 @@ interface BlockchainTransferParams {
 
 export const TransactionService = {
   // Send to blockchain address
-  sendBlockchain: async (params: BlockchainTransferParams): Promise<TransferResponse> => {
+  sendBlockchain: async (
+    params: BlockchainTransferParams
+  ): Promise<TransferResponse> => {
     try {
       console.log("Sending blockchain transaction:", params);
       const response: AxiosResponse<ApiResponse<TransferResponse>> =
         await api.post("v1/transact/blockchain/send", params);
-      
+
       console.log("Blockchain transaction response:", response.data);
-      
+
       if (response.data.error) {
         return { success: false, error: response.data.error };
       }
-      
+
       return response.data.data || { success: true };
     } catch (error) {
       console.error("Error sending blockchain transaction:", error);
       const axiosError = error as AxiosError<ApiResponse<null>>;
-      const errorMessage = 
+      const errorMessage =
         axiosError.response?.data?.message ||
         axiosError.response?.data?.error ||
         "Error processing blockchain transaction";
@@ -102,7 +103,7 @@ export const TransactionService = {
       return response.data.data || { success: false };
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
-      const errorMessage = 
+      const errorMessage =
         axiosError.response?.data?.message ||
         axiosError.response?.data?.error ||
         "Error transferring funds";
@@ -118,7 +119,7 @@ export const TransactionService = {
       return response.data.data || { success: false };
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
-      const errorMessage = 
+      const errorMessage =
         axiosError.response?.data?.message ||
         axiosError.response?.data?.error ||
         "Error processing deposit";
@@ -134,7 +135,7 @@ export const TransactionService = {
       return response.data.data || { success: false };
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
-      const errorMessage = 
+      const errorMessage =
         axiosError.response?.data?.message ||
         axiosError.response?.data?.error ||
         "Error processing withdrawal";
@@ -144,25 +145,27 @@ export const TransactionService = {
 
   // Get previously generated addresses
   getDepositAddresses: async (params: {
-    userIdentifier: string; 
+    userIdentifier: string;
     currency: string;
     isMerchant: boolean;
   }): Promise<string[]> => {
     try {
       const { userIdentifier, currency, isMerchant } = params;
-      console.log(`Fetching addresses for ${userIdentifier}, currency: ${currency}, isMerchant: ${isMerchant}`);
-      
+      console.log(
+        `Fetching addresses for ${userIdentifier}, currency: ${currency}, isMerchant: ${isMerchant}`
+      );
+
       const response: AxiosResponse<ApiResponse<DepositAddressResponse>> =
         await api.get(
           `v1/wallets/address/get/${userIdentifier}?fresh=false&currency=${currency.toLowerCase()}&isMerchant=${isMerchant}&raw=false`
         );
-      
+
       console.log("Address response:", response.data);
-      
+
       if (response.data.data?.error) {
         throw new Error(response.data.data.error);
       }
-      
+
       // Handle case where addresses might be undefined
       const addresses = response.data.data?.addresses || [];
       console.log("Returning addresses:", addresses);
@@ -183,15 +186,17 @@ export const TransactionService = {
   }): Promise<string> => {
     try {
       const { userIdentifier, currency, isMerchant, fresh } = params;
-      console.log(`Generating address for ${userIdentifier}, currency: ${currency}, isMerchant: ${isMerchant}, fresh: ${fresh}`);
-      
+      console.log(
+        `Generating address for ${userIdentifier}, currency: ${currency}, isMerchant: ${isMerchant}, fresh: ${fresh}`
+      );
+
       const response: AxiosResponse<ApiResponse<DepositAddressResponse>> =
         await api.get(
           `v1/wallets/address/generate/${userIdentifier}?currency=${currency.toLowerCase()}&isMerchant=${isMerchant}&fresh=${fresh}&raw=false`
         );
 
       console.log("Generate address response:", response.data);
-      
+
       if (response.data.data?.error) {
         throw new Error(response.data.data.error);
       }
@@ -214,13 +219,16 @@ export const TransactionService = {
 
   // Legacy method alias for receiveInstructions
   receiveInstructions: async (currency: string): Promise<any> => {
-    console.warn("receiveInstructions is deprecated, use generateDepositAddress instead");
+    console.warn(
+      "receiveInstructions is deprecated, use generateDepositAddress instead"
+    );
     // For backward compatibility, we'll keep this function but call the new one
     try {
-      const userInfo = store.getState().auth.user || store.getState().auth.merchant;
+      const userInfo =
+        store.getState().auth.user || store.getState().auth.merchant;
       const isMerchant = !!store.getState().auth.merchant;
       const identifier = userInfo?.email || userInfo?.phone || "";
-      
+
       if (!identifier) {
         throw new Error("User not logged in");
       }
@@ -245,35 +253,42 @@ export const TransactionService = {
   getTransactionHistory: async (): Promise<Transaction[]> => {
     store.dispatch(fetchTransactionsStart());
     try {
-      const userInfo = store.getState().auth.user || store.getState().auth.merchant;
+      const userInfo =
+        store.getState().auth.user || store.getState().auth.merchant;
       const identifier = userInfo?.email || userInfo?.phone;
-      
+
       if (!identifier) {
         throw new Error("User not logged in");
       }
-      
+
       console.log("Fetching transaction history for", identifier);
-      
+
       // Updated endpoint with more detailed logging
       const response: AxiosResponse<ApiResponse<Transaction[]>> = await api.get(
         `v1/transactions/find?initiator=${identifier}&sender=${identifier}&recipient=${identifier}`
       );
-      
+
       console.log("Transaction history response status:", response.status);
-      
+
       if (!response.data.data) {
         console.log("No transaction data returned, using empty array");
         store.dispatch(fetchTransactionsSuccess([]));
         return [];
       }
-      
+
       // Ensure we convert timestamp and updatedAt to BigInt for consistency
-      const processedTransactions = response.data.data.map(tx => ({
+      const processedTransactions = response.data.data.map((tx) => ({
         ...tx,
-        timestamp: typeof tx.timestamp === 'number' ? BigInt(tx.timestamp) : tx.timestamp,
-        updatedAt: typeof tx.updatedAt === 'number' ? BigInt(tx.updatedAt) : tx.updatedAt
+        timestamp:
+          typeof tx.timestamp === "number"
+            ? BigInt(tx.timestamp)
+            : tx.timestamp,
+        updatedAt:
+          typeof tx.updatedAt === "number"
+            ? BigInt(tx.updatedAt)
+            : tx.updatedAt,
       }));
-      
+
       console.log(`Found ${processedTransactions.length} transactions`);
       store.dispatch(fetchTransactionsSuccess(processedTransactions));
       return processedTransactions;
