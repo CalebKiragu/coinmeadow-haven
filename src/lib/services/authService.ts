@@ -1,4 +1,3 @@
-
 import axios, { AxiosError, AxiosResponse } from "axios";
 import {
   loginStart,
@@ -10,19 +9,19 @@ import {
   updateOtp,
 } from "../redux/slices/authSlice";
 import { store } from "../redux/store";
-import { url } from "../utils";
-import { 
-  LoginPayload, 
-  LoginResponse, 
-  UserRegistrationPayload, 
-  MerchantRegistrationPayload, 
-  UserResponse, 
-  MerchantResponse, 
-  OtpVerificationResponse 
+import { getEnvironmentConfig } from "../utils";
+import {
+  LoginPayload,
+  LoginResponse,
+  UserRegistrationPayload,
+  MerchantRegistrationPayload,
+  UserResponse,
+  MerchantResponse,
+  OtpVerificationResponse,
 } from "../types";
 
 // Replace with your actual API base URL
-const API_URL = url().BASE_URL;
+const API_URL = getEnvironmentConfig().apiUrl;
 
 // Create an axios instance
 const api = axios.create({
@@ -195,7 +194,8 @@ export const AuthService = {
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
       throw new Error(
-        axiosError.response?.data?.message || "Error resending OTP to user email"
+        axiosError.response?.data?.message ||
+          "Error resending OTP to user email"
       );
     }
   },
@@ -209,12 +209,15 @@ export const AuthService = {
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
       throw new Error(
-        axiosError.response?.data?.message || "Error resending OTP to user phone"
+        axiosError.response?.data?.message ||
+          "Error resending OTP to user phone"
       );
     }
   },
 
-  resendMerchantEmailOTP: async (email: string): Promise<VerificationResponse> => {
+  resendMerchantEmailOTP: async (
+    email: string
+  ): Promise<VerificationResponse> => {
     try {
       const response: AxiosResponse<ApiResponse<VerificationResponse>> =
         await api.get(buildUrl("resendmerchantemail", { email }));
@@ -223,12 +226,15 @@ export const AuthService = {
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
       throw new Error(
-        axiosError.response?.data?.message || "Error resending OTP to merchant email"
+        axiosError.response?.data?.message ||
+          "Error resending OTP to merchant email"
       );
     }
   },
 
-  resendMerchantPhoneOTP: async (phone: string): Promise<VerificationResponse> => {
+  resendMerchantPhoneOTP: async (
+    phone: string
+  ): Promise<VerificationResponse> => {
     try {
       const response: AxiosResponse<ApiResponse<VerificationResponse>> =
         await api.get(buildUrl("resendmerchantphone", { phone }));
@@ -237,19 +243,20 @@ export const AuthService = {
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
       throw new Error(
-        axiosError.response?.data?.message || "Error resending OTP to merchant phone"
+        axiosError.response?.data?.message ||
+          "Error resending OTP to merchant phone"
       );
     }
   },
 
   // Signup User
-  signupUser: async (userData: UserRegistrationPayload): Promise<LoginResponse> => {
+  signupUser: async (
+    userData: UserRegistrationPayload
+  ): Promise<LoginResponse> => {
     store.dispatch(loginStart());
     try {
-      const response: AxiosResponse<ApiResponse<LoginResponse>> = await api.post(
-        "v1/users/register",
-        userData
-      );
+      const response: AxiosResponse<ApiResponse<LoginResponse>> =
+        await api.post("v1/users/register", userData);
       store.dispatch(loginSuccess(response.data.data));
       return response.data.data;
     } catch (error) {
@@ -262,13 +269,13 @@ export const AuthService = {
   },
 
   // Signup Merchant
-  signupMerchant: async (merchantData: MerchantRegistrationPayload): Promise<LoginResponse> => {
+  signupMerchant: async (
+    merchantData: MerchantRegistrationPayload
+  ): Promise<LoginResponse> => {
     store.dispatch(loginStart());
     try {
-      const response: AxiosResponse<ApiResponse<LoginResponse>> = await api.post(
-        "v1/merchants/register",
-        merchantData
-      );
+      const response: AxiosResponse<ApiResponse<LoginResponse>> =
+        await api.post("v1/merchants/register", merchantData);
       store.dispatch(loginSuccess(response.data.data));
       return response.data.data;
     } catch (error) {
@@ -284,10 +291,8 @@ export const AuthService = {
   loginUser: async (credentials: LoginPayload): Promise<LoginResponse> => {
     store.dispatch(loginStart());
     try {
-      const response: AxiosResponse<ApiResponse<LoginResponse>> = await api.post(
-        "v1/users/login",
-        credentials
-      );
+      const response: AxiosResponse<ApiResponse<LoginResponse>> =
+        await api.post("v1/users/login", credentials);
       store.dispatch(loginSuccess(response.data.data));
       return response.data.data;
     } catch (error) {
@@ -305,10 +310,8 @@ export const AuthService = {
   loginMerchant: async (credentials: LoginPayload): Promise<LoginResponse> => {
     store.dispatch(loginStart());
     try {
-      const response: AxiosResponse<ApiResponse<LoginResponse>> = await api.post(
-        "v1/merchants/login",
-        credentials
-      );
+      const response: AxiosResponse<ApiResponse<LoginResponse>> =
+        await api.post("v1/merchants/login", credentials);
       store.dispatch(loginSuccess(response.data.data));
       return response.data.data;
     } catch (error) {
@@ -427,11 +430,15 @@ export const AuthService = {
   },
 
   // Aliases for registerUser and registerMerchant for backwards compatibility
-  registerUser: async (userData: UserRegistrationPayload): Promise<LoginResponse> => {
+  registerUser: async (
+    userData: UserRegistrationPayload
+  ): Promise<LoginResponse> => {
     return AuthService.signupUser(userData);
   },
-  
-  registerMerchant: async (merchantData: MerchantRegistrationPayload): Promise<LoginResponse> => {
+
+  registerMerchant: async (
+    merchantData: MerchantRegistrationPayload
+  ): Promise<LoginResponse> => {
     return AuthService.signupMerchant(merchantData);
-  }
+  },
 };

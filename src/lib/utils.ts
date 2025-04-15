@@ -121,7 +121,9 @@ export const maskSensitiveData = (data?: string): string => {
 
 export const url = () => {
   return {
-    BASE_URL: "https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/",
+    DEV_BASE_URL:
+      "https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/",
+    PROD_BASE_URL: `https://qckp089yob.execute-api.us-east-1.amazonaws.com/Prod/`,
   };
 };
 
@@ -129,7 +131,7 @@ export const aws = () => {
   return {
     s3: {
       REGION: import.meta.env.VITE_AWS_REGION || "us-east-1",
-      BUCKET_NAME: import.meta.env.VITE_S3_BUCKET_NAME || "pesatoken-kyc",
+      BUCKET_NAME: import.meta.env.VITE_S3_BUCKET_NAME || "pesatoken-kyc-dev",
       IDENTITY_POOL_ID:
         import.meta.env.VITE_IDENTITY_POOL_ID ||
         "us-east-1:539c38cd-87a4-4563-bb9e-16e23aa013f5",
@@ -141,12 +143,18 @@ export const aws = () => {
  * Helper to handle environment branching for different deployment environments
  */
 export const getEnvironmentConfig = () => {
-  const env = import.meta.env.VITE_APP_ENV || "development";
+  const env = import.meta.env.VITE_APP_ENV || "production";
 
   const configs = {
     development: {
-      apiUrl: "https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Dev/",
-      s3Bucket: "pesatoken-kyc-dev",
+      apiUrl: "https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/",
+      aws: {
+        s3: {
+          REGION: "us-east-1",
+          BUCKET_NAME: "pesatoken-kyc-dev",
+          IDENTITY_POOL_ID: "us-east-1:539c38cd-87a4-4563-bb9e-16e23aa013f5",
+        },
+      },
       featureFlags: {
         enableBiometrics: true,
         showDebugInfo: true,
@@ -154,8 +162,14 @@ export const getEnvironmentConfig = () => {
       },
     },
     staging: {
-      apiUrl: "https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Stage/",
-      s3Bucket: "pesatoken-kyc-staging",
+      apiUrl: "https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/",
+      aws: {
+        s3: {
+          REGION: "us-east-1",
+          BUCKET_NAME: "pesatoken-kyc-dev",
+          IDENTITY_POOL_ID: "us-east-1:539c38cd-87a4-4563-bb9e-16e23aa013f5",
+        },
+      },
       featureFlags: {
         enableBiometrics: true,
         showDebugInfo: false,
@@ -163,8 +177,14 @@ export const getEnvironmentConfig = () => {
       },
     },
     production: {
-      apiUrl: "https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/",
-      s3Bucket: "pesatoken-kyc",
+      apiUrl: "https://qckp089yob.execute-api.us-east-1.amazonaws.com/Prod/",
+      aws: {
+        s3: {
+          REGION: "us-east-1",
+          BUCKET_NAME: "pesatoken-kyc-prod",
+          IDENTITY_POOL_ID: "us-east-1:539c38cd-87a4-4563-bb9e-16e23aa013f5",
+        },
+      },
       featureFlags: {
         enableBiometrics: true,
         showDebugInfo: false,
@@ -173,5 +193,5 @@ export const getEnvironmentConfig = () => {
     },
   };
 
-  return configs[env as keyof typeof configs] || configs.development;
+  return configs[env as keyof typeof configs] || configs.production;
 };
