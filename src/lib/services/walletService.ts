@@ -13,12 +13,12 @@ import {
   PriceData,
 } from "../redux/slices/priceSlice";
 import { store } from "../redux/store";
-import { url } from "../utils";
+import { getEnvironmentConfig,} from "../utils";
 import { AuthService } from "./authService";
 import { VerificationService } from "./verificationService";
 
-// Replace with your actual API base URL
-const API_URL = url().BASE_URL;
+// Replace with your actual API base URL for either dev or prod environments
+const API_URL = getEnvironmentConfig().apiUrl;
 
 // Create an axios instance
 const api = axios.create({
