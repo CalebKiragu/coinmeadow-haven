@@ -55,6 +55,14 @@ const services = {
   
   // Notification methods
   requestPermission: NotificationService.requestPermission,
+  
+  // Transaction methods
+  getTransactionHistory: TransactionService.fetchTransactions,
+  deposit: TransactionService.deposit,
+  withdraw: TransactionService.withdraw,
+  transferFunds: TransactionService.transferFunds,
+  getDepositAddresses: TransactionService.getDepositAddresses,
+  generateDepositAddress: TransactionService.generateDepositAddress
 };
 
 export default services;

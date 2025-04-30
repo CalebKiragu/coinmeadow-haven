@@ -1,6 +1,11 @@
 
 import axios from "axios";
 import { getEnvironmentConfig } from "../utils";
+import { AuthService } from "./authService";
+import { WalletService } from "./walletService";
+import { VerificationService } from "./verificationService";
+import { NotificationService } from "./notificationService";
+import { TransactionService } from "./transactionService";
 
 const API_URL = getEnvironmentConfig().apiUrl;
 
@@ -9,6 +14,7 @@ export interface ProfileUpdatePayload {
 }
 
 export const ApiService = {
+  // Base profile update method
   updateProfile: async (endpoint: string, payload: ProfileUpdatePayload) => {
     try {
       const response = await axios.post(`${API_URL}${endpoint}`, payload);
@@ -24,7 +30,42 @@ export const ApiService = {
       }
       throw error;
     }
-  }
+  },
+
+  // Auth Service methods
+  loginUser: AuthService.loginUser,
+  loginMerchant: AuthService.loginMerchant,
+  signupUser: AuthService.signupUser,
+  signupMerchant: AuthService.signupMerchant,
+  verifyUserEmail: AuthService.verifyUserEmail,
+  verifyUserPhone: AuthService.verifyUserPhone,
+  verifyMerchantEmail: AuthService.verifyMerchantEmail,
+  verifyMerchantPhone: AuthService.verifyMerchantPhone,
+  resetUserPin: AuthService.resetUserPin,
+  resetMerchantPin: AuthService.resetMerchantPin,
+  changeUserPin: AuthService.changeUserPin,
+  changeMerchantPin: AuthService.changeMerchantPin,
+
+  // Wallet Service methods
+  updateDashboard: WalletService.updateDashboard,
+  getBalance: WalletService.getBalance,
+  fetchTransactions: WalletService.fetchTransactions,
+  
+  // Verification Service methods
+  getVerificationStatus: VerificationService.getVerificationStatus,
+  submitKycVerification: VerificationService.submitKycVerification,
+  uploadKYC: VerificationService.uploadKYC,
+  
+  // Notification Service methods
+  requestPermission: NotificationService.requestPermission,
+  
+  // Transaction Service methods - adding placeholders for mentioned methods
+  getTransactionHistory: TransactionService.fetchTransactions || (() => Promise.resolve([])),
+  deposit: TransactionService.deposit || (() => Promise.resolve({ success: false })),
+  withdraw: TransactionService.withdraw || (() => Promise.resolve({ success: false })),
+  transferFunds: TransactionService.transferFunds || (() => Promise.resolve({ success: false })),
+  getDepositAddresses: TransactionService.getDepositAddresses || (() => Promise.resolve([])),
+  generateDepositAddress: TransactionService.generateDepositAddress || (() => Promise.resolve({ address: '' }))
 };
 
 export default ApiService;
