@@ -19,6 +19,7 @@ import { ApiService } from "./apiService";
 
 // Create a merged service object for backward compatibility
 const services = {
+  // Include all methods from each service
   ...AuthService,
   ...NotificationService,
   ...VerificationService,
@@ -26,8 +27,33 @@ const services = {
   ...TransactionService,
   ...RateService,
   ...ApiService,
+
+  // Ensure specific methods are properly exposed
+  // Authentication methods
+  loginUser: AuthService.loginUser,
+  loginMerchant: AuthService.loginMerchant,
+  signupUser: AuthService.signupUser,
+  signupMerchant: AuthService.signupMerchant,
+  verifyUserEmail: AuthService.verifyUserEmail,
+  verifyUserPhone: AuthService.verifyUserPhone,
+  verifyMerchantEmail: AuthService.verifyMerchantEmail,
+  verifyMerchantPhone: AuthService.verifyMerchantPhone,
+  resetUserPin: AuthService.resetUserPin,
+  resetMerchantPin: AuthService.resetMerchantPin,
+  changeUserPin: AuthService.changeUserPin,
+  changeMerchantPin: AuthService.changeMerchantPin,
   
-  // Ensure the notification permission method is properly exposed
+  // Wallet methods
+  updateDashboard: WalletService.updateDashboard,
+  getBalance: WalletService.getBalance,
+  fetchTransactions: WalletService.fetchTransactions,
+
+  // Verification methods
+  getVerificationStatus: VerificationService.getVerificationStatus,
+  submitKycVerification: VerificationService.submitKycVerification,
+  uploadKYC: VerificationService.uploadKYC,
+  
+  // Notification methods
   requestPermission: NotificationService.requestPermission,
 };
 
