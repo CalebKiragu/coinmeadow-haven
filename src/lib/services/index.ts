@@ -15,7 +15,7 @@ import { VerificationService } from "./verificationService";
 import { WalletService } from "./walletService";
 import { TransactionService } from "./transactionService";
 import { RateService } from "./rateService";
-import ApiService from "./apiService";
+import { ApiService } from "./apiService";
 
 // Create a merged service object for backward compatibility
 const services = {
