@@ -1,10 +1,5 @@
 
-import React, { useRef, useEffect } from "react";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
+import React, { useState, useEffect } from "react";
 
 type OTPInputProps = {
   value: string;
@@ -13,14 +8,21 @@ type OTPInputProps = {
 };
 
 const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-
+  const [otp, setOtp] = useState(value || "");
+  
+  // Update parent state when internal state changes
   useEffect(() => {
-    // Focus on the input field when component mounts
-    if (inputRef.current) {
-      inputRef.current.focus();
+    onChange(otp);
+  }, [otp, onChange]);
+
+  // Handle input change - only allow numbers and limit to 4 characters
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    // Only allow numeric input and max 4 digits
+    if (/^\d*$/.test(input) && input.length <= 4) {
+      setOtp(input);
     }
-  }, []);
+  };
 
   return (
     <div className="space-y-4">
@@ -28,26 +30,36 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
         Enter the 4-digit code sent to {identifier || "your contact"}
       </p>
       <div className="flex justify-center">
-        <InputOTP
-          value={value}
-          onChange={onChange}
-          maxLength={4}
-          pattern="\d{4}"
-          autoFocus
-          ref={inputRef}
-          render={({ slots }) => (
-            <InputOTPGroup className="gap-3">
-              {slots.map((slot, index) => (
-                <InputOTPSlot 
-                  key={index} 
-                  {...slot} 
-                  index={index} 
-                  className="cursor-pointer focus:ring-2 focus:ring-primary border-2"
-                />
-              ))}
-            </InputOTPGroup>
-          )}
-        />
+        <div className="flex space-x-4">
+          {/* Single input for OTP */}
+          <div className="relative">
+            <input
+              type="text"
+              value={otp}
+              onChange={handleChange}
+              placeholder="Enter 4-digit code"
+              className="w-40 text-center py-2 px-4 border-2 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              autoFocus
+              autoComplete="one-time-code"
+              inputMode="numeric"
+              maxLength={4}
+            />
+            
+            {/* Visual representation of the 4 digits */}
+            <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center pointer-events-none">
+              <div className="flex space-x-2">
+                {Array(4).fill(0).map((_, i) => (
+                  <div 
+                    key={i} 
+                    className="w-6 h-8 flex items-center justify-center text-lg font-bold"
+                  >
+                    {otp[i] || ""}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
