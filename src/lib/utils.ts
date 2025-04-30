@@ -143,7 +143,7 @@ export const aws = () => {
  * Helper to handle environment branching for different deployment environments
  */
 export const getEnvironmentConfig = () => {
-  const env = import.meta.env.VITE_APP_ENV || "development";
+  const env = import.meta.env.VITE_APP_ENV || "production"; // Edit this line to "development" for dev and "production" for prod
 
   const configs = {
     development: {
