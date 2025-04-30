@@ -38,7 +38,7 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
               value={otp}
               onChange={handleChange}
               placeholder="Enter 4-digit code"
-              className="w-40 text-center py-2 px-4 border-2 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-40 text-center py-2 px-4 border-2 rounded-md focus:outline-none focus:ring-2 focus:ring-primary opacity-0"
               autoFocus
               autoComplete="one-time-code"
               inputMode="numeric"
