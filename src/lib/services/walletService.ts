@@ -1,3 +1,4 @@
+
 import axios, { AxiosError, AxiosResponse } from "axios";
 import {
   fetchWalletStart,
@@ -15,6 +16,7 @@ import { store } from "../redux/store";
 import { getEnvironmentConfig } from "../utils";
 import { AuthService } from "./authService";
 import { VerificationService } from "./verificationService";
+import { Transaction } from "../redux/slices/transactionSlice";
 
 // Replace with your actual API base URL for either dev or prod environments
 const API_URL = getEnvironmentConfig().apiUrl;
@@ -55,9 +57,11 @@ const buildUrl = (
     basePair?: string;
     isMerchant?: string;
     currency?: string;
+    limit?: number;
+    offset?: number;
   }
 ): string => {
-  const { email, phone, basePair, isMerchant, currency } = urlData;
+  const { email, phone, basePair, isMerchant, currency, limit, offset } = urlData || {};
 
   switch (caller) {
     case "updatewallets":
@@ -65,6 +69,9 @@ const buildUrl = (
 
     case "updateprices":
       return `v1/tokens/rate/all?basePair=${basePair}`;
+      
+    case "transactions":
+      return `v1/transactions/${email ? email : phone}?limit=${limit || 100}&offset=${offset || 0}`;
 
     default:
       return ``;
@@ -143,12 +150,30 @@ export const WalletService = {
     return result.wallets;
   },
 
+  // Improved and fully implemented fetchTransactions method
   fetchTransactions: async (user?: {
     email?: string;
     phone?: string;
-  }): Promise<any[]> => {
-    // This is a temporary implementation that returns an empty array
-    // It should be replaced with an actual implementation in the future
-    return [];
+    limit?: number;
+    offset?: number;
+  }): Promise<Transaction[]> => {
+    try {
+      if (!user?.email && !user?.phone) {
+        throw new Error("Email or phone is required");
+      }
+      
+      const response: AxiosResponse<ApiResponse<Transaction[]>> = await api.get(
+        buildUrl("transactions", user)
+      );
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to fetch transactions");
+      }
+      
+      return response.data.data || [];
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      return [];
+    }
   },
 };
