@@ -28,12 +28,3 @@ export const ApiService = {
 };
 
 export default ApiService;
-</lov-add-dependency>jspdf@latest</lov-add-dependency>
-
-Let's also update the main services index file to export our new ApiService:
-
-<lov-write file_path="src/lib/services/index.ts">
-export * from './authService';
-export * from './walletService';
-export * from './verificationService';
-export * from './apiService';
