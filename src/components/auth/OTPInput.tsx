@@ -35,7 +35,7 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
           pattern="\d{4}"
           autoFocus
           ref={inputRef}
-          disabled={false} // Explicitly ensure OTP input is not disabled
+          // Remove the disabled attribute to ensure OTP input is enabled
           render={({ slots }) => (
             <InputOTPGroup className="gap-3">
               {slots.map((slot, index) => (

@@ -15,10 +15,10 @@ import { VerificationService } from "./verificationService";
 import { WalletService } from "./walletService";
 import { TransactionService } from "./transactionService";
 import { RateService } from "./rateService";
-import { ApiService } from "./apiService";
+import ApiService from "./apiService";
 
-// Legacy export for backward compatibility
-export default {
+// Create a merged service object for backward compatibility
+const services = {
   ...AuthService,
   ...NotificationService,
   ...VerificationService,
@@ -30,3 +30,5 @@ export default {
   // Ensure the notification permission method is properly exposed
   requestPermission: NotificationService.requestPermission,
 };
+
+export default services;
