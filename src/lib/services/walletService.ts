@@ -13,7 +13,7 @@ import {
   PriceData,
 } from "../redux/slices/priceSlice";
 import { store } from "../redux/store";
-import { url } from "../utils";
+import { url, getEnvironmentConfig } from "../utils";
 import { AuthService } from "./authService";
 import { VerificationService } from "./verificationService";
 
