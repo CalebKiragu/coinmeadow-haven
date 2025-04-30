@@ -1,4 +1,3 @@
-
 import axios, { AxiosError, AxiosResponse } from "axios";
 import {
   fetchWalletStart,
@@ -13,7 +12,7 @@ import {
   PriceData,
 } from "../redux/slices/priceSlice";
 import { store } from "../redux/store";
-import { url, getEnvironmentConfig } from "../utils";
+import { getEnvironmentConfig } from "../utils";
 import { AuthService } from "./authService";
 import { VerificationService } from "./verificationService";
 
@@ -131,7 +130,7 @@ export const WalletService = {
       throw new Error(errorMessage);
     }
   },
-  
+
   // Legacy method aliases
   getBalance: async (user?: {
     email?: string;
@@ -143,7 +142,7 @@ export const WalletService = {
     const result = await WalletService.updateDashboard(user);
     return result.wallets;
   },
-  
+
   fetchTransactions: async (user?: {
     email?: string;
     phone?: string;
@@ -151,5 +150,5 @@ export const WalletService = {
     // This is a temporary implementation that returns an empty array
     // It should be replaced with an actual implementation in the future
     return [];
-  }
+  },
 };
