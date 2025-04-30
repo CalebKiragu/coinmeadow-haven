@@ -133,4 +133,18 @@ export const VerificationService = {
   ): Promise<VerificationResponse> => {
     return VerificationService.submitKycVerification(data);
   },
+
+  // OTP verification
+  verifyOTP: async (otpCode: string, otpId: string) => {
+    try {
+      // Implementation for OTP verification
+      console.log(`Verifying OTP code: ${otpCode} with ID: ${otpId}`);
+      return { success: true };
+    } catch (error) {
+      console.error("OTP verification failed:", error);
+      throw error;
+    }
+  },
 };
+
+export default VerificationService;

@@ -42,7 +42,7 @@ const OTPInput = ({ value, onChange, identifier }: OTPInputProps) => {
                   key={index} 
                   {...slot} 
                   index={index} 
-                  className="cursor-text focus:ring-2 focus:ring-primary"
+                  className="cursor-pointer focus:ring-2 focus:ring-primary border-2"
                 />
               ))}
             </InputOTPGroup>
