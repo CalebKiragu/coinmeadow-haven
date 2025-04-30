@@ -46,8 +46,7 @@ const services = {
   // Wallet methods
   updateDashboard: WalletService.updateDashboard,
   getBalance: WalletService.getBalance,
-  fetchTransactions: WalletService.fetchTransactions,
-
+  
   // Verification methods
   getVerificationStatus: VerificationService.getVerificationStatus,
   submitKycVerification: VerificationService.submitKycVerification,
@@ -57,7 +56,7 @@ const services = {
   requestPermission: NotificationService.requestPermission,
   
   // Transaction methods
-  getTransactionHistory: TransactionService.fetchTransactions,
+  getTransactionHistory: TransactionService.getTransactionHistory,
   deposit: TransactionService.deposit,
   withdraw: TransactionService.withdraw,
   transferFunds: TransactionService.transferFunds,

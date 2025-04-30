@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -15,6 +16,7 @@ import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import { useToast } from "@/components/ui/use-toast";
 import { RootState } from "@/lib/redux/store";
 import { ApiService } from "@/lib/services";
+import { TransferResponse } from "@/lib/services/transactionService";
 import { cryptoCurrencies, fiatCurrencies, countries } from "@/types/currency";
 import {
   Select,
@@ -229,7 +231,7 @@ const Deposit = () => {
         txType: "DEPOSIT" as const,
       };
 
-      const response = await ApiService.deposit(payload);
+      const response: TransferResponse = await ApiService.deposit(payload);
 
       if (response.success) {
         setTransactionStatus("success");

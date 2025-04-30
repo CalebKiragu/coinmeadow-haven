@@ -15,6 +15,7 @@ import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import { useToast } from "@/components/ui/use-toast";
 import { RootState } from "@/lib/redux/store";
 import { ApiService } from "@/lib/services";
+import { TransferResponse } from "@/lib/services/transactionService";
 import { cryptoCurrencies, fiatCurrencies } from "@/types/currency";
 import {
   Select,
@@ -165,7 +166,7 @@ const Withdraw = () => {
         txType: "WITHDRAW" as const,
       };
 
-      const response = await ApiService.withdraw(payload);
+      const response: TransferResponse = await ApiService.withdraw(payload);
 
       if (response.success) {
         setTransactionStatus("success");

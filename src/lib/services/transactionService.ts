@@ -1,3 +1,4 @@
+
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { store } from "../redux/store";
 import { getEnvironmentConfig } from "../utils";
@@ -39,7 +40,7 @@ interface ApiResponse<T> {
   error?: string;
 }
 
-interface TransferResponse {
+export interface TransferResponse {
   success?: boolean;
   message?: string;
   error?: string;
@@ -100,7 +101,7 @@ export const TransactionService = {
     try {
       const response: AxiosResponse<ApiResponse<TransferResponse>> =
         await api.post("v1/transfer", data);
-      return response.data.data || { success: false };
+      return response.data.data || { success: false, msg: "No response data", error: "No response data" };
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
       const errorMessage =
@@ -116,7 +117,7 @@ export const TransactionService = {
     try {
       const response: AxiosResponse<ApiResponse<TransferResponse>> =
         await api.post("v1/deposit", data);
-      return response.data.data || { success: false };
+      return response.data.data || { success: false, error: "No response data" };
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
       const errorMessage =
@@ -132,7 +133,7 @@ export const TransactionService = {
     try {
       const response: AxiosResponse<ApiResponse<TransferResponse>> =
         await api.post("v1/withdraw", data);
-      return response.data.data || { success: false };
+      return response.data.data || { success: false, error: "No response data" };
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
       const errorMessage =

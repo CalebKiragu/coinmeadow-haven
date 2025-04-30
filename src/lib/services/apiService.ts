@@ -49,7 +49,6 @@ export const ApiService = {
   // Wallet Service methods
   updateDashboard: WalletService.updateDashboard,
   getBalance: WalletService.getBalance,
-  fetchTransactions: WalletService.fetchTransactions,
   
   // Verification Service methods
   getVerificationStatus: VerificationService.getVerificationStatus,
@@ -59,13 +58,13 @@ export const ApiService = {
   // Notification Service methods
   requestPermission: NotificationService.requestPermission,
   
-  // Transaction Service methods - adding placeholders for mentioned methods
-  getTransactionHistory: TransactionService.fetchTransactions || (() => Promise.resolve([])),
-  deposit: TransactionService.deposit || (() => Promise.resolve({ success: false })),
-  withdraw: TransactionService.withdraw || (() => Promise.resolve({ success: false })),
-  transferFunds: TransactionService.transferFunds || (() => Promise.resolve({ success: false })),
-  getDepositAddresses: TransactionService.getDepositAddresses || (() => Promise.resolve([])),
-  generateDepositAddress: TransactionService.generateDepositAddress || (() => Promise.resolve({ address: '' }))
+  // Transaction Service methods
+  getTransactionHistory: TransactionService.getTransactionHistory,
+  deposit: TransactionService.deposit,
+  withdraw: TransactionService.withdraw,
+  transferFunds: TransactionService.transferFunds,
+  getDepositAddresses: TransactionService.getDepositAddresses,
+  generateDepositAddress: TransactionService.generateDepositAddress
 };
 
 export default ApiService;

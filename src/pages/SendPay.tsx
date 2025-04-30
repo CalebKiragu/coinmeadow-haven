@@ -14,6 +14,7 @@ import { MobileTransfer } from "@/components/send/MobileTransfer";
 import { SendPayProvider, useSendPay } from "@/contexts/SendPayContext";
 import { TransactionSummary } from "@/components/send/TransactionSummary";
 import { ApiService } from "@/lib/services";
+import { TransferResponse } from "@/lib/services/transactionService";
 import { BlockchainTransfer } from "@/components/send/BlockchainTransfer";
 
 const SendPayContent = () => {
@@ -212,9 +213,9 @@ const SendPayContent = () => {
         };
       }
 
-      const response = await ApiService.transferFunds(payload);
+      const response: TransferResponse = await ApiService.transferFunds(payload);
 
-      if (response.msg === "Transaction successful") {
+      if (response.success || response.msg === "Transaction successful") {
         setTransactionStatus("success");
         confetti({
           particleCount: 100,
