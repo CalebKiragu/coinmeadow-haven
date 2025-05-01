@@ -54,13 +54,13 @@ const fetchPriceHistory = async (
   timeRange: TimeRange
 ): Promise<DataPoint[]> => {
   // Map time ranges to CoinGecko parameters
-  const rangeMap: Record<TimeRange, { days: number, interval: string }> = {
+  const rangeMap: Record<TimeRange, { days: number | string, interval: string }> = {
     '1D': { days: 1, interval: 'hourly' },
     '1W': { days: 7, interval: 'daily' },
     '1M': { days: 30, interval: 'daily' },
     '3M': { days: 90, interval: 'daily' },
     '1Y': { days: 365, interval: 'daily' },
-    'ALL': { days: 'max', interval: 'weekly' },
+    'ALL': { days: 'max' as any, interval: 'weekly' },
   };
 
   const { days, interval } = rangeMap[timeRange];
