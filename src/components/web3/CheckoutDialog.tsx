@@ -28,6 +28,14 @@ interface CheckoutDialogProps {
   onCheckoutComplete: () => void;
 }
 
+// Extend the Charge interface to include the properties we expect
+interface Charge {
+  id?: string;
+  hosted_url?: string;
+  // Add any other properties that might be needed
+  status?: string;
+}
+
 const supportedTokens = [
   { name: "USDC", value: "USDC", recommended: true },
   { name: "ETH", value: "ETH", recommended: false },
@@ -66,7 +74,7 @@ const CheckoutDialog = ({
         cancel_url: "https://duka.pesatoken.org/dashboard?chargeId={chargeId}"
       };
       
-      const charge = await ApiService.createCharge(chargeData);
+      const charge = await ApiService.createCharge(chargeData) as Charge;
       
       if (charge?.id) {
         // If we have a hosted_url, redirect to it

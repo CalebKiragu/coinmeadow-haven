@@ -4,12 +4,24 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch } from "@/lib/redux/hooks";
-import { login } from "@/lib/redux/slices/authSlice";
+import { loginSuccess } from "@/lib/redux/slices/authSlice";
 import { AuthService } from "@/lib/services";
 
 interface BaseAuthProps {
   onComplete?: (user: any) => void;
   isSignUp?: boolean;
+}
+
+// Declare ethereum on window to avoid TypeScript errors
+declare global {
+  interface Window {
+    ethereum?: any;
+    phantom?: {
+      solana?: any;
+    };
+    coinbaseWalletExtension?: any;
+    ethers?: any;
+  }
 }
 
 const BaseAuth: React.FC<BaseAuthProps> = ({ 
@@ -114,7 +126,7 @@ const BaseAuth: React.FC<BaseAuthProps> = ({
   };
   
   const handleAuthSuccess = (user: any, token: any) => {
-    dispatch(login({ user, token }));
+    dispatch(loginSuccess({ user, token }));
     
     toast({
       title: "Authentication successful",

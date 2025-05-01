@@ -29,6 +29,12 @@ import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { ApiService } from "@/lib/services";
 import { WalletService } from "@/lib/services/walletService";
 
+// Define the Charge interface
+interface Charge {
+  id?: string;
+  status?: string;
+}
+
 const trendingOffers: Offer[] = [
   {
     id: "1",
@@ -96,10 +102,14 @@ const Dashboard = () => {
     if (chargeId) {
       const checkChargeStatus = async () => {
         try {
-          const charge = await WalletService.queryCharge({ chargeId });
-          setChargeStatus(charge.status || 'unknown');
-          // Further processing based on status can be done here
-          console.log('Charge status:', charge.status);
+          const charge = await WalletService.queryCharge({ chargeId }) as Charge;
+          if (charge && typeof charge.status === 'string') {
+            setChargeStatus(charge.status);
+            // Further processing based on status can be done here
+            console.log('Charge status:', charge.status);
+          } else {
+            setChargeStatus('unknown');
+          }
         } catch (error) {
           console.error('Error querying charge:', error);
           setChargeStatus('error');

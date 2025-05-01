@@ -1,8 +1,19 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Wallet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+// Declare ethereum on window to avoid TypeScript errors
+declare global {
+  interface Window {
+    ethereum?: any;
+    phantom?: {
+      solana?: any;
+    };
+    coinbaseWalletExtension?: any;
+    ethers?: any;
+  }
+}
 
 interface WalletConnectorProps {
   onConnect: (address: string, name?: string) => void;
