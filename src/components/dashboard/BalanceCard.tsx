@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Checkout, CheckoutButton } from "@coinbase/onchainkit/checkout";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -16,7 +17,7 @@ import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import {
   setSelectedCrypto,
   setSelectedFiat,
-  Currency
+  Currency,
 } from "@/lib/redux/slices/walletSlice";
 import { ApiService } from "@/lib/services";
 import { Skeleton } from "../ui/skeleton";
@@ -122,7 +123,7 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
   const handleToggleBalance = async () => {
     // Prevent multiple simultaneous verification attempts
     if (isVerifying) return;
-    
+
     // If we're trying to show the balance and passkey hasn't been verified yet
     if (!showBalance && !isPasskeyVerified) {
       try {
@@ -141,6 +142,18 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
       // If passkey is already verified or we're hiding the balance
       setShowBalance(!showBalance);
     }
+  };
+
+  const chargeHandler = async () => {
+    const chargeData = {
+      amount: "1",
+      currency: "USDC",
+      orderId: "575b7bef-fcc9-4765-87c8-96cf5f845b85",
+      type: "fixed_price",
+    };
+    const response = await ApiService.createCharge(chargeData);
+    const { id } = response;
+    return id; // Return charge ID
   };
 
   const greetName = user?.firstName || merchant?.merchantName || "";
@@ -173,7 +186,9 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
       ) : (
         <div className="flex flex-col gap-1 sm:gap-2">
           <div className="flex justify-between items-center">
-            <h1 className="text-base sm:text-lg font-semibold">{greeting(greetName)}</h1>
+            <h1 className="text-base sm:text-lg font-semibold">
+              {greeting(greetName)}
+            </h1>
             <button
               onClick={handleToggleBalance}
               className="text-gray-600 hover:text-gray-800 transition-colors"
@@ -182,14 +197,16 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
               {showBalance ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-          
+
           {merchant && merchantNo && (
             <p className="text-xs text-muted-foreground -mt-1">
               Merchant No: {merchantNo}
             </p>
           )}
-          
-          <h2 className="text-sm sm:text-base font-medium mt-1">Available Balance:</h2>
+
+          <h2 className="text-sm sm:text-base font-medium mt-1">
+            Available Balance:
+          </h2>
 
           <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
             <Select value={selectedCrypto} onValueChange={handleSelectCrypto}>
@@ -231,20 +248,30 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
           <div className="flex flex-wrap gap-1 items-center justify-between text-xs sm:text-sm text-gray-600 dark:text-gray-300">
             <div className="flex items-center gap-2">
               <span className={!showBalance ? "blur-content" : ""}>
-                {selectedCrypto === "ALL" ? "Total balance across all wallets" : 
-                  `1 ${selectedCryptoData?.symbol} = ${formatPrice(Number(selectedCryptoPrice?.value) || 0)}`}
+                {selectedCrypto === "ALL"
+                  ? "Total balance across all wallets"
+                  : `1 ${selectedCryptoData?.symbol} = ${formatPrice(
+                      Number(selectedCryptoPrice?.value) || 0
+                    )}`}
               </span>
-              
+
               {lastUpdated && (
                 <span className="text-xs text-gray-500">
-                  • Updated {new Date(lastUpdated).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  • Updated{" "}
+                  {new Date(lastUpdated).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </span>
               )}
             </div>
 
             <div className="flex items-center gap-1 flex-wrap">
               {selectedCryptoPrice && (
-                <Badge variant="secondary" className="max-w-fit text-xs h-5 px-1">
+                <Badge
+                  variant="secondary"
+                  className="max-w-fit text-xs h-5 px-1"
+                >
                   <span
                     className={
                       Number(selectedCryptoPrice.value) >= 0
@@ -257,14 +284,20 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
                   </span>
                 </Badge>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePortfolioClick}
-                className="text-xs h-6 px-2 py-0"
-              >
-                See Portfolio
-              </Button>
+
+              <div>
+                <Checkout chargeHandler={chargeHandler}>
+                  <CheckoutButton text="Fund Wallet" />
+                </Checkout>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePortfolioClick}
+                  className="text-xs h-6 px-2 py-0"
+                >
+                  See Portfolio
+                </Button>
+              </div>
             </div>
           </div>
         </div>

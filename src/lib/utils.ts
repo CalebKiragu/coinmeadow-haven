@@ -1,4 +1,5 @@
 import { ClassValue, clsx } from "clsx";
+import { base, baseSepolia } from "wagmi/chains"; // add baseSepolia for testing
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -143,7 +144,7 @@ export const aws = () => {
  * Helper to handle environment branching for different deployment environments
  */
 export const getEnvironmentConfig = () => {
-  const env = import.meta.env.VITE_APP_ENV || "development";
+  const env = import.meta.env.VITE_APP_ENV || "production";
 
   const configs = {
     development: {
@@ -160,6 +161,10 @@ export const getEnvironmentConfig = () => {
         showDebugInfo: true,
         mockTransactions: false,
       },
+      base: baseSepolia,
+      onchainkitApiKey:
+        import.meta.env.VITE_PUBLIC_ONCHAINKIT_API_KEY ||
+        "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
     },
     staging: {
       apiUrl: "https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/",
@@ -175,6 +180,10 @@ export const getEnvironmentConfig = () => {
         showDebugInfo: false,
         mockTransactions: false,
       },
+      base: baseSepolia,
+      onchainkitApiKey:
+        import.meta.env.VITE_PUBLIC_ONCHAINKIT_API_KEY ||
+        "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
     },
     production: {
       apiUrl: "https://qckp089yob.execute-api.us-east-1.amazonaws.com/Prod/",
@@ -190,8 +199,12 @@ export const getEnvironmentConfig = () => {
         showDebugInfo: false,
         mockTransactions: false,
       },
+      base,
+      onchainkitApiKey:
+        import.meta.env.VITE_PUBLIC_ONCHAINKIT_API_KEY ||
+        "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
     },
   };
 
-  return configs[env as keyof typeof configs] || configs.production;
+  return configs[env as keyof typeof configs];
 };
