@@ -9,7 +9,15 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  TooltipProps
+  TooltipProps,
+  BarChart,
+  Bar,
+  Cell,
+  ReferenceLine,
+  Legend,
+  ComposedChart,
+  Line,
+  Scatter
 } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
@@ -20,7 +28,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 interface DataPoint {
   timestamp: number;
   price: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  close?: number;
   date?: string;
+  volume?: number;
 }
 
 interface PortfolioChartProps {
@@ -60,7 +73,7 @@ const fetchPriceHistory = async (
     '1M': { days: 30, interval: 'daily' },
     '3M': { days: 90, interval: 'daily' },
     '1Y': { days: 365, interval: 'daily' },
-    'ALL': { days: 'max' as any, interval: 'weekly' },
+    'ALL': { days: 'max', interval: 'weekly' },
   };
 
   const { days, interval } = rangeMap[timeRange];
@@ -77,11 +90,42 @@ const fetchPriceHistory = async (
       }
     );
 
-    // Transform CoinGecko response to our DataPoint format
+    // Get OHLC data for candlestick chart
+    const ohlcResponse = await axios.get(
+      `https://api.coingecko.com/api/v3/coins/${coinId}/ohlc`,
+      {
+        params: {
+          vs_currency: 'usd',
+          days,
+        },
+      }
+    );
+
+    // Transform CoinGecko OHLC response to our DataPoint format
+    if (ohlcResponse.data && Array.isArray(ohlcResponse.data)) {
+      return ohlcResponse.data.map((item: [number, number, number, number, number]) => ({
+        timestamp: item[0],
+        price: item[4], // Close price
+        open: item[1],
+        high: item[2],
+        low: item[3],
+        close: item[4],
+        date: new Date(item[0]).toLocaleString(),
+        volume: response.data.total_volumes?.find((vol: [number, number]) => 
+          Math.abs(vol[0] - item[0]) < 3600000
+        )?.[1] || 0
+      }));
+    }
+
+    // Fallback to line chart data if OHLC data is not available
     return response.data.prices.map((item: [number, number]) => ({
       timestamp: item[0],
       price: item[1],
-      date: new Date(item[0]).toLocaleString(), // Format date for tooltip
+      open: item[1],
+      high: item[1],
+      low: item[1],
+      close: item[1],
+      date: new Date(item[0]).toLocaleString(),
     }));
   } catch (error) {
     console.error('Error fetching price history:', error);
@@ -129,11 +173,23 @@ const generateMockData = (timeRange: TimeRange): DataPoint[] => {
   for (let i = points - 1; i >= 0; i--) {
     const timestamp = now - i * step;
     // Add some random variation to the price
-    price = price + (Math.random() - 0.5) * 1000;
+    const priceVariation = (Math.random() - 0.5) * 1000;
+    price = price + priceVariation;
+    
+    const open = price - priceVariation/2;
+    const close = price;
+    const high = Math.max(open, close) + Math.random() * 200;
+    const low = Math.min(open, close) - Math.random() * 200;
+    
     data.push({
       timestamp,
       price,
+      open,
+      high,
+      low,
+      close,
       date: new Date(timestamp).toLocaleString(),
+      volume: Math.random() * 1000000000
     });
   }
   
@@ -143,12 +199,16 @@ const generateMockData = (timeRange: TimeRange): DataPoint[] => {
 // Custom tooltip component
 const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
   if (active && payload && payload.length) {
+    const data = payload[0].payload;
     return (
       <div className="bg-background p-3 border border-border rounded-md shadow-lg">
-        <p className="text-sm font-medium">{payload[0].payload.date}</p>
-        <p className="text-base font-bold text-primary">
-          ${Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </p>
+        <p className="text-sm font-medium">{data.date}</p>
+        <div className="grid grid-cols-2 gap-2 text-xs mt-1">
+          <div>Open: <span className="font-bold">${Number(data.open).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+          <div>Close: <span className="font-bold">${Number(data.close).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+          <div>High: <span className="font-bold">${Number(data.high).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+          <div>Low: <span className="font-bold">${Number(data.low).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+        </div>
       </div>
     );
   }
@@ -241,21 +301,15 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
           <Skeleton className="h-[300px] w-full" />
         ) : (
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart
+            <ComposedChart
               data={chartData}
               margin={{
                 top: 10,
-                right: 0,
+                right: 10,
                 left: 0,
                 bottom: 0,
               }}
             >
-              <defs>
-                <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={isPriceUp ? "#10B981" : "#EF4444"} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={isPriceUp ? "#10B981" : "#EF4444"} stopOpacity={0} />
-                </linearGradient>
-              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
               <XAxis 
                 dataKey="timestamp" 
@@ -271,15 +325,89 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
                 stroke="rgba(255,255,255,0.3)"
               />
               <Tooltip content={<CustomTooltip />} />
-              <Area
-                type="monotone"
-                dataKey="price"
-                stroke={isPriceUp ? "#10B981" : "#EF4444"}
-                strokeWidth={2}
-                fillOpacity={1}
-                fill="url(#colorPrice)"
-              />
-            </AreaChart>
+              {chartData?.length > 0 && chartData[0].open !== undefined ? (
+                <>
+                  {/* Candlestick chart implementation using bars */}
+                  {chartData.map((entry, index) => (
+                    <React.Fragment key={`candle-${index}`}>
+                      {/* The wick (high to low) */}
+                      <Line 
+                        type="monotone"
+                        dataKey="high"
+                        stroke="transparent"
+                        dot={false}
+                      />
+                      <Line 
+                        type="monotone"
+                        dataKey="low"
+                        stroke="transparent"
+                        dot={false}
+                      />
+                      <Bar
+                        dataKey={(entry) => [entry.open, entry.close]}
+                        fill={(entry) => (entry.open > entry.close ? '#EF4444' : '#10B981')}
+                        shape={(props: any) => {
+                          const { x, y, width, height, fill } = props;
+                          const isRising = props.payload.open <= props.payload.close;
+                          
+                          // Draw the wick
+                          const wickX = x + width / 2;
+                          const wickTop = isRising ? 
+                            y - (props.payload.high - props.payload.close) * height / (props.payload.high - props.payload.low) :
+                            y - (props.payload.high - props.payload.open) * height / (props.payload.high - props.payload.low);
+                          const wickBottom = isRising ?
+                            y + height + (props.payload.open - props.payload.low) * height / (props.payload.high - props.payload.low) :
+                            y + height + (props.payload.close - props.payload.low) * height / (props.payload.high - props.payload.low);
+                          
+                          return (
+                            <g>
+                              {/* Vertical wick line */}
+                              <line
+                                x1={wickX}
+                                y1={wickTop}
+                                x2={wickX}
+                                y2={wickBottom}
+                                stroke={fill}
+                                strokeWidth={1}
+                              />
+                              {/* Candle body */}
+                              <rect
+                                x={x}
+                                y={y}
+                                width={width}
+                                height={height}
+                                fill={fill}
+                                stroke={fill}
+                              />
+                            </g>
+                          );
+                        }}
+                      />
+                    </React.Fragment>
+                  ))}
+                </>
+              ) : (
+                // Fallback to area chart if candlestick data not available
+                <Area
+                  type="monotone"
+                  dataKey="price"
+                  stroke={isPriceUp ? "#10B981" : "#EF4444"}
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill={`url(#color${isPriceUp ? 'Up' : 'Down'})`}
+                />
+              )}
+              <defs>
+                <linearGradient id="colorUp" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="colorDown" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+            </ComposedChart>
           </ResponsiveContainer>
         )}
       </CardContent>
