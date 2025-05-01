@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useAppSelector } from "@/lib/redux/hooks";
 import GlassCard from "@/components/ui/GlassCard";
-import NavigationHeader from "@/components/shared/NavigationHeader";
+import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import IdentityDisplay from "@/components/web3/IdentityDisplay";
 
@@ -26,8 +26,6 @@ const Account = () => {
     <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4">
       <NavigationHeader
         title="Account"
-        backTo="/dashboard"
-        className="mb-6 text-white"
       />
 
       <div className="max-w-2xl mx-auto space-y-6">

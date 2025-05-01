@@ -129,7 +129,7 @@ const CheckoutDialog = ({
               </SelectContent>
             </Select>
           </div>
-          <Alert variant="warning" className="mt-2">
+          <Alert variant="default" className="mt-2">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               USDC is recommended for lower fees. Other tokens may incur higher gas fees.
