@@ -1,3 +1,4 @@
+
 import { ClassValue, clsx } from "clsx";
 import { base, baseSepolia } from "wagmi/chains"; // add baseSepolia for testing
 import { twMerge } from "tailwind-merge";
@@ -165,6 +166,7 @@ export const getEnvironmentConfig = () => {
       onchainkitApiKey:
         import.meta.env.VITE_PUBLIC_ONCHAINKIT_API_KEY ||
         "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
+      walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016"
     },
     staging: {
       apiUrl: "https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/",
@@ -184,6 +186,7 @@ export const getEnvironmentConfig = () => {
       onchainkitApiKey:
         import.meta.env.VITE_PUBLIC_ONCHAINKIT_API_KEY ||
         "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
+      walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016"
     },
     production: {
       apiUrl: "https://qckp089yob.execute-api.us-east-1.amazonaws.com/Prod/",
@@ -203,6 +206,7 @@ export const getEnvironmentConfig = () => {
       onchainkitApiKey:
         import.meta.env.VITE_PUBLIC_ONCHAINKIT_API_KEY ||
         "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
+      walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016"
     },
   };
 
