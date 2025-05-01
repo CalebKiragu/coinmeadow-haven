@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -345,19 +344,21 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
                       />
                       <Bar
                         dataKey={(entry) => [entry.open, entry.close]}
-                        fill={(entry) => (entry.open > entry.close ? '#EF4444' : '#10B981')}
+                        fill={(entry) => entry.open > entry.close ? "#EF4444" : "#10B981"}
                         shape={(props: any) => {
-                          const { x, y, width, height, fill } = props;
-                          const isRising = props.payload.open <= props.payload.close;
+                          const { x, y, width, height } = props;
+                          const payload = props.payload;
+                          const isRising = payload.open <= payload.close;
+                          const fill = isRising ? "#10B981" : "#EF4444";
                           
                           // Draw the wick
                           const wickX = x + width / 2;
                           const wickTop = isRising ? 
-                            y - (props.payload.high - props.payload.close) * height / (props.payload.high - props.payload.low) :
-                            y - (props.payload.high - props.payload.open) * height / (props.payload.high - props.payload.low);
+                            y - (payload.high - payload.close) * height / (payload.high - payload.low) :
+                            y - (payload.high - payload.open) * height / (payload.high - payload.low);
                           const wickBottom = isRising ?
-                            y + height + (props.payload.open - props.payload.low) * height / (props.payload.high - props.payload.low) :
-                            y + height + (props.payload.close - props.payload.low) * height / (props.payload.high - props.payload.low);
+                            y + height + (payload.open - payload.low) * height / (payload.high - payload.low) :
+                            y + height + (payload.close - payload.low) * height / (payload.high - payload.low);
                           
                           return (
                             <g>

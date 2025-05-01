@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Eye, EyeOff, ExternalLink, Wallet, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import { useToast } from "@/hooks/use-toast";
-import { updateBalanceDisplay } from "@/lib/redux/slices/walletSlice";
+import { setShowBalance } from "@/lib/redux/slices/walletSlice";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import IdentityDisplay from "../web3/IdentityDisplay";
@@ -54,7 +53,7 @@ const BalanceCard = ({
 
   useEffect(() => {
     // Update redux state when showBalance changes
-    dispatch(updateBalanceDisplay(showBalance));
+    dispatch(setShowBalance(showBalance));
   }, [showBalance, dispatch]);
 
   const fetchPriceChanges = async (period: string) => {
@@ -229,7 +228,7 @@ const BalanceCard = ({
               <div className="flex gap-2">
                 <IdentityDisplay 
                   address={connectedWallet}
-                  name={connectedWalletName}
+                  ensName={connectedWalletName}
                 />
                 <Button 
                   variant="outline" 
