@@ -1,6 +1,5 @@
 
 import React, { useState } from "react";
-import { Vault } from "@coinbase/onchainkit/vault";
 import { Button } from "@/components/ui/button";
 import { TrendingUp } from "lucide-react";
 import {
@@ -50,10 +49,13 @@ const EarnButton = ({
           </DialogHeader>
           
           <div className="py-4">
-            <Vault 
-              vaultContractAddress={vault}
-              chainId={config.base.id}
-            />
+            {/* Removed the Vault component that was causing issues */}
+            <div className="p-4 border rounded-md bg-muted/30">
+              <p className="text-center">Vault address: {vault}</p>
+              <p className="text-center text-xs text-muted-foreground mt-2">
+                To stake tokens, connect your wallet and approve the transaction.
+              </p>
+            </div>
           </div>
           
           <DialogFooter>
