@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -117,6 +118,14 @@ const PortfolioChart = ({
     setChartType(type);
   };
 
+  // Custom formatter function for number values
+  const customFormatter = (value: any) => {
+    if (typeof value === 'number') {
+      return formatValue(value);
+    }
+    return value;
+  };
+
   return (
     <Card className="col-span-3">
       <CardHeader className="pb-2">
@@ -188,7 +197,7 @@ const PortfolioChart = ({
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12 }}
-                  tickFormatter={(value) => `$${formatValue(value)}`}
+                  tickFormatter={(value) => `$${customFormatter(value)}`}
                 />
                 <Tooltip
                   contentStyle={{
@@ -197,7 +206,7 @@ const PortfolioChart = ({
                     borderRadius: '4px',
                     color: 'white',
                   }}
-                  formatter={(value) => `$${formatValue(value)}`}
+                  formatter={(value) => `$${customFormatter(Number(value))}`}
                   labelFormatter={(label) => formatDate(label, timeRange)}
                 />
                 <Area
@@ -253,7 +262,7 @@ const PortfolioChart = ({
                     tickLine={false}
                     tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }}
                     domain={['dataMin', 'dataMax']}
-                    tickFormatter={(value) => `$${formatValue(value)}`}
+                    tickFormatter={(value) => `$${customFormatter(Number(value))}`}
                   />
                   <Tooltip
                     contentStyle={{
@@ -264,9 +273,9 @@ const PortfolioChart = ({
                     }}
                     formatter={(value, name) => {
                       if (Array.isArray(value)) {
-                        return [`$${formatValue(value[0])} → $${formatValue(value[1])}`, 'Price']
+                        return [`$${customFormatter(Number(value[0]))} → $${customFormatter(Number(value[1]))}`, 'Price']
                       }
-                      return [`$${formatValue(value)}`, name];
+                      return [`$${customFormatter(Number(value))}`, name];
                     }}
                     labelFormatter={(label) => formatDate(label, timeRange)}
                   />
@@ -278,7 +287,6 @@ const PortfolioChart = ({
                   />
                   <Bar
                     dataKey={(entry) => [entry.open, entry.close]}
-                    fill="#000000"
                     shape={(props: any) => {
                       const { x, y, width, height } = props;
                       const payload = props.payload;
@@ -288,11 +296,11 @@ const PortfolioChart = ({
                       // Draw the wick
                       const wickX = x + width / 2;
                       const wickTop = isRising ? 
-                        y - (payload.high - payload.close) * height / (payload.high - payload.low) :
-                        y - (payload.high - payload.open) * height / (payload.high - payload.low);
+                        y - (Number(payload.high) - Number(payload.close)) * height / (Number(payload.high) - Number(payload.low)) :
+                        y - (Number(payload.high) - Number(payload.open)) * height / (Number(payload.high) - Number(payload.low));
                       const wickBottom = isRising ?
-                        y + height + (payload.open - payload.low) * height / (payload.high - payload.low) :
-                        y + height + (payload.close - payload.low) * height / (payload.high - payload.low);
+                        y + height + (Number(payload.open) - Number(payload.low)) * height / (Number(payload.high) - Number(payload.low)) :
+                        y + height + (Number(payload.close) - Number(payload.low)) * height / (Number(payload.high) - Number(payload.low));
                       
                       return (
                         <g>

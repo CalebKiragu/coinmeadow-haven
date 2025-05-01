@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff, ExternalLink, Wallet, LogOut } from "lucide-react";
+import { Eye, EyeOff, ExternalLink, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import { useToast } from "@/hooks/use-toast";
@@ -39,7 +39,7 @@ const BalanceCard = ({
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { wallets, loading } = useAppSelector((state) => state.wallet);
-  const priceState = useAppSelector((state) => state.price);
+  const priceState = useAppSelector((state) => state.price) || { prices: [] };
   const prices = priceState?.prices || [];
   const { toast } = useToast();
   const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
@@ -231,7 +231,7 @@ const BalanceCard = ({
               <div className="flex gap-2">
                 <IdentityDisplay 
                   address={connectedWallet}
-                  ensName={connectedWalletName}
+                  ensName={connectedWalletName || undefined}
                 />
                 <Button 
                   variant="outline" 
@@ -278,20 +278,21 @@ const BalanceCard = ({
                       const priceInfo = prices.find((p) => p.token === wallet.symbol);
                       const price = priceInfo?.usdRate || 1;
                       const usdValue = parseFloat(wallet.balance) * price;
+                      const walletSymbol = wallet.symbol || "";
 
                       return (
                         <div
-                          key={wallet.symbol}
+                          key={walletSymbol}
                           className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
                         >
                           <div className="flex items-center gap-3">
                             <div className="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center">
-                              <span>{wallet.symbol.charAt(0)}</span>
+                              <span>{walletSymbol.charAt(0)}</span>
                             </div>
                             <div>
-                              <p className="font-medium">{wallet.symbol}</p>
+                              <p className="font-medium">{walletSymbol}</p>
                               <p className="text-xs text-muted-foreground">
-                                {wallet.name}
+                                {wallet.name || walletSymbol}
                               </p>
                             </div>
                           </div>
@@ -304,7 +305,7 @@ const BalanceCard = ({
                                       minimumFractionDigits: 2,
                                       maximumFractionDigits: 6,
                                     }
-                                  )} ${wallet.symbol}`
+                                  )} ${walletSymbol}`
                                 : "••••••"}
                             </p>
                             <p className="text-xs text-muted-foreground">
