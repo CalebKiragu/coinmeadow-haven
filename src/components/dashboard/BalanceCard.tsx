@@ -47,6 +47,7 @@ const BalanceCard = ({
   const [timeRange, setTimeRange] = useState("24h");
   const [priceChanges, setPriceChanges] = useState<Record<string, number>>({});
   const [isLoadingPriceChanges, setIsLoadingPriceChanges] = useState(false);
+  const [animateBalance, setAnimateBalance] = useState(false);
 
   useEffect(() => {
     // Fetch price changes for default timeframe (24h) on component mount
@@ -165,36 +166,42 @@ const BalanceCard = ({
 
   // Updated handler to update both local and parent state
   const handleBalanceVisibilityToggle = () => {
+    setAnimateBalance(true);
+    setTimeout(() => setAnimateBalance(false), 300);
     const newShowBalance = !showBalance;
     setParentShowBalance(newShowBalance);
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-xl">Total Balance</CardTitle>
+    <Card className="overflow-hidden bg-gradient-to-br from-white/10 to-white/5 dark:from-black/20 dark:to-black/10 backdrop-blur-sm border border-white/20 dark:border-white/10 shadow-lg">
+      <CardHeader className="flex flex-row items-center justify-between bg-white/5 dark:bg-black/20">
+        <CardTitle className="text-xl font-bold text-white">Total Balance</CardTitle>
         <button
           onClick={handleBalanceVisibilityToggle}
-          className="p-1 hover:bg-white/10 rounded-full transition-colors"
+          className="p-2 hover:bg-white/10 rounded-full transition-all duration-200 transform hover:scale-105 active:scale-95"
+          aria-label={showBalance ? "Hide balance" : "Show balance"}
         >
           {showBalance ? (
-            <EyeOff className="h-5 w-5 text-muted-foreground" />
+            <EyeOff className="h-5 w-5 text-white/70 hover:text-white" />
           ) : (
-            <Eye className="h-5 w-5 text-muted-foreground" />
+            <Eye className="h-5 w-5 text-white/70 hover:text-white" />
           )}
         </button>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-6">
         <div className="space-y-8">
           <div>
             {loading ? (
               <>
-                <Skeleton className="h-10 w-40 mb-2" />
-                <Skeleton className="h-5 w-20" />
+                <Skeleton className="h-10 w-40 mb-2 bg-white/10" />
+                <Skeleton className="h-5 w-20 bg-white/10" />
               </>
             ) : (
               <>
-                <h2 className="text-3xl font-bold">
+                <h2 className={cn(
+                  "text-4xl font-bold text-white transition-all duration-300",
+                  animateBalance && "opacity-0 transform scale-95"
+                )}>
                   {showBalance
                     ? `$${calculateTotalBalance().toLocaleString(undefined, {
                         minimumFractionDigits: 2,
@@ -202,19 +209,19 @@ const BalanceCard = ({
                       })}`
                     : "••••••"}
                 </h2>
-                <div className="flex items-center gap-2">
-                  <div className={cn("flex items-center", priceChangeColor)}>
+                <div className="flex items-center gap-2 mt-2">
+                  <div className={cn("flex items-center font-medium", priceChangeColor)}>
                     {isLoadingPriceChanges ? (
-                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-16 bg-white/10" />
                     ) : (
                       priceChangeDisplay
                     )}
                   </div>
                   <Select value={timeRange} onValueChange={handleTimeRangeChange}>
-                    <SelectTrigger className="h-7 w-16 text-xs">
+                    <SelectTrigger className="h-7 w-16 text-xs bg-white/10 border-white/20">
                       <SelectValue placeholder="24H" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white/90 dark:bg-black/90 backdrop-blur-lg">
                       {timeRanges.map((range) => (
                         <SelectItem key={range.value} value={range.value}>
                           {range.label}
@@ -230,7 +237,8 @@ const BalanceCard = ({
           <div className="flex flex-wrap gap-2">
             <Button
               onClick={handleFundWallet}
-              className="bg-dollar-dark hover:bg-dollar text-white"
+              className="bg-dollar-dark hover:bg-dollar text-white shadow-md hover:shadow-lg transition-all"
+              size="sm"
             >
               Fund Wallet
             </Button>
@@ -244,10 +252,10 @@ const BalanceCard = ({
                 <Button 
                   variant="outline" 
                   size="icon"
-                  className="h-9 w-9"
+                  className="h-9 w-9 bg-white/5 border-white/20 hover:bg-white/10"
                   onClick={handleDisconnect}
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="h-4 w-4 text-white/70" />
                 </Button>
               </div>
             ) : (
@@ -257,7 +265,8 @@ const BalanceCard = ({
             <Button
               onClick={() => navigate("/receive")}
               variant="outline"
-              className="text-white"
+              className="text-white bg-white/5 border-white/20 hover:bg-white/10 transition-all"
+              size="sm"
             >
               <ExternalLink className="mr-2 h-4 w-4" />
               Receive
@@ -268,7 +277,7 @@ const BalanceCard = ({
 
           {wallets?.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-sm font-medium text-muted-foreground">
+              <h3 className="text-sm font-medium text-white/70">
                 My Wallets
               </h3>
 
@@ -279,7 +288,7 @@ const BalanceCard = ({
                       .map((_, index) => (
                         <Skeleton
                           key={index}
-                          className="h-14 w-full rounded-lg"
+                          className="h-14 w-full rounded-lg bg-white/10"
                         />
                       ))
                   : wallets.map((wallet) => {
@@ -291,21 +300,21 @@ const BalanceCard = ({
                       return (
                         <div
                           key={walletSymbol}
-                          className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                          className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors border border-white/10 hover:border-white/20"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center">
-                              <span>{walletSymbol.charAt(0)}</span>
+                            <div className="h-10 w-10 bg-white/10 rounded-full flex items-center justify-center shadow-inner">
+                              <span className="text-white font-medium">{walletSymbol.charAt(0)}</span>
                             </div>
                             <div>
-                              <p className="font-medium">{walletSymbol}</p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="font-medium text-white">{walletSymbol}</p>
+                              <p className="text-xs text-white/60">
                                 {wallet.name || walletSymbol}
                               </p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium">
+                            <p className="font-medium text-white">
                               {showBalance
                                 ? `${parseFloat(wallet.balance).toLocaleString(
                                     undefined,
@@ -316,7 +325,7 @@ const BalanceCard = ({
                                   )} ${walletSymbol}`
                                 : "••••••"}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-white/60">
                               {showBalance
                                 ? `$${usdValue.toLocaleString(undefined, {
                                     minimumFractionDigits: 2,
