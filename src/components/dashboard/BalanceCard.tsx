@@ -31,7 +31,7 @@ const timeRanges = [
 
 const BalanceCard = ({
   showBalance,
-  setShowBalance,
+  setShowBalance: setParentShowBalance,
 }: {
   showBalance: boolean;
   setShowBalance: (value: boolean) => void;
@@ -56,7 +56,6 @@ const BalanceCard = ({
   useEffect(() => {
     // Update redux state when showBalance changes
     if (typeof showBalance === 'boolean') {
-      // Fix the action dispatching by properly dispatching the action
       dispatch(setShowBalance(showBalance));
     }
   }, [showBalance, dispatch]);
@@ -164,12 +163,18 @@ const BalanceCard = ({
   const priceChangeDisplay = `${priceChange.isUp ? '+' : ''}${formattedPriceChange}%`;
   const priceChangeColor = priceChange.isUp ? "text-green-500" : "text-red-500";
 
+  // Updated handler to update both local and parent state
+  const handleBalanceVisibilityToggle = () => {
+    const newShowBalance = !showBalance;
+    setParentShowBalance(newShowBalance);
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-xl">Total Balance</CardTitle>
         <button
-          onClick={() => setShowBalance(!showBalance)}
+          onClick={handleBalanceVisibilityToggle}
           className="p-1 hover:bg-white/10 rounded-full transition-colors"
         >
           {showBalance ? (
