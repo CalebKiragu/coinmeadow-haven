@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   Select,
@@ -26,11 +26,20 @@ import { useToast } from "@/hooks/use-toast";
 import CheckoutDialog from "../web3/CheckoutDialog";
 import EarnButton from "../web3/EarnButton";
 import IdentityDisplay from "../web3/IdentityDisplay";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface BalanceCardProps {
   showBalance: boolean;
   setShowBalance: (value: boolean) => void;
 }
+
+// Time periods for price changes
+type TimePeriod = "1h" | "6h" | "12h" | "24h" | "7d" | "30d" | "12m";
 
 const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
   const navigate = useNavigate();
@@ -46,6 +55,7 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
+  const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("24h");
 
   // Fetch wallet data when component mounts or selected currencies change
   useEffect(() => {
@@ -76,6 +86,10 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
     dispatch(setSelectedFiat(value as Currency));
   };
 
+  const handleSelectTimePeriod = (value: TimePeriod) => {
+    setSelectedTimePeriod(value);
+  };
+
   // Get the selected crypto data
   const selectedCryptoData = cryptoCurrencies.find(
     (c) => c.symbol === selectedCrypto
@@ -88,6 +102,22 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
   const selectedCryptoPrice = prices?.find(
     (price) => price.currency === selectedCrypto
   );
+
+  // Mock price change data for different time periods (replace with real data)
+  const getPriceChangeByPeriod = (period: TimePeriod): number => {
+    // This would be replaced with real API data
+    const mockChanges = {
+      "1h": 0.5,
+      "6h": 1.2,
+      "12h": -0.8,
+      "24h": selectedCryptoPrice ? Number(selectedCryptoPrice.change) : 2.5,
+      "7d": 5.7,
+      "30d": -3.2,
+      "12m": 12.8
+    };
+    
+    return mockChanges[period];
+  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -198,7 +228,9 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
               <h1 className="text-base sm:text-lg font-semibold">
                 {greeting(greetName)}
               </h1>
-              <IdentityDisplay compact={true} />
+              <div className="mt-1">
+                <IdentityDisplay compact={true} />
+              </div>
             </div>
             <button
               onClick={handleToggleBalance}
@@ -279,21 +311,49 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
 
             <div className="flex items-center gap-1 flex-wrap">
               {selectedCryptoPrice && (
-                <Badge
-                  variant="secondary"
-                  className="max-w-fit text-xs h-5 px-1"
-                >
-                  <span
-                    className={
-                      Number(selectedCryptoPrice.value) >= 0
-                        ? "text-green-500"
-                        : "text-red-500"
-                    }
-                  >
-                    {Number(selectedCryptoPrice.value) >= 0 ? "+" : ""}
-                    {Number(selectedCryptoPrice.value).toFixed(2)}% today
-                  </span>
-                </Badge>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center">
+                      <Badge
+                        variant="secondary"
+                        className="max-w-fit text-xs h-5 px-1"
+                      >
+                        <span
+                          className={
+                            getPriceChangeByPeriod(selectedTimePeriod) >= 0
+                              ? "text-green-500"
+                              : "text-red-500"
+                          }
+                        >
+                          {getPriceChangeByPeriod(selectedTimePeriod) >= 0 ? "+" : ""}
+                          {getPriceChangeByPeriod(selectedTimePeriod).toFixed(2)}% {selectedTimePeriod}
+                        </span>
+                      </Badge>
+                      <ChevronDown className="h-3 w-3 ml-0.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {(["1h", "6h", "12h", "24h", "7d", "30d", "12m"] as TimePeriod[]).map((period) => (
+                      <DropdownMenuItem 
+                        key={period}
+                        onClick={() => handleSelectTimePeriod(period)}
+                        className={selectedTimePeriod === period ? "bg-accent" : ""}
+                      >
+                        <span className="mr-2">{period}</span>
+                        <span
+                          className={
+                            getPriceChangeByPeriod(period) >= 0
+                              ? "text-green-500"
+                              : "text-red-500"
+                          }
+                        >
+                          {getPriceChangeByPeriod(period) >= 0 ? "+" : ""}
+                          {getPriceChangeByPeriod(period).toFixed(2)}%
+                        </span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
 
               <div className="flex flex-wrap gap-1">
@@ -306,7 +366,7 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
                   Fund Wallet
                 </Button>
 
-                <EarnButton className="text-xs h-6 px-2 py-0" />
+                <EarnButton className="text-xs h-6 px-2 py-0 bg-green-600 hover:bg-green-700 text-white border-0" />
 
                 <Button
                   variant="outline"

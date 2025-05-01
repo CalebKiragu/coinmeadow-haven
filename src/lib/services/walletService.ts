@@ -1,3 +1,4 @@
+
 import axios, { AxiosError, AxiosResponse } from "axios";
 import {
   fetchWalletStart,
@@ -50,6 +51,18 @@ interface ApiResponse<T> {
 
 interface Charge {
   id?: string;
+  status?: string;
+  hosted_url?: string;
+  code?: string;
+  name?: string;
+  description?: string;
+  pricing_type?: string;
+  amount?: {
+    local: string;
+    crypto: string;
+  };
+  created_at?: string;
+  expires_at?: string;
 }
 
 const buildUrl = (
@@ -180,16 +193,26 @@ export const WalletService = {
     currency?: string;
     orderId?: string;
     type?: string;
+    success_url?: string;
+    cancel_url?: string;
   }): Promise<Charge> => {
     try {
       if (!chargeData?.amount || !chargeData?.currency) {
         throw new Error("amount and currency is required");
       }
 
+      // Add default success/cancel URLs if not provided
+      const finalChargeData = {
+        ...chargeData,
+        success_url: chargeData.success_url || `https://duka.pesatoken.org/dashboard?chargeId={chargeId}`,
+        cancel_url: chargeData.cancel_url || `https://duka.pesatoken.org/dashboard?chargeId={chargeId}`
+      };
+
       const response: AxiosResponse<ApiResponse<Charge>> = await api.post(
         buildUrl("charge"),
-        chargeData
+        finalChargeData
       );
+      
       if (!response.data.data) {
         throw new Error(
           response.data.message ||
@@ -199,7 +222,7 @@ export const WalletService = {
       }
       return response.data.data || { id: null };
     } catch (error) {
-      console.error("Error fetching creating charge:", error);
+      console.error("Error creating charge:", error);
       return { id: null };
     }
   },
@@ -214,15 +237,17 @@ export const WalletService = {
       const response: AxiosResponse<ApiResponse<Charge>> = await api.get(
         buildUrl("getcharge", chargeData)
       );
+      
       if (!response.data.data) {
         throw new Error(
           response.data.message || response.data.error || "Failed to get charge"
         );
       }
-      return response.data.data || { id: null };
+      
+      return response.data.data;
     } catch (error) {
       console.error("Error fetching charge:", error);
-      return { id: null };
+      return { id: null, status: "error" };
     }
   },
 
@@ -241,7 +266,7 @@ export const WalletService = {
       }
       return response.data.data || [];
     } catch (error) {
-      console.error("Error fetching getting charges:", error);
+      console.error("Error fetching charges:", error);
       return [];
     }
   },

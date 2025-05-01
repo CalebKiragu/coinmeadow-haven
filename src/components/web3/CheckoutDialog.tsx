@@ -3,12 +3,22 @@ import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -16,93 +26,87 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { ApiService } from "@/lib/services";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { cryptoCurrencies } from "@/types/currency";
+import { WalletService } from "@/lib/services/walletService";
 
 interface CheckoutDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCheckoutComplete: () => void;
+  onCheckoutComplete?: () => void;
 }
 
-// Extend the Charge interface to include the properties we expect
-interface Charge {
-  id?: string;
-  hosted_url?: string;
-  // Add any other properties that might be needed
-  status?: string;
-}
+// Define the form schema with validation
+const formSchema = z.object({
+  amount: z.string().min(1, {
+    message: "Amount is required.",
+  }),
+  currency: z.string().min(1, {
+    message: "Currency is required.",
+  }),
+});
 
-const supportedTokens = [
-  { name: "USDC", value: "USDC", recommended: true },
-  { name: "ETH", value: "ETH", recommended: false },
-  { name: "DAI", value: "DAI", recommended: false },
-  { name: "WBTC", value: "WBTC", recommended: false },
-];
-
-const CheckoutDialog = ({
+const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
   open,
   onOpenChange,
   onCheckoutComplete,
-}: CheckoutDialogProps) => {
-  const [amount, setAmount] = useState<string>("1");
-  const [currency, setCurrency] = useState<string>("USDC");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+}) => {
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleCheckout = async () => {
-    if (!amount || parseFloat(amount) <= 0) {
-      toast({
-        title: "Invalid amount",
-        description: "Please enter a valid amount",
-        variant: "destructive",
-      });
-      return;
-    }
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      amount: "",
+      currency: "BTC",
+    },
+  });
 
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
-      const chargeData = {
-        amount: amount,
-        currency: currency,
-        orderId: crypto.randomUUID(),
-        type: "fixed_price",
-        success_url: "https://duka.pesatoken.org/dashboard?chargeId={chargeId}",
-        cancel_url: "https://duka.pesatoken.org/dashboard?chargeId={chargeId}"
-      };
-      
-      const charge = await ApiService.createCharge(chargeData) as Charge;
-      
-      if (charge?.id) {
-        // If we have a hosted_url, redirect to it
-        if (charge.hosted_url) {
-          window.open(charge.hosted_url, '_blank');
-        } else {
-          // Fallback to using the charge ID
-          const checkoutUrl = `https://pay.coinbase.com/charges/${charge.id}`;
-          window.open(checkoutUrl, '_blank');
-        }
-      }
-      
-      onCheckoutComplete();
-      
-      toast({
-        title: "Checkout initiated",
-        description: "Please complete the checkout process in the new tab",
+      const charge = await WalletService.createCharge({
+        amount: values.amount,
+        currency: values.currency,
+        orderId: `order-${Date.now()}`,
+        type: "customer",
+        success_url: `https://duka.pesatoken.org/dashboard?chargeId={chargeId}`,
+        cancel_url: `https://duka.pesatoken.org/dashboard?chargeId={chargeId}`
       });
+
+      if (charge && charge.id) {
+        if (charge.hosted_url) {
+          // Open the hosted checkout URL in a new tab
+          window.open(charge.hosted_url, '_blank');
+        }
+        
+        toast({
+          title: "Checkout initiated",
+          description: "Please complete the payment process.",
+        });
+        onOpenChange(false);
+        if (onCheckoutComplete) {
+          onCheckoutComplete();
+        }
+      } else {
+        toast({
+          title: "Checkout Failed",
+          description: "Unable to initiate checkout process.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
-      console.error("Error creating charge:", error);
       toast({
         title: "Error",
-        description: "Failed to initiate checkout",
+        description: "Failed to initiate checkout.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
-      onOpenChange(false);
     }
   };
 
@@ -110,63 +114,81 @@ const CheckoutDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Fund Your Wallet</DialogTitle>
+          <DialogTitle>Fund Wallet</DialogTitle>
           <DialogDescription>
-            Enter the amount and select a token to fund your wallet.
+            Add funds to your wallet by specifying amount and currency
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label htmlFor="amount" className="text-right col-span-1">
-              Amount
-            </label>
-            <Input
-              id="amount"
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="col-span-3"
-              placeholder="1.0"
-              min="0.01"
-              step="0.01"
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="0.00"
+                      type="number"
+                      step="0.000001"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Enter the amount you want to deposit
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <label htmlFor="currency" className="text-right col-span-1">
-              Token
-            </label>
-            <Select
-              value={currency}
-              onValueChange={setCurrency}
-            >
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select token" />
-              </SelectTrigger>
-              <SelectContent>
-                {supportedTokens.map((token) => (
-                  <SelectItem key={token.value} value={token.value}>
-                    {token.name} {token.recommended && "(Recommended)"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Alert variant="default" className="mt-2">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              USDC is recommended for lower fees. Other tokens may incur higher gas fees.
-              Price and availability subject to network conditions.
-            </AlertDescription>
-          </Alert>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleCheckout} disabled={isLoading}>
-            {isLoading ? "Processing..." : "Confirm"}
-          </Button>
-        </DialogFooter>
+
+            <FormField
+              control={form.control}
+              name="currency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Currency</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a currency" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {cryptoCurrencies.map((crypto) => (
+                        <SelectItem key={crypto.symbol} value={crypto.symbol}>
+                          {crypto.name} ({crypto.symbol})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Select the currency you want to deposit
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  "Continue to Checkout"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

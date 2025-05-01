@@ -1,22 +1,30 @@
 
 import React, { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Copy } from "lucide-react";
+import { Copy, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { getEnvironmentConfig } from "@/lib/utils";
 import WalletConnector from "./WalletConnector";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface IdentityDisplayProps {
   compact?: boolean;
   showCopy?: boolean;
   address?: string;
   ensName?: string;
+  showDisconnect?: boolean;
 }
 
 const IdentityDisplay = ({ 
   compact = false, 
   showCopy = true,
+  showDisconnect = true,
   address,
   ensName
 }: IdentityDisplayProps) => {
@@ -59,6 +67,20 @@ const IdentityDisplay = ({
     // Save to localStorage for persistence
     localStorage.setItem('walletAddress', newAddress);
     if (name) localStorage.setItem('walletName', name);
+  };
+
+  const handleDisconnect = () => {
+    setWalletAddress(undefined);
+    setDisplayName(undefined);
+    
+    // Remove from localStorage
+    localStorage.removeItem('walletAddress');
+    localStorage.removeItem('walletName');
+    
+    toast({
+      title: "Wallet disconnected",
+      description: "Your wallet has been disconnected successfully",
+    });
   };
 
   const shortenAddress = (addr: string) => {
@@ -108,15 +130,44 @@ const IdentityDisplay = ({
         </span>
       </div>
       {showCopy && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 w-6 p-0"
-          onClick={handleCopy}
-        >
-          <Copy className="h-3 w-3" />
-          <span className="sr-only">Copy address</span>
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={handleCopy}
+              >
+                <Copy className="h-3 w-3" />
+                <span className="sr-only">Copy address</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Copy wallet address</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+      {showDisconnect && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-red-500 hover:text-red-600 hover:bg-red-100"
+                onClick={handleDisconnect}
+              >
+                <LogOut className="h-3 w-3" />
+                <span className="sr-only">Disconnect wallet</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Disconnect wallet</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
     </div>
   );

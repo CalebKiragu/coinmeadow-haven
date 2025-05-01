@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,8 +30,86 @@ const MerchantLoginForm = () => {
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
   const [activeTab, setActiveTab] = useState<"email" | "phone">("email");
+  const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
 
   const { isAuthenticated, error, otp } = useAppSelector((state) => state.auth);
+
+  // Load Google Identity Services script
+  useEffect(() => {
+    const loadGoogleScript = () => {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        setGoogleScriptLoaded(true);
+      };
+      document.body.appendChild(script);
+    };
+
+    loadGoogleScript();
+
+    return () => {
+      // Cleanup any Google sign-in instances
+      const buttonContainer = document.getElementById('merchant-google-signin-button');
+      if (buttonContainer) {
+        buttonContainer.innerHTML = '';
+      }
+    };
+  }, []);
+
+  // Initialize Google Sign-In button when script is loaded
+  useEffect(() => {
+    if (googleScriptLoaded && window.google) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: '339887597881-dtj402e9975k4r8stoejgovj1me8gicn.apps.googleusercontent.com',
+          callback: handleGoogleSignIn
+        });
+        
+        window.google.accounts.id.renderButton(
+          document.getElementById('merchant-google-signin-button'),
+          { 
+            theme: 'filled_blue', 
+            size: 'large',
+            text: 'continue_with',
+            width: '100%'
+          }
+        );
+      } catch (error) {
+        console.error('Error initializing Google Sign-In:', error);
+      }
+    }
+  }, [googleScriptLoaded]);
+
+  const handleGoogleSignIn = async (response: any) => {
+    try {
+      setIsLoading(true);
+      // Extract the credential from the response
+      const { credential } = response;
+      
+      // Here you would send the token to your backend for verification
+      // and further processing
+      console.log("Google Sign-In successful for merchant", credential);
+      
+      toast({
+        title: "Google authentication successful",
+        description: "Logging you in as merchant...",
+      });
+      
+      // For now, we'll just navigate to the dashboard
+      // In a real application, you'd verify this token with your backend
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      toast({
+        title: "Google Sign-In Failed",
+        description: "Could not authenticate with Google. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,9 +168,9 @@ const MerchantLoginForm = () => {
     navigate("/dashboard", { replace: true });
   };
 
-  const handleThirdPartyLogin = (provider: string) => {
+  const handleBaseSignin = () => {
     toast({
-      title: `${provider} merchant login`,
+      title: "Base authentication",
       description: "This feature is coming soon!",
     });
   };
@@ -195,21 +274,15 @@ const MerchantLoginForm = () => {
           </div>
         </div>
         <div className="grid grid-cols-1 gap-3">
+          <div id="merchant-google-signin-button" className="w-full"></div>
+          
           <Button
             type="button"
             variant="outline"
-            onClick={() => handleThirdPartyLogin("Twitter")}
-            className="bg-[#1DA1F2] text-white hover:bg-[#1a8cd8]"
+            onClick={handleBaseSignin}
+            className="bg-[#0052FF] hover:bg-[#0039B3] text-white"
           >
-            Continue with Twitter
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleThirdPartyLogin("Google")}
-            className="bg-[#4285F4] text-white hover:bg-[#3367D6]"
-          >
-            Continue with Google
+            Continue with Base
           </Button>
         </div>
       </div>

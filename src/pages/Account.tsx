@@ -5,6 +5,7 @@ import GlassCard from "@/components/ui/GlassCard";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import IdentityDisplay from "@/components/web3/IdentityDisplay";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 const Account = () => {
   const { user } = useAppSelector((state) => state.auth);
@@ -53,9 +54,14 @@ const Account = () => {
               )}
             </div>
             
-            <div className="py-2 px-4 bg-white/10 rounded-lg">
-              <IdentityDisplay showCopy={true} compact={false} />
-            </div>
+            <Card className="w-full max-w-sm bg-white/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Connected Wallet</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <IdentityDisplay showCopy={true} showDisconnect={true} compact={false} />
+              </CardContent>
+            </Card>
           </div>
         </GlassCard>
 
