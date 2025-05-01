@@ -54,8 +54,10 @@ const BalanceCard = ({
   }, []);
 
   useEffect(() => {
-    // Update redux state when showBalance changes
-    dispatch(setShowBalance(showBalance));
+    // Update redux state when showBalance changes - FIX: Check if setShowBalance is an action creator
+    if (showBalance !== undefined) {
+      dispatch(setShowBalance(showBalance));
+    }
   }, [showBalance, dispatch]);
 
   const fetchPriceChanges = async (period: string) => {

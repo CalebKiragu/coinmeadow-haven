@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -69,8 +70,8 @@ const Dashboard = () => {
   const [chargeStatus, setChargeStatus] = useState<string | null>(null);
   
   const { verifyPasskey, isPasskeyVerified } = usePasskeyAuth();
-
   const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const walletState = useAppSelector((state) => state.wallet);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -122,6 +123,13 @@ const Dashboard = () => {
     initPasskeyAuth();
     prefetchData();
   }, [isAuthenticated, navigate, verifyPasskey, location.search]);
+
+  useEffect(() => {
+    // Synchronize with redux store's showBalance if available
+    if (walletState && walletState.showBalance !== undefined) {
+      setShowBalance(walletState.showBalance);
+    }
+  }, [walletState]);
 
   const handleLogout = () => {
     dispatch(logout());

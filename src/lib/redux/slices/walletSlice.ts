@@ -1,3 +1,4 @@
+
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export type Currency = "USD" | "EUR" | "GBP" | "KES" | "NGN" | "ZAR";
