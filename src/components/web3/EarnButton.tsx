@@ -47,15 +47,20 @@ const EarnButton = ({ className }: EarnButtonProps) => {
   // Generate staking pools from available wallets or use default pools
   const stakingPools = React.useMemo(() => {
     if (wallets && wallets.length > 0) {
-      return wallets.map(wallet => ({
-        id: `${wallet.symbol.toLowerCase()}-flexible`,
-        asset: wallet.symbol,
-        apy: 4.5 + Math.random() * 5, // Random APY between 4.5% and 9.5%
-        lockupPeriod: "Flexible",
-        minStake: 0.01,
-        available: parseFloat(wallet.balance),
-        description: `Stake ${wallet.symbol} with no minimum lock-up period`
-      }));
+      return wallets.map(wallet => {
+        // Add null check for wallet.symbol
+        const symbol = wallet.symbol || "UNKNOWN";
+        
+        return {
+          id: `${symbol.toLowerCase()}-flexible`,
+          asset: symbol,
+          apy: 4.5 + Math.random() * 5, // Random APY between 4.5% and 9.5%
+          lockupPeriod: "Flexible",
+          minStake: 0.01,
+          available: parseFloat(wallet.balance || "0"),
+          description: `Stake ${symbol} with no minimum lock-up period`
+        };
+      });
     }
     
     // Default pools if no wallet is connected
