@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,8 @@ const BalanceCard = ({
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { wallets, loading } = useAppSelector((state) => state.wallet);
-  const { prices } = useAppSelector((state) => state.prices);
+  const priceState = useAppSelector((state) => state.price);
+  const prices = priceState?.prices || [];
   const { toast } = useToast();
   const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
   const [connectedWalletName, setConnectedWalletName] = useState<string | null>(null);
@@ -120,8 +122,8 @@ const BalanceCard = ({
   const calculateTotalBalance = () => {
     if (!wallets?.length) return 0;
     return wallets.reduce((acc, wallet) => {
-      const price =
-        prices.find((p) => p.token === wallet.symbol)?.usdRate || 1;
+      const priceInfo = prices.find((p) => p.token === wallet.symbol);
+      const price = priceInfo?.usdRate || 1;
       return acc + parseFloat(wallet.balance) * price;
     }, 0);
   };
@@ -134,7 +136,8 @@ const BalanceCard = ({
     let weightedChangeSum = 0;
     
     wallets.forEach((wallet) => {
-      const price = prices.find((p) => p.token === wallet.symbol)?.usdRate || 1;
+      const priceInfo = prices.find((p) => p.token === wallet.symbol);
+      const price = priceInfo?.usdRate || 1;
       const value = parseFloat(wallet.balance) * price;
       const change = priceChanges[wallet.symbol] || 0;
       
@@ -272,9 +275,8 @@ const BalanceCard = ({
                         />
                       ))
                   : wallets.map((wallet) => {
-                      const price =
-                        prices.find((p) => p.token === wallet.symbol)?.usdRate ||
-                        1;
+                      const priceInfo = prices.find((p) => p.token === wallet.symbol);
+                      const price = priceInfo?.usdRate || 1;
                       const usdValue = parseFloat(wallet.balance) * price;
 
                       return (
