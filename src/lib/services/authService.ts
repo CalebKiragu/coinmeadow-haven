@@ -441,4 +441,64 @@ export const AuthService = {
   ): Promise<LoginResponse> => {
     return AuthService.signupMerchant(merchantData);
   },
+
+  // Get wallet challenge for signature
+  getWalletChallenge: async (): Promise<{ challenge: string }> => {
+    try {
+      const response = await api.get('v1/auth/wallet/challenge');
+      return response.data.data;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      const errorMessage =
+        axiosError.response?.data?.message ||
+        axiosError.response?.data?.error ||
+        "Error getting challenge";
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Verify wallet signature
+  verifyWalletSignature: async (params: { 
+    address: string; 
+    signature: string; 
+    challenge: string;
+  }): Promise<{ user: any; token: any; isNewUser: boolean }> => {
+    try {
+      const response = await api.post('v1/auth/wallet/verify', params);
+      return {
+        user: response.data.data.user,
+        token: response.data.data.token,
+        isNewUser: response.data.data.isNewUser || false,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      const errorMessage =
+        axiosError.response?.data?.message ||
+        axiosError.response?.data?.error ||
+        "Error verifying signature";
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Complete wallet signup with user profile
+  completeWalletSignup: async (params: {
+    email: string;
+    firstName: string;
+    lastName?: string;
+  }): Promise<{ user: any; token: any }> => {
+    try {
+      const response = await api.post('v1/auth/wallet/complete', params);
+      return {
+        user: response.data.data.user,
+        token: response.data.data.token,
+      };
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      const errorMessage =
+        axiosError.response?.data?.message ||
+        axiosError.response?.data?.error ||
+        "Error completing signup";
+      throw new Error(errorMessage);
+    }
+  },
 };

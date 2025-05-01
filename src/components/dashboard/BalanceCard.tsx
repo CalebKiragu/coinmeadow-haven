@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { Checkout } from "@coinbase/onchainkit/checkout";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -153,6 +152,18 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
     setCheckoutDialogOpen(true);
   };
 
+  const handleCheckoutComplete = () => {
+    // Refresh wallet data after checkout
+    if (user || merchant) {
+      ApiService.updateDashboard({
+        email: user?.email || merchant?.email || "",
+        phone: user?.phone || merchant?.phone || "",
+        basePair: selectedFiat,
+        isMerchant: merchant ? "true" : "false",
+      });
+    }
+  };
+
   const greetName = user?.firstName || merchant?.merchantName || "";
   const merchantNo = merchant?.merchantNo;
 
@@ -290,7 +301,7 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
                   variant="outline" 
                   size="sm" 
                   onClick={handleCheckoutClick} 
-                  className="text-xs h-6 px-2 py-0"
+                  className="text-xs h-6 px-2 py-0 bg-[#0052FF] hover:bg-[#0039B3] text-white border-0"
                 >
                   Fund Wallet
                 </Button>
@@ -312,7 +323,7 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
           <CheckoutDialog
             open={checkoutDialogOpen}
             onOpenChange={setCheckoutDialogOpen}
-            onCheckoutComplete={() => {}}
+            onCheckoutComplete={handleCheckoutComplete}
           />
         </div>
       )}

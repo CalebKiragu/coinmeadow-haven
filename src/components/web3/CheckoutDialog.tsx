@@ -62,14 +62,28 @@ const CheckoutDialog = ({
         currency: currency,
         orderId: crypto.randomUUID(),
         type: "fixed_price",
+        success_url: "https://duka.pesatoken.org/dashboard?chargeId={chargeId}",
+        cancel_url: "https://duka.pesatoken.org/dashboard?chargeId={chargeId}"
       };
       
-      await ApiService.createCharge(chargeData);
+      const charge = await ApiService.createCharge(chargeData);
+      
+      if (charge?.id) {
+        // If we have a hosted_url, redirect to it
+        if (charge.hosted_url) {
+          window.open(charge.hosted_url, '_blank');
+        } else {
+          // Fallback to using the charge ID
+          const checkoutUrl = `https://pay.coinbase.com/charges/${charge.id}`;
+          window.open(checkoutUrl, '_blank');
+        }
+      }
+      
       onCheckoutComplete();
       
       toast({
         title: "Checkout initiated",
-        description: "Please complete the checkout process",
+        description: "Please complete the checkout process in the new tab",
       });
     } catch (error) {
       console.error("Error creating charge:", error);

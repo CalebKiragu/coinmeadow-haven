@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -27,6 +27,7 @@ import { logout } from "@/lib/redux/slices/authSlice";
 import KycBanner from "@/components/verification/KycBanner";
 import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { ApiService } from "@/lib/services";
+import { WalletService } from "@/lib/services/walletService";
 
 const trendingOffers: Offer[] = [
   {
@@ -55,9 +56,11 @@ const trendingOffers: Offer[] = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState("wallet");
   const [showBalance, setShowBalance] = useState(false);
+  const [chargeStatus, setChargeStatus] = useState<string | null>(null);
   
   const { verifyPasskey, isPasskeyVerified } = usePasskeyAuth();
 
@@ -86,9 +89,29 @@ const Dashboard = () => {
       }
     };
     
+    // Check for chargeId in URL query parameters
+    const queryParams = new URLSearchParams(location.search);
+    const chargeId = queryParams.get('chargeId');
+    
+    if (chargeId) {
+      const checkChargeStatus = async () => {
+        try {
+          const charge = await WalletService.queryCharge({ chargeId });
+          setChargeStatus(charge.status || 'unknown');
+          // Further processing based on status can be done here
+          console.log('Charge status:', charge.status);
+        } catch (error) {
+          console.error('Error querying charge:', error);
+          setChargeStatus('error');
+        }
+      };
+      
+      checkChargeStatus();
+    }
+    
     initPasskeyAuth();
     prefetchData();
-  }, [isAuthenticated, navigate, verifyPasskey]);
+  }, [isAuthenticated, navigate, verifyPasskey, location.search]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -106,7 +129,7 @@ const Dashboard = () => {
           <div className="flex flex-col items-start">
             <h1 className="text-2xl font-bold text-white">CoinDuka</h1>
             <span className="text-sm text-white/70">
-              Your trusted crypto partner
+              Your trustless crypto partner
             </span>
           </div>
           <div className="flex items-center gap-2">

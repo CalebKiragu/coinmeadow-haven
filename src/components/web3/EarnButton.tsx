@@ -33,7 +33,7 @@ const EarnButton = ({
         variant="outline" 
         size={size} 
         onClick={() => setDialogOpen(true)} 
-        className={className}
+        className={`bg-[#7b61ff] hover:bg-[#5e48c5] text-white border-0 ${className}`}
       >
         <TrendingUp className="mr-1 h-4 w-4" />
         Stake to Earn
@@ -49,13 +49,11 @@ const EarnButton = ({
           </DialogHeader>
           
           <div className="py-4">
-            {/* Removed the Vault component that was causing issues */}
-            <div className="p-4 border rounded-md bg-muted/30">
-              <p className="text-center">Vault address: {vault}</p>
-              <p className="text-center text-xs text-muted-foreground mt-2">
-                To stake tokens, connect your wallet and approve the transaction.
-              </p>
-            </div>
+            <iframe
+              src={`https://earn.base.org/vaults/${vault}?embed=true`}
+              style={{ width: '100%', height: '400px', border: 'none', borderRadius: '8px' }}
+              title="Base Earn"
+            />
           </div>
           
           <DialogFooter>
