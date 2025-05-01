@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,9 +53,11 @@ const BalanceCard = ({
   }, []);
 
   useEffect(() => {
-    // Update redux state when showBalance changes - FIX: Check if setShowBalance is an action creator
-    if (showBalance !== undefined) {
-      dispatch(setShowBalance(showBalance));
+    // Update redux state when showBalance changes
+    if (typeof showBalance === 'boolean') {
+      // Fix: Make sure we're dispatching the action creator properly
+      const action = setShowBalance(showBalance);
+      dispatch(action);
     }
   }, [showBalance, dispatch]);
 
