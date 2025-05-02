@@ -6,331 +6,282 @@ import {
   Area,
   XAxis,
   YAxis,
+  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  CartesianGrid,
-  BarChart,
-  Bar,
-  Cell,
+  TooltipProps
 } from 'recharts';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { cryptoCurrencies } from '@/types/currency';
+import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const timeRanges = [
-  { value: '1h', label: '1H' },
-  { value: '24h', label: '24H' },
-  { value: '7d', label: '7D' },
-  { value: '30d', label: '30D' },
-  { value: '1y', label: '1Y' },
-];
-
-interface ChartData {
-  date: string;
-  value: number;
-  volume: number;
-  open: number;
-  close: number;
-  high: number;
-  low: number;
+// Define data point structure
+interface DataPoint {
+  timestamp: number;
+  price: number;
+  date?: string;
 }
 
-const formatDate = (date: string, timeRange: string) => {
-  const dateObj = new Date(date);
-  const options: Intl.DateTimeFormatOptions = {
-    month: 'short',
-    day: 'numeric',
+interface PortfolioChartProps {
+  selectedCrypto: string;
+}
+
+type TimeRange = '1D' | '1W' | '1M' | '3M' | '1Y' | 'ALL';
+
+// Map crypto symbols to CoinGecko IDs
+const getCoinGeckoId = (symbol: string): string => {
+  const mapping: Record<string, string> = {
+    'BTC': 'bitcoin',
+    'ETH': 'ethereum',
+    'SOL': 'solana',
+    'USDT': 'tether',
+    'USDC': 'usd-coin',
+    'XRP': 'ripple',
+    'ADA': 'cardano',
+    'AVAX': 'avalanche-2',
+    'DOGE': 'dogecoin',
+    'DOT': 'polkadot',
+    'LINK': 'chainlink'
+  };
+  
+  return mapping[symbol] || 'bitcoin'; // Default to bitcoin if symbol not in mapping
+};
+
+// Function to fetch price history from CoinGecko
+const fetchPriceHistory = async (
+  coinId: string,
+  timeRange: TimeRange
+): Promise<DataPoint[]> => {
+  // Map time ranges to CoinGecko parameters
+  const rangeMap: Record<TimeRange, { days: number | string, interval: string }> = {
+    '1D': { days: 1, interval: 'hourly' },
+    '1W': { days: 7, interval: 'daily' },
+    '1M': { days: 30, interval: 'daily' },
+    '3M': { days: 90, interval: 'daily' },
+    '1Y': { days: 365, interval: 'daily' },
+    'ALL': { days: 'max' as any, interval: 'weekly' },
   };
 
-  if (timeRange === '1h' || timeRange === '24h') {
-    options.hour = 'numeric';
-    options.minute = 'numeric';
-  }
+  const { days, interval } = rangeMap[timeRange];
 
-  return dateObj.toLocaleDateString(undefined, options);
-};
-
-const formatValue = (value: number) => {
-  if (value >= 1000) {
-    return (value / 1000).toFixed(1) + 'k';
-  }
-  return value.toFixed(2);
-};
-
-const PortfolioChart = ({
-  selectedCrypto = 'BTC',
-}: {
-  selectedCrypto?: string;
-}) => {
-  const [timeRange, setTimeRange] = useState('24h');
-  const [chartType, setChartType] = useState('line');
-  const [chartData, setChartData] = useState<ChartData[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchChartData = async () => {
-      setIsLoading(true);
-      try {
-        const response = await axios.get(
-          `https://api.coingecko.com/api/v3/coins/${selectedCrypto.toLowerCase()}/market_chart`,
-          {
-            params: {
-              vs_currency: 'usd',
-              days: timeRange.replace('h', ''),
-              interval:
-                timeRange === '1h' || timeRange === '24h' ? 'hourly' : 'daily',
-            },
-          }
-        );
-
-        const data = response.data.prices.map((item: any) => ({
-          date: new Date(item[0]).toLocaleDateString(),
-          value: item[1],
-        }));
-
-        // Mock candlestick data
-        const candlestickData = response.data.prices.map((item: any) => ({
-          date: new Date(item[0]).toLocaleDateString(),
-          open: item[1],
-          close: item[1] + (Math.random() - 0.5) * 10,
-          high: item[1] + Math.random() * 15,
-          low: item[1] - Math.random() * 15,
-          volume: Math.random() * 100,
-        }));
-
-        setChartData(chartType === 'line' ? data : candlestickData);
-      } catch (error) {
-        console.error('Error fetching chart data:', error);
-      } finally {
-        setIsLoading(false);
+  try {
+    const response = await axios.get(
+      `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart`,
+      {
+        params: {
+          vs_currency: 'usd',
+          days,
+          interval: days === 1 ? 'hourly' : undefined, // Override for 1D to get hourly data
+        },
       }
-    };
+    );
 
-    fetchChartData();
-  }, [selectedCrypto, timeRange, chartType]);
+    // Transform CoinGecko response to our DataPoint format
+    return response.data.prices.map((item: [number, number]) => ({
+      timestamp: item[0],
+      price: item[1],
+      date: new Date(item[0]).toLocaleString(), // Format date for tooltip
+    }));
+  } catch (error) {
+    console.error('Error fetching price history:', error);
+    return generateMockData(timeRange); // Fallback to mock data on error
+  }
+};
 
-  const handleTimeRangeChange = (value: string) => {
-    setTimeRange(value);
-  };
+// Generate mock data if API fails
+const generateMockData = (timeRange: TimeRange): DataPoint[] => {
+  const now = Date.now();
+  const data: DataPoint[] = [];
+  let points = 30;
+  let step = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+  
+  switch (timeRange) {
+    case '1D':
+      points = 24;
+      step = 60 * 60 * 1000; // 1 hour
+      break;
+    case '1W':
+      points = 7;
+      step = 24 * 60 * 60 * 1000; // 1 day
+      break;
+    case '1M':
+      points = 30;
+      step = 24 * 60 * 60 * 1000; // 1 day
+      break;
+    case '3M':
+      points = 90;
+      step = 24 * 60 * 60 * 1000; // 1 day
+      break;
+    case '1Y':
+      points = 52;
+      step = 7 * 24 * 60 * 60 * 1000; // 1 week
+      break;
+    case 'ALL':
+      points = 60;
+      step = 30 * 24 * 60 * 60 * 1000; // 1 month
+      break;
+  }
 
-  const handleChartTypeChange = (type: string) => {
-    setChartType(type);
-  };
+  // Generate price starting at around current BTC price
+  let price = 65000;
+  
+  for (let i = points - 1; i >= 0; i--) {
+    const timestamp = now - i * step;
+    // Add some random variation to the price
+    price = price + (Math.random() - 0.5) * 1000;
+    data.push({
+      timestamp,
+      price,
+      date: new Date(timestamp).toLocaleString(),
+    });
+  }
+  
+  return data;
+};
 
-  // Custom formatter function for number values
-  const customFormatter = (value: any) => {
-    if (typeof value === 'number') {
-      return formatValue(value);
+// Custom tooltip component
+const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-background p-3 border border-border rounded-md shadow-lg">
+        <p className="text-sm font-medium">{payload[0].payload.date}</p>
+        <p className="text-base font-bold text-primary">
+          ${Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
+  const [timeRange, setTimeRange] = useState<TimeRange>('1W');
+  
+  const { data: chartData, isLoading } = useQuery({
+    queryKey: ['priceHistory', selectedCrypto, timeRange],
+    queryFn: () => fetchPriceHistory(getCoinGeckoId(selectedCrypto), timeRange),
+    staleTime: 60000, // Cache for 1 minute
+  });
+
+  const formatXAxis = (timestamp: number) => {
+    const date = new Date(timestamp);
+    switch (timeRange) {
+      case '1D':
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      case '1W':
+      case '1M':
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      case '3M':
+      case '1Y':
+        return date.toLocaleDateString([], { month: 'short' });
+      case 'ALL':
+        return date.toLocaleDateString([], { year: '2-digit' });
+      default:
+        return date.toLocaleDateString();
     }
-    return value;
   };
-
+  
+  // Calculate price change percentage
+  const calculatePriceChange = () => {
+    if (!chartData || chartData.length < 2) return { amount: 0, percentage: 0 };
+    
+    const firstPrice = chartData[0].price;
+    const lastPrice = chartData[chartData.length - 1].price;
+    const change = lastPrice - firstPrice;
+    const percentage = (change / firstPrice) * 100;
+    
+    return { amount: change, percentage };
+  };
+  
+  const priceChange = chartData ? calculatePriceChange() : { amount: 0, percentage: 0 };
+  const isPriceUp = priceChange.amount >= 0;
+  
+  const timeRangeButtons: TimeRange[] = ['1D', '1W', '1M', '3M', '1Y', 'ALL'];
+  
   return (
-    <Card className="col-span-3">
+    <Card className="animate-fade-in">
       <CardHeader className="pb-2">
-        <CardTitle>
-          {selectedCrypto} Price Chart ({timeRange})
-        </CardTitle>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleChartTypeChange('line')}
-            className={chartType === 'line' ? 'bg-secondary' : ''}
-          >
-            Line
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleChartTypeChange('candlestick')}
-            className={chartType === 'candlestick' ? 'bg-secondary' : ''}
-          >
-            Candlestick
-          </Button>
-          <select
-            value={timeRange}
-            onChange={(e) => handleTimeRangeChange(e.target.value)}
-            className="border rounded-md px-2 py-1 bg-background text-foreground"
-          >
-            {timeRanges.map((range) => (
-              <option key={range.value} value={range.value}>
-                {range.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="h-[400px]">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <Skeleton className="h-full w-full" />
-            </div>
-          ) : null}
-
-          {chartType === 'line' && (
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={chartData}
-                margin={{
-                  top: 10,
-                  right: 30,
-                  left: 0,
-                  bottom: 0,
-                }}
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg">{selectedCrypto} Price Chart</CardTitle>
+          <div className="bg-muted rounded-lg flex">
+            {timeRangeButtons.map((range) => (
+              <Button
+                key={range}
+                variant={timeRange === range ? "secondary" : "ghost"}
+                size="sm"
+                className="h-8 px-2 text-xs"
+                onClick={() => setTimeRange(range)}
               >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="rgba(255,255,255,0.1)"
-                />
-                <XAxis
-                  dataKey="date"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12 }}
-                  padding={{ left: 20, right: 20 }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12 }}
-                  tickFormatter={(value) => `$${customFormatter(value)}`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(0,0,0,0.8)',
-                    border: 'none',
-                    borderRadius: '4px',
-                    color: 'white',
-                  }}
-                  formatter={(value) => `$${customFormatter(Number(value))}`}
-                  labelFormatter={(label) => formatDate(label, timeRange)}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#8884d8"
-                  fillOpacity={0.3}
-                  fill="url(#colorValue)"
-                />
-                <defs>
-                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
-
-          {chartType === 'candlestick' && (
-            <ResponsiveContainer width="100%" height="100%">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <Skeleton className="h-full w-full" />
-                </div>
-              ) : (
-                <BarChart
-                  width={500}
-                  height={300}
-                  data={chartData}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="rgba(255,255,255,0.1)"
-                  />
-                  <XAxis
-                    dataKey="date"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }}
-                    padding={{ left: 10, right: 10 }}
-                    tickFormatter={(value) => formatDate(value, timeRange)}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 12 }}
-                    domain={['dataMin', 'dataMax']}
-                    tickFormatter={(value) => `$${customFormatter(Number(value))}`}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'rgba(0,0,0,0.8)',
-                      border: 'none',
-                      borderRadius: '4px',
-                      color: 'white',
-                    }}
-                    formatter={(value, name) => {
-                      if (Array.isArray(value)) {
-                        return [`$${customFormatter(Number(value[0]))} → $${customFormatter(Number(value[1]))}`, 'Price']
-                      }
-                      return [`$${customFormatter(Number(value))}`, name];
-                    }}
-                    labelFormatter={(label) => formatDate(label, timeRange)}
-                  />
-                  <Bar
-                    dataKey="volume"
-                    fill="rgba(255,255,255,0.1)"
-                    opacity={0.3}
-                    yAxisId={1}
-                  />
-                  <Bar
-                    dataKey={(entry) => [entry.open, entry.close]}
-                    shape={(props: any) => {
-                      const { x, y, width, height } = props;
-                      const payload = props.payload;
-                      const isRising = payload.open <= payload.close;
-                      const fill = isRising ? "#10B981" : "#EF4444";
-                      
-                      // Draw the wick
-                      const wickX = x + width / 2;
-                      const wickTop = isRising ? 
-                        y - (Number(payload.high) - Number(payload.close)) * height / (Number(payload.high) - Number(payload.low)) :
-                        y - (Number(payload.high) - Number(payload.open)) * height / (Number(payload.high) - Number(payload.low));
-                      const wickBottom = isRising ?
-                        y + height + (Number(payload.open) - Number(payload.low)) * height / (Number(payload.high) - Number(payload.low)) :
-                        y + height + (Number(payload.close) - Number(payload.low)) * height / (Number(payload.high) - Number(payload.low));
-                      
-                      return (
-                        <g>
-                          {/* Candle body */}
-                          <rect
-                            x={x}
-                            y={y}
-                            width={width}
-                            height={height}
-                            fill={fill}
-                            stroke={fill}
-                          />
-                          {/* Wick */}
-                          <line
-                            x1={wickX}
-                            y1={wickTop}
-                            x2={wickX}
-                            y2={wickBottom}
-                            stroke={fill}
-                            strokeWidth={1}
-                          />
-                        </g>
-                      );
-                    }}
-                  />
-                </BarChart>
-              )}
-            </ResponsiveContainer>
-          )}
+                {range}
+              </Button>
+            ))}
+          </div>
         </div>
+        
+        {isLoading ? (
+          <Skeleton className="h-4 w-32 mt-1" />
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-bold">
+              ${chartData && chartData.length > 0 
+                ? chartData[chartData.length - 1].price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                : "0.00"
+              }
+            </span>
+            <span className={`text-sm font-medium ${isPriceUp ? 'text-green-500' : 'text-red-500'}`}>
+              {isPriceUp ? '+' : ''}{priceChange.percentage.toFixed(2)}%
+            </span>
+          </div>
+        )}
+      </CardHeader>
+      
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-[300px] w-full" />
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart
+              data={chartData}
+              margin={{
+                top: 10,
+                right: 0,
+                left: 0,
+                bottom: 0,
+              }}
+            >
+              <defs>
+                <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={isPriceUp ? "#10B981" : "#EF4444"} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={isPriceUp ? "#10B981" : "#EF4444"} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <XAxis 
+                dataKey="timestamp" 
+                tickFormatter={formatXAxis} 
+                tick={{ fontSize: 12 }}
+                stroke="rgba(255,255,255,0.3)" 
+              />
+              <YAxis 
+                tickFormatter={(value) => `$${value.toLocaleString()}`}
+                width={80}
+                tick={{ fontSize: 12 }}
+                domain={['dataMin', 'dataMax']}
+                stroke="rgba(255,255,255,0.3)"
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Area
+                type="monotone"
+                dataKey="price"
+                stroke={isPriceUp ? "#10B981" : "#EF4444"}
+                strokeWidth={2}
+                fillOpacity={1}
+                fill="url(#colorPrice)"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   );

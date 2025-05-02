@@ -28,7 +28,6 @@ import KycBanner from "@/components/verification/KycBanner";
 import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { ApiService } from "@/lib/services";
 import { WalletService } from "@/lib/services/walletService";
-import { setShowBalance as setReduxShowBalance } from "@/lib/redux/slices/walletSlice";
 
 // Define the Charge interface
 interface Charge {
@@ -66,12 +65,12 @@ const Dashboard = () => {
   const location = useLocation();
   const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState("wallet");
-  const [localShowBalance, setLocalShowBalance] = useState(false);
+  const [showBalance, setShowBalance] = useState(false);
   const [chargeStatus, setChargeStatus] = useState<string | null>(null);
   
   const { verifyPasskey, isPasskeyVerified } = usePasskeyAuth();
+
   const { isAuthenticated } = useAppSelector((state) => state.auth);
-  const walletState = useAppSelector((state) => state.wallet);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -82,9 +81,7 @@ const Dashboard = () => {
     const initPasskeyAuth = async () => {
       try {
         const verified = await verifyPasskey();
-        setLocalShowBalance(verified);
-        // Make sure we update Redux state too
-        dispatch(setReduxShowBalance(verified));
+        setShowBalance(verified);
       } catch (error) {
         console.log("Initial passkey verification skipped or failed");
       }
@@ -124,14 +121,7 @@ const Dashboard = () => {
     
     initPasskeyAuth();
     prefetchData();
-  }, [isAuthenticated, navigate, verifyPasskey, location.search, dispatch]);
-
-  useEffect(() => {
-    // Synchronize with redux store's showBalance if available
-    if (walletState && walletState.showBalance !== undefined) {
-      setLocalShowBalance(walletState.showBalance);
-    }
-  }, [walletState]);
+  }, [isAuthenticated, navigate, verifyPasskey, location.search]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -139,8 +129,7 @@ const Dashboard = () => {
   };
 
   const handleBalanceToggle = (newValue: boolean) => {
-    setLocalShowBalance(newValue);
-    dispatch(setReduxShowBalance(newValue));
+    setShowBalance(newValue);
   };
 
   return (
@@ -240,7 +229,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-8">
                 <BalanceCard
-                  showBalance={localShowBalance}
+                  showBalance={showBalance}
                   setShowBalance={handleBalanceToggle}
                 />
                 <h3 className="text-lg text-white/80 text-center">
@@ -248,7 +237,7 @@ const Dashboard = () => {
                 </h3>
                 <TransactionButtons />
                 <TransactionHistory
-                  showBalance={localShowBalance}
+                  showBalance={showBalance}
                   setShowBalance={handleBalanceToggle}
                 />
               </div>

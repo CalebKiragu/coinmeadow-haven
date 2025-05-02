@@ -13,9 +13,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, ArrowLeftRight, InfoIcon } from "lucide-react";
+import { Coins, ArrowLeftRight, InfoIcon, Star } from "lucide-react";
 import { cn } from '@/lib/utils';
-import { useAppSelector } from "@/lib/redux/hooks";
 
 interface EarnButtonProps {
   className?: string;
@@ -28,9 +27,43 @@ interface StakingPool {
   apy: number;
   lockupPeriod: string;
   minStake: number;
-  available: number;
   description: string;
 }
+
+const stakingPools: StakingPool[] = [
+  {
+    id: "eth-flexible",
+    asset: "ETH",
+    apy: 4.5,
+    lockupPeriod: "Flexible",
+    minStake: 0.01,
+    description: "Stake ETH with no minimum lock-up period"
+  },
+  {
+    id: "eth-30days",
+    asset: "ETH",
+    apy: 6.2,
+    lockupPeriod: "30 days",
+    minStake: 0.05,
+    description: "Higher APY with a 30-day lock-up period"
+  },
+  {
+    id: "sol-flexible",
+    asset: "SOL",
+    apy: 7.5,
+    lockupPeriod: "Flexible",
+    minStake: 0.5,
+    description: "Stake SOL with no minimum lock-up period"
+  },
+  {
+    id: "sol-30days",
+    asset: "SOL",
+    apy: 9.2,
+    lockupPeriod: "30 days",
+    minStake: 1,
+    description: "Higher APY with a 30-day lock-up period"
+  }
+];
 
 const EarnButton = ({ className }: EarnButtonProps) => {
   const { toast } = useToast();
@@ -39,61 +72,6 @@ const EarnButton = ({ className }: EarnButtonProps) => {
   const [selectedPool, setSelectedPool] = useState<StakingPool | null>(null);
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isWalletConnected, setIsWalletConnected] = useState(false);
-
-  // Get wallet data from redux store
-  const { wallets } = useAppSelector((state) => state.wallet);
-  
-  // Generate staking pools from available wallets or use default pools
-  const stakingPools = React.useMemo(() => {
-    if (wallets && wallets.length > 0) {
-      return wallets.map(wallet => {
-        // Add null check for wallet.symbol
-        const symbol = wallet.symbol || "UNKNOWN";
-        
-        return {
-          id: `${symbol.toLowerCase()}-flexible`,
-          asset: symbol,
-          apy: 4.5 + Math.random() * 5, // Random APY between 4.5% and 9.5%
-          lockupPeriod: "Flexible",
-          minStake: 0.01,
-          available: parseFloat(wallet.balance || "0"),
-          description: `Stake ${symbol} with no minimum lock-up period`
-        };
-      });
-    }
-    
-    // Default pools if no wallet is connected
-    return [
-      {
-        id: "eth-flexible",
-        asset: "ETH",
-        apy: 4.5,
-        lockupPeriod: "Flexible",
-        minStake: 0.01,
-        available: 0,
-        description: "Stake ETH with no minimum lock-up period"
-      },
-      {
-        id: "sol-flexible",
-        asset: "SOL",
-        apy: 7.5,
-        lockupPeriod: "Flexible",
-        minStake: 0.5,
-        available: 0,
-        description: "Stake SOL with no minimum lock-up period"
-      },
-      {
-        id: "btc-flexible",
-        asset: "BTC",
-        apy: 3.2,
-        lockupPeriod: "Flexible",
-        minStake: 0.001,
-        available: 0,
-        description: "Stake BTC with no minimum lock-up period"
-      }
-    ];
-  }, [wallets]);
   
   const handleStakeSubmit = async () => {
     if (!selectedPool) {
@@ -172,37 +150,8 @@ const EarnButton = ({ className }: EarnButtonProps) => {
     }, 2000);
   };
   
-  const handleConnectWallet = () => {
-    // Close the dialog and open wallet connector
-    setOpen(false);
-    toast({
-      title: "Wallet Connection",
-      description: "Please connect your wallet to access staking features"
-    });
-  };
-  
   const formatAPY = (apy: number) => {
     return `${apy.toFixed(2)}%`;
-  };
-  
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only allow positive numbers
-    const value = e.target.value;
-    if (value === '' || parseFloat(value) >= 0) {
-      setAmount(value);
-    }
-  };
-  
-  const setMaxAmount = () => {
-    if (selectedPool) {
-      setAmount(selectedPool.available.toString());
-    }
-  };
-  
-  const setMinAmount = () => {
-    if (selectedPool) {
-      setAmount(selectedPool.minStake.toString());
-    }
   };
   
   return (
@@ -213,7 +162,7 @@ const EarnButton = ({ className }: EarnButtonProps) => {
         onClick={() => setOpen(true)}
         className={cn("flex items-center gap-1", className)}
       >
-        <TrendingUp className="h-3 w-3" />
+        <Star className="h-3 w-3" />
         <span>Stake to Earn</span>
       </Button>
       
@@ -226,179 +175,151 @@ const EarnButton = ({ className }: EarnButtonProps) => {
             </DialogDescription>
           </DialogHeader>
           
-          {wallets && wallets.length > 0 ? (
-            <Tabs defaultValue="deposit" value={activeTab} onValueChange={(value) => setActiveTab(value as 'deposit' | 'withdraw')}>
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="deposit">Deposit</TabsTrigger>
-                <TabsTrigger value="withdraw">Withdraw</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="deposit" className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 mb-4">
-                  <h3 className="text-sm font-medium">Select a staking pool</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {stakingPools.map((pool) => (
-                      <div 
-                        key={pool.id}
-                        className={cn(
-                          "p-3 border rounded-lg cursor-pointer transition-all",
-                          selectedPool?.id === pool.id 
-                            ? "bg-primary/10 border-primary" 
-                            : "hover:bg-accent"
-                        )}
-                        onClick={() => setSelectedPool(pool)}
-                      >
-                        <div className="flex justify-between items-center">
-                          <span className="font-bold">{pool.asset}</span>
-                          <span className="text-green-500 font-semibold">{formatAPY(pool.apy)} APY</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {pool.lockupPeriod} • Min {pool.minStake} {pool.asset}
-                        </div>
-                        <div className="text-sm mt-1">
-                          Available: {pool.available} {pool.asset}
-                        </div>
+          <Tabs defaultValue="deposit" value={activeTab} onValueChange={(value) => setActiveTab(value as 'deposit' | 'withdraw')}>
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="deposit">Deposit</TabsTrigger>
+              <TabsTrigger value="withdraw">Withdraw</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="deposit" className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 mb-4">
+                <h3 className="text-sm font-medium">Select a staking pool</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {stakingPools.map((pool) => (
+                    <div 
+                      key={pool.id}
+                      className={cn(
+                        "p-3 border rounded-lg cursor-pointer transition-all",
+                        selectedPool?.id === pool.id 
+                          ? "bg-primary/10 border-primary" 
+                          : "hover:bg-accent"
+                      )}
+                      onClick={() => setSelectedPool(pool)}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold">{pool.asset}</span>
+                        <span className="text-green-500 font-semibold">{formatAPY(pool.apy)} APY</span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {selectedPool && (
-                  <>
-                    <div className="space-y-2">
-                      <label htmlFor="stake-amount" className="text-sm font-medium">Amount to stake</label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="stake-amount"
-                          type="number"
-                          min="0"
-                          placeholder={`Min ${selectedPool.minStake} ${selectedPool.asset}`}
-                          value={amount}
-                          onChange={handleAmountChange}
-                        />
-                        <Button
-                          variant="outline"
-                          onClick={setMinAmount}
-                          className="whitespace-nowrap"
-                        >
-                          Min
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={setMaxAmount}
-                          className="whitespace-nowrap"
-                        >
-                          Max
-                        </Button>
+                      <div className="text-sm text-muted-foreground">
+                        {pool.lockupPeriod} • Min {pool.minStake} {pool.asset}
                       </div>
                     </div>
-                    
-                    <div className="rounded-md bg-muted p-3 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <InfoIcon className="h-4 w-4" />
-                        <span>Estimated returns</span>
-                      </div>
-                      <div className="mt-2 grid grid-cols-2 gap-2">
-                        <div>
-                          <div className="text-xs text-muted-foreground">Monthly</div>
-                          <div className="font-medium">
-                            {amount ? (parseFloat(amount) * selectedPool.apy / 100 / 12).toFixed(6) : '0'} {selectedPool.asset}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-muted-foreground">Yearly</div>
-                          <div className="font-medium">
-                            {amount ? (parseFloat(amount) * selectedPool.apy / 100).toFixed(6) : '0'} {selectedPool.asset}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-                
-                <Button 
-                  className="w-full"
-                  disabled={!selectedPool || !amount || parseFloat(amount) <= 0 || isLoading}
-                  onClick={handleStakeSubmit}
-                >
-                  {isLoading ? <Skeleton className="h-5 w-20" /> : 'Stake Now'}
-                </Button>
-              </TabsContent>
-              
-              <TabsContent value="withdraw" className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 mb-4">
-                  <h3 className="text-sm font-medium">Select a staking pool to withdraw from</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {stakingPools.map((pool) => (
-                      <div 
-                        key={pool.id}
-                        className={cn(
-                          "p-3 border rounded-lg cursor-pointer transition-all",
-                          selectedPool?.id === pool.id 
-                            ? "bg-primary/10 border-primary" 
-                            : "hover:bg-accent"
-                        )}
-                        onClick={() => setSelectedPool(pool)}
-                      >
-                        <div className="flex justify-between items-center">
-                          <span className="font-bold">{pool.asset}</span>
-                          <span className="text-green-500 font-semibold">{formatAPY(pool.apy)} APY</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {pool.lockupPeriod} • Available: {pool.available.toFixed(6)} {pool.asset}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  ))}
                 </div>
-                
-                {selectedPool && (
+              </div>
+              
+              {selectedPool && (
+                <>
                   <div className="space-y-2">
-                    <label htmlFor="withdraw-amount" className="text-sm font-medium">Amount to withdraw</label>
+                    <label htmlFor="stake-amount" className="text-sm font-medium">Amount to stake</label>
                     <div className="flex gap-2">
                       <Input
-                        id="withdraw-amount"
+                        id="stake-amount"
                         type="number"
-                        min="0"
-                        placeholder={`Available: ${selectedPool.available.toFixed(6)} ${selectedPool.asset}`}
+                        placeholder={`Min ${selectedPool.minStake} ${selectedPool.asset}`}
                         value={amount}
-                        onChange={handleAmountChange}
+                        onChange={(e) => setAmount(e.target.value)}
                       />
                       <Button
                         variant="outline"
-                        onClick={setMinAmount}
+                        onClick={() => setAmount(selectedPool.minStake.toString())}
                         className="whitespace-nowrap"
                       >
                         Min
                       </Button>
-                      <Button
-                        variant="outline"
-                        onClick={setMaxAmount}
-                        className="whitespace-nowrap"
-                      >
-                        Max
-                      </Button>
                     </div>
                   </div>
-                )}
-                
-                <Button 
-                  className="w-full"
-                  disabled={!selectedPool || !amount || parseFloat(amount) <= 0 || isLoading}
-                  onClick={handleWithdrawSubmit}
-                >
-                  {isLoading ? <Skeleton className="h-5 w-20" /> : 'Withdraw'}
-                </Button>
-              </TabsContent>
-            </Tabs>
-          ) : (
-            <div className="flex flex-col items-center justify-center p-8 gap-4">
-              <p className="text-center text-muted-foreground">Connect your wallet to access staking pools</p>
-              <Button onClick={handleConnectWallet}>
-                Connect Wallet
+                  
+                  <div className="rounded-md bg-muted p-3 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <InfoIcon className="h-4 w-4" />
+                      <span>Estimated returns</span>
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Monthly</div>
+                        <div className="font-medium">
+                          {amount ? (parseFloat(amount) * selectedPool.apy / 100 / 12).toFixed(6) : '0'} {selectedPool.asset}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Yearly</div>
+                        <div className="font-medium">
+                          {amount ? (parseFloat(amount) * selectedPool.apy / 100).toFixed(6) : '0'} {selectedPool.asset}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              <Button 
+                className="w-full"
+                disabled={!selectedPool || !amount || parseFloat(amount) <= 0 || isLoading}
+                onClick={handleStakeSubmit}
+              >
+                {isLoading ? <Skeleton className="h-5 w-20" /> : 'Stake Now'}
               </Button>
-            </div>
-          )}
+            </TabsContent>
+            
+            <TabsContent value="withdraw" className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 mb-4">
+                <h3 className="text-sm font-medium">Select a staking pool to withdraw from</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {stakingPools.map((pool) => (
+                    <div 
+                      key={pool.id}
+                      className={cn(
+                        "p-3 border rounded-lg cursor-pointer transition-all",
+                        selectedPool?.id === pool.id 
+                          ? "bg-primary/10 border-primary" 
+                          : "hover:bg-accent"
+                      )}
+                      onClick={() => setSelectedPool(pool)}
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold">{pool.asset}</span>
+                        <span className="text-green-500 font-semibold">{formatAPY(pool.apy)} APY</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {pool.lockupPeriod} • Available: 0.00 {pool.asset}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {selectedPool && (
+                <div className="space-y-2">
+                  <label htmlFor="withdraw-amount" className="text-sm font-medium">Amount to withdraw</label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="withdraw-amount"
+                      type="number"
+                      placeholder={`Available: 0.00 ${selectedPool.asset}`}
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => setAmount('0')}
+                      className="whitespace-nowrap"
+                    >
+                      Max
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              <Button 
+                className="w-full"
+                disabled={!selectedPool || !amount || parseFloat(amount) <= 0 || isLoading}
+                onClick={handleWithdrawSubmit}
+              >
+                {isLoading ? <Skeleton className="h-5 w-20" /> : 'Withdraw'}
+              </Button>
+            </TabsContent>
+          </Tabs>
           
           <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between items-center pt-2">
             <span className="text-xs text-muted-foreground">Earn interest on your idle crypto assets</span>
