@@ -37,16 +37,20 @@ export function CandlestickChart({ data, children, ...props }: CandlestickChartP
   );
 }
 
-interface CandlestickProps extends React.SVGAttributes<SVGPathElement> {
+// Fix the interface to not extend SVGAttributes
+interface CandlestickProps {
+  data?: any[];
   yAccessor: (d: any) => [number, number, number, number];
   xAccessor?: (d: any, index: number) => number;
   width?: number;
   horizontalPadding?: number;
   fill?: string | ((d: any) => string);
   stroke?: string | ((d: any) => string);
+  className?: string;
 }
 
 export function Candlestick({
+  data = [],
   yAccessor,
   xAccessor = (_, i) => i,
   width = 10,
@@ -54,11 +58,10 @@ export function Candlestick({
   className,
   fill,
   stroke,
-  ...props
 }: CandlestickProps) {
   return (
-    <g className={className} {...props}>
-      {(props.data || []).map((d: any, i: number) => {
+    <g className={className}>
+      {data.map((d: any, i: number) => {
         const [low, open, close, high] = yAccessor(d);
         const x = xAccessor(d, i);
         const isUpward = close > open;
