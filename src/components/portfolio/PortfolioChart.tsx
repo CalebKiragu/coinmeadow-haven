@@ -2,24 +2,28 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  AreaChart,
-  Area,
+  CartesianGrid,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  TooltipProps
+  TooltipProps,
+  Legend
 } from 'recharts';
+import { CandlestickChart, Candlestick } from '@/components/ui/candlestick-chart';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Define data point structure
-interface DataPoint {
+// Define OHLC data structure
+interface OHLCData {
   timestamp: number;
-  price: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume?: number;
   date?: string;
 }
 
@@ -48,11 +52,11 @@ const getCoinGeckoId = (symbol: string): string => {
   return mapping[symbol] || 'bitcoin'; // Default to bitcoin if symbol not in mapping
 };
 
-// Function to fetch price history from CoinGecko
-const fetchPriceHistory = async (
+// Function to fetch OHLC data
+const fetchOHLCData = async (
   coinId: string,
   timeRange: TimeRange
-): Promise<DataPoint[]> => {
+): Promise<OHLCData[]> => {
   // Map time ranges to CoinGecko parameters
   const rangeMap: Record<TimeRange, { days: number | string, interval: string }> = {
     '1D': { days: 1, interval: 'hourly' },
@@ -63,36 +67,39 @@ const fetchPriceHistory = async (
     'ALL': { days: 'max' as any, interval: 'weekly' },
   };
 
-  const { days, interval } = rangeMap[timeRange];
+  const { days } = rangeMap[timeRange];
 
   try {
     const response = await axios.get(
-      `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart`,
+      `https://api.coingecko.com/api/v3/coins/${coinId}/ohlc`,
       {
         params: {
           vs_currency: 'usd',
           days,
-          interval: days === 1 ? 'hourly' : undefined, // Override for 1D to get hourly data
         },
       }
     );
 
-    // Transform CoinGecko response to our DataPoint format
-    return response.data.prices.map((item: [number, number]) => ({
+    // Transform CoinGecko response to our OHLCData format
+    // CoinGecko OHLC response format is [timestamp, open, high, low, close]
+    return response.data.map((item: [number, number, number, number, number]) => ({
       timestamp: item[0],
-      price: item[1],
-      date: new Date(item[0]).toLocaleString(), // Format date for tooltip
+      open: item[1],
+      high: item[2],
+      low: item[3],
+      close: item[4],
+      date: new Date(item[0]).toLocaleString(),
     }));
   } catch (error) {
-    console.error('Error fetching price history:', error);
-    return generateMockData(timeRange); // Fallback to mock data on error
+    console.error('Error fetching OHLC data:', error);
+    return generateMockOHLCData(timeRange); // Fallback to mock data on error
   }
 };
 
-// Generate mock data if API fails
-const generateMockData = (timeRange: TimeRange): DataPoint[] => {
+// Generate mock OHLC data if API fails
+const generateMockOHLCData = (timeRange: TimeRange): OHLCData[] => {
   const now = Date.now();
-  const data: DataPoint[] = [];
+  const data: OHLCData[] = [];
   let points = 30;
   let step = 24 * 60 * 60 * 1000; // 1 day in milliseconds
   
@@ -129,26 +136,57 @@ const generateMockData = (timeRange: TimeRange): DataPoint[] => {
   for (let i = points - 1; i >= 0; i--) {
     const timestamp = now - i * step;
     // Add some random variation to the price
-    price = price + (Math.random() - 0.5) * 1000;
+    const volatility = Math.random() * 0.03; // 0-3% volatility
+    const change = price * volatility * (Math.random() > 0.5 ? 1 : -1);
+    
+    const open = price;
+    const close = price + change;
+    const high = Math.max(open, close) + Math.abs(change) * Math.random() * 0.5;
+    const low = Math.min(open, close) - Math.abs(change) * Math.random() * 0.5;
+    
     data.push({
       timestamp,
-      price,
+      open,
+      high,
+      low,
+      close,
+      volume: Math.random() * 10000,
       date: new Date(timestamp).toLocaleString(),
     });
+    
+    // Set the next price to the current closing price
+    price = close;
   }
   
   return data;
 };
 
 // Custom tooltip component
-const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
   if (active && payload && payload.length) {
+    const data = payload[0].payload as OHLCData;
+    
     return (
       <div className="bg-background p-3 border border-border rounded-md shadow-lg">
-        <p className="text-sm font-medium">{payload[0].payload.date}</p>
-        <p className="text-base font-bold text-primary">
-          ${Number(payload[0].value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </p>
+        <p className="text-sm font-medium">{data.date}</p>
+        <div className="grid grid-cols-2 gap-2 mt-1">
+          <div>
+            <p className="text-xs text-muted-foreground">Open</p>
+            <p className="text-sm font-bold">${data.open.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Close</p>
+            <p className="text-sm font-bold">${data.close.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">High</p>
+            <p className="text-sm font-bold text-green-500">${data.high.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Low</p>
+            <p className="text-sm font-bold text-red-500">${data.low.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -159,8 +197,8 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
   const [timeRange, setTimeRange] = useState<TimeRange>('1W');
   
   const { data: chartData, isLoading } = useQuery({
-    queryKey: ['priceHistory', selectedCrypto, timeRange],
-    queryFn: () => fetchPriceHistory(getCoinGeckoId(selectedCrypto), timeRange),
+    queryKey: ['ohlcData', selectedCrypto, timeRange],
+    queryFn: () => fetchOHLCData(getCoinGeckoId(selectedCrypto), timeRange),
     staleTime: 60000, // Cache for 1 minute
   });
 
@@ -186,8 +224,8 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
   const calculatePriceChange = () => {
     if (!chartData || chartData.length < 2) return { amount: 0, percentage: 0 };
     
-    const firstPrice = chartData[0].price;
-    const lastPrice = chartData[chartData.length - 1].price;
+    const firstPrice = chartData[0].open;
+    const lastPrice = chartData[chartData.length - 1].close;
     const change = lastPrice - firstPrice;
     const percentage = (change / firstPrice) * 100;
     
@@ -203,7 +241,7 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
     <Card className="animate-fade-in">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-lg">{selectedCrypto} Price Chart</CardTitle>
+          <CardTitle className="text-lg">{selectedCrypto} OHLC Chart</CardTitle>
           <div className="bg-muted rounded-lg flex">
             {timeRangeButtons.map((range) => (
               <Button
@@ -225,7 +263,7 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
           <div className="flex items-center gap-2">
             <span className="text-2xl font-bold">
               ${chartData && chartData.length > 0 
-                ? chartData[chartData.length - 1].price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                ? chartData[chartData.length - 1].close.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                 : "0.00"
               }
             </span>
@@ -234,6 +272,9 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
             </span>
           </div>
         )}
+        <div className="text-xs text-right text-muted-foreground">
+          Source: CoinGecko
+        </div>
       </CardHeader>
       
       <CardContent>
@@ -241,20 +282,11 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
           <Skeleton className="h-[300px] w-full" />
         ) : (
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart
-              data={chartData}
-              margin={{
-                top: 10,
-                right: 0,
-                left: 0,
-                bottom: 0,
-              }}
-            >
+            <CandlestickChart data={chartData || []}>
               <defs>
-                <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={isPriceUp ? "#10B981" : "#EF4444"} stopOpacity={0.3} />
-                  <stop offset="95%" stopColor={isPriceUp ? "#10B981" : "#EF4444"} stopOpacity={0} />
-                </linearGradient>
+                <filter id="shadow" x="-2" y="-2" width="104%" height="104%">
+                  <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.2" />
+                </filter>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
               <XAxis 
@@ -267,19 +299,18 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
                 tickFormatter={(value) => `$${value.toLocaleString()}`}
                 width={80}
                 tick={{ fontSize: 12 }}
-                domain={['dataMin', 'dataMax']}
+                domain={['auto', 'auto']}
                 stroke="rgba(255,255,255,0.3)"
               />
               <Tooltip content={<CustomTooltip />} />
-              <Area
-                type="monotone"
-                dataKey="price"
-                stroke={isPriceUp ? "#10B981" : "#EF4444"}
-                strokeWidth={2}
-                fillOpacity={1}
-                fill="url(#colorPrice)"
+              <Legend />
+              <Candlestick
+                fill={(data: OHLCData) => (data.open > data.close ? "#ef4444" : "#10b981")}
+                stroke={(data: OHLCData) => (data.open > data.close ? "#ef4444" : "#10b981")}
+                yAccessor={(data: OHLCData) => [data.low, data.open, data.close, data.high]}
+                className="filter-shadow"
               />
-            </AreaChart>
+            </CandlestickChart>
           </ResponsiveContainer>
         )}
       </CardContent>

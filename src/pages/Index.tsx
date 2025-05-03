@@ -26,14 +26,35 @@ const Index = () => {
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-coffee-light via-coffee to-dollar-dark">
       <div className="w-full max-w-md">
         <div className="mb-6">
-          <BaseAuth isSignUp={!showLogin} />
+          {/* For regular login, we'll move the Base auth button below the Google button */}
+          {showLogin && !isMerchant && (
+            <>
+              <div id="google-signin-button" className="w-full mb-4"></div>
+              
+              <div className="relative my-4">
+                <Separator />
+                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-coffee px-3 text-white/70">
+                  OR
+                </span>
+              </div>
+              
+              <BaseAuth isSignUp={false} />
+            </>
+          )}
           
-          <div className="relative my-6">
-            <Separator />
-            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-coffee px-3 text-white/70">
-              OR
-            </span>
-          </div>
+          {/* For signup or merchant flow, place the Base auth at the top */}
+          {(!showLogin || isMerchant) && (
+            <>
+              <BaseAuth isSignUp={!showLogin} />
+              
+              <div className="relative my-6">
+                <Separator />
+                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-coffee px-3 text-white/70">
+                  OR
+                </span>
+              </div>
+            </>
+          )}
         </div>
         
         {isMerchant ? (

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Eye, EyeOff, ChevronDown } from "lucide-react";
+import { Eye, EyeOff, ChevronDown, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   Select,
@@ -26,6 +26,14 @@ import { useToast } from "@/hooks/use-toast";
 import CheckoutDialog from "../web3/CheckoutDialog";
 import EarnButton from "../web3/EarnButton";
 import IdentityDisplay from "../web3/IdentityDisplay";
+import WalletConnector from "../web3/WalletConnector";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +63,9 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
+  const [walletDialogOpen, setWalletDialogOpen] = useState(false);
+  const [earnDialogOpen, setEarnDialogOpen] = useState(false);
+  const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("24h");
 
   // Fetch wallet data when component mounts or selected currencies change
@@ -182,6 +193,20 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
     setCheckoutDialogOpen(true);
   };
 
+  const handleEarnButtonClick = () => {
+    setEarnDialogOpen(true);
+  };
+
+  const handleWalletConnect = (address: string, name?: string) => {
+    setConnectedWallet(address);
+    toast({
+      title: "Wallet Connected",
+      description: `Connected to ${name || address.slice(0, 6) + "..." + address.slice(-4)}`,
+    });
+    setWalletDialogOpen(false);
+    // Could trigger a balance refresh or other actions when wallet is connected
+  };
+
   const handleCheckoutComplete = () => {
     // Refresh wallet data after checkout
     if (user || merchant) {
@@ -196,6 +221,23 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
 
   const greetName = user?.firstName || merchant?.merchantName || "";
   const merchantNo = merchant?.merchantNo;
+
+  // Available staking assets - display these if wallet is connected
+  const stakingAssets = connectedWallet
+    ? [
+        { symbol: "ETH", name: "Ethereum", balance: "1.23", apy: "4.5%" },
+        { symbol: "SOL", name: "Solana", balance: "45.67", apy: "5.7%" },
+        { symbol: "DOT", name: "Polkadot", balance: "120.45", apy: "12.2%" },
+      ]
+    : // Fallback to wallet balances if no DeFi wallet is connected
+      wallets
+        .filter((w) => ["BTC", "ETH", "USDC", "USDT"].includes(w.currency))
+        .map((w) => ({
+          symbol: w.currency,
+          name: cryptoCurrencies.find((c) => c.symbol === w.currency)?.name || w.currency,
+          balance: w.balance.availableBalance,
+          apy: w.currency === "USDC" ? "4.2%" : w.currency === "USDT" ? "3.8%" : "2.1%",
+        }));
 
   const greeting = (name?: string): string => {
     // East Africa Time (EAT) is UTC+3, no daylight savings
@@ -361,18 +403,26 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
                   variant="outline" 
                   size="sm" 
                   onClick={handleCheckoutClick} 
-                  className="text-xs h-6 px-2 py-0 bg-[#0052FF] hover:bg-[#0039B3] text-white border-0"
+                  className="text-xs h-7 px-3 py-0 bg-[#0052FF] hover:bg-[#0039B3] text-white border-0"
                 >
                   Fund Wallet
                 </Button>
 
-                <EarnButton className="text-xs h-6 px-2 py-0 bg-green-600 hover:bg-green-700 text-white border-0" />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setWalletDialogOpen(true)} 
+                  className="text-xs h-7 px-3 py-0 bg-green-600 hover:bg-green-700 text-white border-0"
+                >
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  Stake to Earn
+                </Button>
 
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handlePortfolioClick}
-                  className="text-xs h-6 px-2 py-0"
+                  className="text-xs h-7 px-3 py-0"
                 >
                   See Portfolio
                 </Button>
@@ -380,11 +430,94 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
             </div>
           </div>
           
+          {/* Checkout Dialog */}
           <CheckoutDialog
             open={checkoutDialogOpen}
             onOpenChange={setCheckoutDialogOpen}
             onCheckoutComplete={handleCheckoutComplete}
           />
+
+          {/* Wallet Connection Dialog */}
+          <Dialog open={walletDialogOpen} onOpenChange={setWalletDialogOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Connect DeFi Wallet</DialogTitle>
+                <DialogDescription>
+                  Connect your DeFi wallet to access staking features
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="grid gap-4 py-4">
+                <WalletConnector
+                  onConnect={handleWalletConnect}
+                  className="w-full"
+                />
+                
+                {!document.documentElement.classList.contains('has-wallet') && (
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md mt-2">
+                    <p className="text-amber-900 dark:text-amber-200 text-sm">
+                      No DeFi wallets detected in your browser. Please install a wallet extension to enable staking features.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Staking Dialog */}
+          <Dialog open={earnDialogOpen} onOpenChange={setEarnDialogOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Stake to Earn</DialogTitle>
+                <DialogDescription>
+                  Stake your assets to earn passive income
+                </DialogDescription>
+              </DialogHeader>
+              
+              {connectedWallet ? (
+                <div className="mt-2 space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Connected wallet: {connectedWallet.slice(0, 6)}...{connectedWallet.slice(-4)}
+                  </p>
+                  <div className="space-y-4">
+                    {stakingAssets.map((asset) => (
+                      <div key={asset.symbol} className="border rounded-lg p-4">
+                        <div className="flex justify-between">
+                          <div>
+                            <h3 className="font-medium">{asset.name} ({asset.symbol})</h3>
+                            <p className="text-sm text-muted-foreground">APY: {asset.apy}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium">{asset.balance} {asset.symbol}</p>
+                            <p className="text-xs text-muted-foreground">Available</p>
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          <div className="flex gap-2 mb-2">
+                            <input
+                              type="number"
+                              placeholder="Amount"
+                              className="flex-1 px-3 py-2 text-sm border rounded"
+                              min="0"
+                              max={asset.balance}
+                            />
+                            <Button variant="outline" size="sm">Min</Button>
+                            <Button variant="outline" size="sm">Max</Button>
+                          </div>
+                          <Button className="w-full">Stake {asset.symbol}</Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 text-center">
+                  <p className="mb-4">Connect a DeFi wallet to access staking features</p>
+                  <WalletConnector onConnect={handleWalletConnect} />
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       )}
     </GlassCard>
