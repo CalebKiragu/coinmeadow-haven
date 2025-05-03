@@ -37,7 +37,7 @@ export function CandlestickChart({ data, children, ...props }: CandlestickChartP
   );
 }
 
-// Fix the interface to not extend SVGAttributes
+// Fix the interface to not extend any SVG attributes
 interface CandlestickProps {
   data?: any[];
   yAccessor: (d: any) => [number, number, number, number];

@@ -23,7 +23,7 @@ describe('ThirdPartyAuth Component', () => {
 
   it('shows toast when Google authentication is clicked', async () => {
     const mockToast = vi.fn();
-    vi.mocked(useToast).mockReturnValue({ toast: mockToast, toasts: [] });
+    vi.mocked(useToast).mockReturnValue({ toast: mockToast, toasts: [], dismiss: vi.fn() });
     
     render(<ThirdPartyAuth />);
     
@@ -39,7 +39,7 @@ describe('ThirdPartyAuth Component', () => {
 
   it('shows toast when Twitter authentication is clicked', async () => {
     const mockToast = vi.fn();
-    vi.mocked(useToast).mockReturnValue({ toast: mockToast, toasts: [] });
+    vi.mocked(useToast).mockReturnValue({ toast: mockToast, toasts: [], dismiss: vi.fn() });
     
     render(<ThirdPartyAuth />);
     
