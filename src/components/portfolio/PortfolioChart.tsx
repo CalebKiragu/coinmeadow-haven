@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,15 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Import the TradingView types
-// This ensures TypeScript knows about the TradingView object
-declare global {
-  interface Window {
-    TradingView: {
-      widget: (config: any) => void;
-    };
-  }
-}
+// No need to redeclare TradingView interface as it's already defined in src/types/tradingview.d.ts
+// Just using the existing interface
 
 // Define OHLC data structure
 interface OHLCData {
@@ -224,9 +216,8 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
           theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
           style: '1',
           locale: 'en',
-          toolbar_bg: '#f1f3f6',
           enable_publishing: false,
-          hide_top_toolbar: false,
+          hide_side_toolbar: false,
           hide_legend: false,
           save_image: false,
           container_id: 'tradingview_chart',
@@ -240,6 +231,11 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
             { text: "ALL", resolution: "M" }
           ],
           range: getTimeRangeParam(timeRange),
+          overrides: {
+            "paneProperties.background": document.documentElement.classList.contains('dark') ? "#111111" : "#f9f9f9",
+            "paneProperties.vertGridProperties.color": document.documentElement.classList.contains('dark') ? "#1e1e1e" : "#e1e1e1",
+            "paneProperties.horzGridProperties.color": document.documentElement.classList.contains('dark') ? "#1e1e1e" : "#e1e1e1",
+          }
         });
       }
     };
