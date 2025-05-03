@@ -8,6 +8,7 @@ interface CandlestickChartProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function CandlestickChart({ data, children, ...props }: CandlestickChartProps) {
+  // Wrap children in a fragment to ensure it's a React element
   return (
     <ChartContainer
       {...props}
@@ -32,7 +33,9 @@ export function CandlestickChart({ data, children, ...props }: CandlestickChartP
         },
       }}
     >
-      {children}
+      <React.Fragment>
+        {children}
+      </React.Fragment>
     </ChartContainer>
   );
 }
