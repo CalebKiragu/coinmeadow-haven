@@ -2,12 +2,11 @@
 import { describe, it, expect, vi } from '../../../test/test-imports';
 import { render, screen, userEvent } from '../../../test/test-utils';
 import ThirdPartyAuth from '../ThirdPartyAuth';
+import { useToast } from '@/hooks/use-toast';
 
 // Mock the use-toast hook
 vi.mock('@/hooks/use-toast', () => ({
-  useToast: () => ({
-    toast: vi.fn(),
-  }),
+  useToast: vi.fn(),
 }));
 
 describe('ThirdPartyAuth Component', () => {
