@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   CartesianGrid,
@@ -8,7 +8,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   TooltipProps,
-  Legend
+  Legend,
+  ComposedChart
 } from 'recharts';
 import { CandlestickChart, Candlestick } from '@/components/ui/candlestick-chart';
 import { Button } from '@/components/ui/button';

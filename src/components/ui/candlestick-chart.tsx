@@ -1,6 +1,7 @@
 
 import * as React from "react";
 import { ChartContainer } from "@/components/ui/chart";
+import { ComposedChart, XAxis, YAxis } from "recharts";
 
 interface CandlestickChartProps extends React.HTMLAttributes<HTMLDivElement> {
   data: any[];
@@ -8,7 +9,6 @@ interface CandlestickChartProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export function CandlestickChart({ data, children, ...props }: CandlestickChartProps) {
-  // Wrap children in a fragment to ensure it's a React element
   return (
     <ChartContainer
       {...props}
@@ -33,9 +33,9 @@ export function CandlestickChart({ data, children, ...props }: CandlestickChartP
         },
       }}
     >
-      <React.Fragment>
+      <ComposedChart data={data}>
         {children}
-      </React.Fragment>
+      </ComposedChart>
     </ChartContainer>
   );
 }
