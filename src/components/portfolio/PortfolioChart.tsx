@@ -1,9 +1,20 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { Skeleton } from '@/components/ui/skeleton';
+
+// Import the TradingView types
+// This ensures TypeScript knows about the TradingView object
+declare global {
+  interface Window {
+    TradingView: {
+      widget: (config: any) => void;
+    };
+  }
+}
 
 // Define OHLC data structure
 interface OHLCData {
@@ -204,8 +215,8 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
     script.src = 'https://s3.tradingview.com/tv.js';
     script.async = true;
     script.onload = () => {
-      if (typeof TradingView !== 'undefined') {
-        new TradingView.widget({
+      if (typeof window.TradingView !== 'undefined') {
+        new window.TradingView.widget({
           autosize: true,
           symbol: `BINANCE:${getTradingViewSymbol(selectedCrypto)}`,
           interval: timeRange === '1D' ? '60' : 'D',
