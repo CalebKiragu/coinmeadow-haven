@@ -12,7 +12,7 @@ const queryClient = new QueryClient();
 
 // Create wagmi config for the supported chains
 const config = createConfig({
-  chains: [mainnet, base, optimism, arbitrum],
+  chains: [mainnet, base, optimism, arbitrum] as const,
   transports: {
     [mainnet.id]: http(),
     [base.id]: http(),
