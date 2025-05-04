@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -136,8 +135,7 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
           "paneProperties.background": document.documentElement.classList.contains('dark') ? "#111111" : "#f9f9f9",
           "paneProperties.vertGridProperties.color": document.documentElement.classList.contains('dark') ? "#1e1e1e" : "#e1e1e1",
           "paneProperties.horzGridProperties.color": document.documentElement.classList.contains('dark') ? "#1e1e1e" : "#e1e1e1",
-        },
-        debug: true // Enable debug mode to see console messages
+        }
       });
       
       chartInitializedRef.current = true;
