@@ -1,12 +1,12 @@
 
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { ethers } from "ethers";
 import { useToast } from "@/hooks/use-toast";
 import { StakingService } from "@/lib/services/stakingService";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowRight } from "lucide-react";
+import EarnDeposit from "./EarnDeposit";
+import EarnWithdraw from "./EarnWithdraw";
 
 interface EarnProps {
   walletAddress?: string;
@@ -21,34 +21,74 @@ interface EarnProps {
   onRefresh?: () => void;
 }
 
+interface ExtendedAsset {
+  symbol: string;
+  name: string;
+  balance: string;
+  apy: string;
+  decimals: number;
+  stakedBalance: string;
+}
+
 const Earn = ({ walletAddress, walletProvider, stakingAssets, onRefresh }: EarnProps) => {
   const { toast } = useToast();
-  const [stakeAmount, setStakeAmount] = useState<Record<string, string>>({});
-  const [isStaking, setIsStaking] = useState(false);
-  const [isUnstaking, setIsUnstaking] = useState(false);
+  const [isDepositing, setIsDepositing] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
-
-  // Helper function to set max amount
-  const handleStakeMax = (symbol: string) => {
-    const asset = stakingAssets.find(a => a.symbol === symbol);
-    if (asset) {
-      setStakeAmount({
-        ...stakeAmount,
-        [symbol]: asset.balance
-      });
+  const [extendedAssets, setExtendedAssets] = useState<ExtendedAsset[]>([]);
+  
+  // Initialize extended assets with staked balances
+  useEffect(() => {
+    // Function to get staked balances
+    const getStakedBalances = async () => {
+      if (!walletAddress || !walletProvider) return;
+      
+      try {
+        const provider = new ethers.providers.Web3Provider(walletProvider);
+        const extended = await Promise.all(stakingAssets.map(async (asset) => {
+          try {
+            // Get staking info for this asset
+            const stakingInfo = await StakingService.getStakingInfo(provider, walletAddress);
+            
+            return {
+              ...asset,
+              stakedBalance: stakingInfo.vaultBalance || "0"
+            };
+          } catch (error) {
+            console.error(`Error getting staked balance for ${asset.symbol}:`, error);
+            return {
+              ...asset,
+              stakedBalance: "0"
+            };
+          }
+        }));
+        
+        setExtendedAssets(extended);
+      } catch (error) {
+        console.error("Error getting staked balances:", error);
+        // Fall back to mock staked balances
+        const mockExtended = stakingAssets.map(asset => ({
+          ...asset,
+          stakedBalance: "0"
+        }));
+        setExtendedAssets(mockExtended);
+      }
+    };
+    
+    // If we don't have real data, use mock data
+    if (!walletAddress || !walletProvider || stakingAssets.length === 0) {
+      const mockAssets = StakingService.getMockStakingAssets().map(asset => ({
+        ...asset,
+        stakedBalance: (parseFloat(asset.balance) * 0.5).toString() // 50% of balance is staked in mock data
+      }));
+      setExtendedAssets(mockAssets);
+    } else {
+      getStakedBalances();
     }
-  };
+  }, [walletAddress, walletProvider, stakingAssets]);
 
-  // Handle amount change
-  const handleStakeAmountChange = (symbol: string, amount: string) => {
-    setStakeAmount({
-      ...stakeAmount,
-      [symbol]: amount
-    });
-  };
-
-  // Handle stake action
-  const handleStake = async (asset: typeof stakingAssets[0]) => {
+  // Handle deposit action
+  const handleDeposit = async (amount: string, assetSymbol: string) => {
     if (!walletAddress || !walletProvider) {
       toast({
         title: "Wallet Required",
@@ -58,19 +98,22 @@ const Earn = ({ walletAddress, walletProvider, stakingAssets, onRefresh }: EarnP
       return;
     }
 
-    const amount = stakeAmount[asset.symbol];
     if (!amount || parseFloat(amount) <= 0) {
       toast({
         title: "Invalid Amount",
-        description: "Please enter a valid amount to stake",
+        description: "Please enter a valid amount to deposit",
         variant: "destructive"
       });
       return;
     }
 
     try {
-      setIsStaking(true);
-      setSelectedAsset(asset.symbol);
+      setIsDepositing(true);
+      setSelectedAsset(assetSymbol);
+      
+      // Find the asset
+      const asset = stakingAssets.find(a => a.symbol === assetSymbol);
+      if (!asset) throw new Error("Asset not found");
       
       // Get a signer for the transaction
       const provider = new ethers.providers.Web3Provider(walletProvider);
@@ -80,7 +123,7 @@ const Earn = ({ walletAddress, walletProvider, stakingAssets, onRefresh }: EarnP
       const tx = await StakingService.stakeTokens(signer, amount, asset.decimals);
       
       toast({
-        title: "Staking Transaction Sent",
+        title: "Deposit Transaction Sent",
         description: `Transaction hash: ${tx.hash.slice(0, 10)}...${tx.hash.slice(-4)}`,
       });
       
@@ -88,8 +131,8 @@ const Earn = ({ walletAddress, walletProvider, stakingAssets, onRefresh }: EarnP
       await tx.wait();
       
       toast({
-        title: "Staking Successful",
-        description: `Successfully staked ${amount} ${asset.symbol}`,
+        title: "Deposit Successful",
+        description: `Successfully deposited ${amount} ${asset.symbol}`,
       });
       
       // Refresh staking assets if callback provided
@@ -98,20 +141,20 @@ const Earn = ({ walletAddress, walletProvider, stakingAssets, onRefresh }: EarnP
       }
       
     } catch (error) {
-      console.error("Staking error:", error);
+      console.error("Deposit error:", error);
       toast({
-        title: "Staking Failed",
+        title: "Deposit Failed",
         description: `Error: ${(error as Error).message || "Unknown error"}`,
         variant: "destructive"
       });
     } finally {
-      setIsStaking(false);
+      setIsDepositing(false);
       setSelectedAsset(null);
     }
   };
 
-  // Handle unstake action
-  const handleUnstake = async (asset: typeof stakingAssets[0]) => {
+  // Handle withdraw action
+  const handleWithdraw = async (amount: string, assetSymbol: string) => {
     if (!walletAddress || !walletProvider) {
       toast({
         title: "Wallet Required",
@@ -121,19 +164,22 @@ const Earn = ({ walletAddress, walletProvider, stakingAssets, onRefresh }: EarnP
       return;
     }
 
-    const amount = stakeAmount[asset.symbol];
     if (!amount || parseFloat(amount) <= 0) {
       toast({
         title: "Invalid Amount",
-        description: "Please enter a valid amount to unstake",
+        description: "Please enter a valid amount to withdraw",
         variant: "destructive"
       });
       return;
     }
 
     try {
-      setIsUnstaking(true);
-      setSelectedAsset(asset.symbol);
+      setIsWithdrawing(true);
+      setSelectedAsset(assetSymbol);
+      
+      // Find the asset
+      const asset = stakingAssets.find(a => a.symbol === assetSymbol);
+      if (!asset) throw new Error("Asset not found");
       
       // Get a signer for the transaction
       const provider = new ethers.providers.Web3Provider(walletProvider);
@@ -143,7 +189,7 @@ const Earn = ({ walletAddress, walletProvider, stakingAssets, onRefresh }: EarnP
       const tx = await StakingService.unstakeTokens(signer, amount, asset.decimals);
       
       toast({
-        title: "Unstaking Transaction Sent",
+        title: "Withdrawal Transaction Sent",
         description: `Transaction hash: ${tx.hash.slice(0, 10)}...${tx.hash.slice(-4)}`,
       });
       
@@ -151,8 +197,8 @@ const Earn = ({ walletAddress, walletProvider, stakingAssets, onRefresh }: EarnP
       await tx.wait();
       
       toast({
-        title: "Unstaking Successful",
-        description: `Successfully unstaked ${amount} ${asset.symbol}`,
+        title: "Withdrawal Successful",
+        description: `Successfully withdrew ${amount} ${asset.symbol}`,
       });
       
       // Refresh staking assets if callback provided
@@ -161,19 +207,19 @@ const Earn = ({ walletAddress, walletProvider, stakingAssets, onRefresh }: EarnP
       }
       
     } catch (error) {
-      console.error("Unstaking error:", error);
+      console.error("Withdrawal error:", error);
       toast({
-        title: "Unstaking Failed",
+        title: "Withdrawal Failed",
         description: `Error: ${(error as Error).message || "Unknown error"}`,
         variant: "destructive"
       });
     } finally {
-      setIsUnstaking(false);
+      setIsWithdrawing(false);
       setSelectedAsset(null);
     }
   };
 
-  if (stakingAssets.length === 0) {
+  if (extendedAssets.length === 0) {
     return (
       <div className="text-center p-8">
         <p>No stakable assets found in your wallet</p>
@@ -182,59 +228,28 @@ const Earn = ({ walletAddress, walletProvider, stakingAssets, onRefresh }: EarnP
   }
 
   return (
-    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-      {stakingAssets.map((asset) => (
-        <Card key={asset.symbol} className="p-4 border rounded-lg">
-          <div className="flex justify-between">
-            <div>
-              <h3 className="font-medium">{asset.name} ({asset.symbol})</h3>
-              <p className="text-sm text-muted-foreground">APY: {asset.apy}</p>
-            </div>
-            <div className="text-right">
-              <p className="font-medium">{asset.balance} {asset.symbol}</p>
-              <p className="text-xs text-muted-foreground">Available</p>
-            </div>
+    <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2">
+      {extendedAssets.map((asset) => (
+        <div key={asset.symbol}>
+          <h3 className="font-semibold text-xl mb-3">{asset.name} ({asset.symbol})</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <EarnDeposit
+              walletAddress={walletAddress}
+              walletProvider={walletProvider}
+              asset={asset}
+              onDeposit={handleDeposit}
+              isProcessing={isDepositing && selectedAsset === asset.symbol}
+            />
+            
+            <EarnWithdraw
+              walletAddress={walletAddress}
+              walletProvider={walletProvider}
+              asset={asset}
+              onWithdraw={handleWithdraw}
+              isProcessing={isWithdrawing && selectedAsset === asset.symbol}
+            />
           </div>
-          <div className="mt-3">
-            <div className="flex gap-2 mb-2">
-              <Input
-                type="number"
-                placeholder="Amount"
-                className="flex-1"
-                min="0"
-                max={asset.balance}
-                value={stakeAmount[asset.symbol] || ''}
-                onChange={(e) => handleStakeAmountChange(asset.symbol, e.target.value)}
-              />
-              <Button variant="outline" size="sm" onClick={() => handleStakeMax(asset.symbol)}>Max</Button>
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                className="flex-1"
-                onClick={() => handleStake(asset)}
-                disabled={isStaking && selectedAsset === asset.symbol}
-              >
-                {isStaking && selectedAsset === asset.symbol ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Staking...</>
-                ) : (
-                  `Stake ${asset.symbol}`
-                )}
-              </Button>
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => handleUnstake(asset)}
-                disabled={isUnstaking && selectedAsset === asset.symbol}
-              >
-                {isUnstaking && selectedAsset === asset.symbol ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Unstaking...</>
-                ) : (
-                  `Unstake ${asset.symbol}`
-                )}
-              </Button>
-            </div>
-          </div>
-        </Card>
+        </div>
       ))}
     </div>
   );

@@ -13,7 +13,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.772.0",
     "@aws-sdk/credential-providers": "^3.772.0",
-    "@coinbase/onchainkit": "^0.38.9",
+    "@coinbase/onchainkit": "^0.38.10",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@hookform/resolvers": "^3.9.0",

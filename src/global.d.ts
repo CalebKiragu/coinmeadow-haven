@@ -12,6 +12,7 @@ declare const __dirname: string;
 
 // Add missing module declarations
 declare module '@radix-ui/react-toast';
+declare module '@coinbase/onchainkit';
 
 // Add declarations for test-related globals
 interface Window {
@@ -21,6 +22,7 @@ interface Window {
   phantom?: {
     ethereum?: any;
     solana?: any;
+    isPhantom?: boolean;
   };
   coinbaseWalletExtension?: any;
   ethers?: any;
