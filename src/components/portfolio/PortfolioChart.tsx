@@ -1,21 +1,20 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  TooltipProps,
-  Legend,
-  ComposedChart
-} from 'recharts';
-import { CandlestickChart, Candlestick } from '@/components/ui/candlestick-chart';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { Skeleton } from '@/components/ui/skeleton';
+
+// Import the TradingView types
+// This ensures TypeScript knows about the TradingView object
+declare global {
+  interface Window {
+    TradingView: {
+      widget: (config: any) => void;
+    };
+  }
+}
 
 // Define OHLC data structure
 interface OHLCData {
@@ -34,7 +33,40 @@ interface PortfolioChartProps {
 
 type TimeRange = '1D' | '1W' | '1M' | '3M' | '1Y' | 'ALL';
 
-// Map crypto symbols to CoinGecko IDs
+// Map crypto symbols to TradingView symbols
+const getTradingViewSymbol = (symbol: string): string => {
+  const mapping: Record<string, string> = {
+    'BTC': 'BTCUSD',
+    'ETH': 'ETHUSD',
+    'SOL': 'SOLUSD',
+    'USDT': 'USDTUSD',
+    'USDC': 'USDCUSD',
+    'XRP': 'XRPUSD',
+    'ADA': 'ADAUSD',
+    'AVAX': 'AVAXUSD',
+    'DOGE': 'DOGEUSD',
+    'DOT': 'DOTUSD',
+    'LINK': 'LINKUSD'
+  };
+  
+  return mapping[symbol] || 'BTCUSD'; // Default to BTCUSD if symbol not in mapping
+};
+
+// Map time ranges to TradingView intervals
+const getTimeRangeParam = (timeRange: TimeRange): string => {
+  const mapping: Record<TimeRange, string> = {
+    '1D': '1D',
+    '1W': '1W',
+    '1M': '1M',
+    '3M': '3M',
+    '1Y': '12M',
+    'ALL': 'ALL',
+  };
+  
+  return mapping[timeRange] || '1D';
+};
+
+// Map CoinGecko IDs for API fallback
 const getCoinGeckoId = (symbol: string): string => {
   const mapping: Record<string, string> = {
     'BTC': 'bitcoin',
@@ -50,7 +82,7 @@ const getCoinGeckoId = (symbol: string): string => {
     'LINK': 'chainlink'
   };
   
-  return mapping[symbol] || 'bitcoin'; // Default to bitcoin if symbol not in mapping
+  return mapping[symbol] || 'bitcoin';
 };
 
 // Function to fetch OHLC data
@@ -82,7 +114,6 @@ const fetchOHLCData = async (
     );
 
     // Transform CoinGecko response to our OHLCData format
-    // CoinGecko OHLC response format is [timestamp, open, high, low, close]
     return response.data.map((item: [number, number, number, number, number]) => ({
       timestamp: item[0],
       open: item[1],
@@ -162,40 +193,9 @@ const generateMockOHLCData = (timeRange: TimeRange): OHLCData[] => {
   return data;
 };
 
-// Custom tooltip component
-const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
-  if (active && payload && payload.length) {
-    const data = payload[0].payload as OHLCData;
-    
-    return (
-      <div className="bg-background p-3 border border-border rounded-md shadow-lg">
-        <p className="text-sm font-medium">{data.date}</p>
-        <div className="grid grid-cols-2 gap-2 mt-1">
-          <div>
-            <p className="text-xs text-muted-foreground">Open</p>
-            <p className="text-sm font-bold">${data.open.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Close</p>
-            <p className="text-sm font-bold">${data.close.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">High</p>
-            <p className="text-sm font-bold text-green-500">${data.high.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Low</p>
-            <p className="text-sm font-bold text-red-500">${data.low.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  return null;
-};
-
 const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
   const [timeRange, setTimeRange] = useState<TimeRange>('1W');
+  const containerRef = useRef<HTMLDivElement>(null);
   
   const { data: chartData, isLoading } = useQuery({
     queryKey: ['ohlcData', selectedCrypto, timeRange],
@@ -203,25 +203,56 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
     staleTime: 60000, // Cache for 1 minute
   });
 
-  const formatXAxis = (timestamp: number) => {
-    const date = new Date(timestamp);
-    switch (timeRange) {
-      case '1D':
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      case '1W':
-      case '1M':
-        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-      case '3M':
-      case '1Y':
-        return date.toLocaleDateString([], { month: 'short' });
-      case 'ALL':
-        return date.toLocaleDateString([], { year: '2-digit' });
-      default:
-        return date.toLocaleDateString();
-    }
-  };
-  
-  // Calculate price change percentage
+  // Initialize TradingView widget when component mounts or when dependencies change
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Clean up previous widget if it exists
+    container.innerHTML = '';
+
+    const script = document.createElement('script');
+    script.src = 'https://s3.tradingview.com/tv.js';
+    script.async = true;
+    script.onload = () => {
+      if (typeof window.TradingView !== 'undefined') {
+        new window.TradingView.widget({
+          autosize: true,
+          symbol: `BINANCE:${getTradingViewSymbol(selectedCrypto)}`,
+          interval: timeRange === '1D' ? '60' : 'D',
+          timezone: 'Etc/UTC',
+          theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+          style: '1',
+          locale: 'en',
+          toolbar_bg: '#f1f3f6',
+          enable_publishing: false,
+          hide_top_toolbar: false,
+          hide_legend: false,
+          save_image: false,
+          container_id: 'tradingview_chart',
+          studies: ["RSI@tv-basicstudies"],
+          time_frames: [
+            { text: "1D", resolution: "60" },
+            { text: "1W", resolution: "D" },
+            { text: "1M", resolution: "D" },
+            { text: "3M", resolution: "W" },
+            { text: "1Y", resolution: "W" },
+            { text: "ALL", resolution: "M" }
+          ],
+          range: getTimeRangeParam(timeRange),
+        });
+      }
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, [selectedCrypto, timeRange]);
+
+  // Calculate price change percentage based on last available data
   const calculatePriceChange = () => {
     if (!chartData || chartData.length < 2) return { amount: 0, percentage: 0 };
     
@@ -241,9 +272,9 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
   return (
     <Card className="animate-fade-in">
       <CardHeader className="pb-2">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg">{selectedCrypto} OHLC Chart</CardTitle>
-          <div className="bg-muted rounded-lg flex">
+        <div className="flex justify-between items-center flex-wrap gap-2">
+          <CardTitle className="text-lg">{selectedCrypto} Price Chart</CardTitle>
+          <div className="bg-muted rounded-lg flex flex-wrap">
             {timeRangeButtons.map((range) => (
               <Button
                 key={range}
@@ -261,8 +292,8 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
         {isLoading ? (
           <Skeleton className="h-4 w-32 mt-1" />
         ) : (
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xl md:text-2xl font-bold">
               ${chartData && chartData.length > 0 
                 ? chartData[chartData.length - 1].close.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                 : "0.00"
@@ -274,7 +305,7 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
           </div>
         )}
         <div className="text-xs text-right text-muted-foreground">
-          Source: CoinGecko
+          Data source: TradingView
         </div>
       </CardHeader>
       
@@ -282,37 +313,52 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
         {isLoading ? (
           <Skeleton className="h-[300px] w-full" />
         ) : (
-          <ResponsiveContainer width="100%" height={300}>
-            <CandlestickChart data={chartData || []}>
-              <defs>
-                <filter id="shadow" x="-2" y="-2" width="104%" height="104%">
-                  <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.2" />
-                </filter>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-              <XAxis 
-                dataKey="timestamp" 
-                tickFormatter={formatXAxis} 
-                tick={{ fontSize: 12 }}
-                stroke="rgba(255,255,255,0.3)" 
-              />
-              <YAxis 
-                tickFormatter={(value) => `$${value.toLocaleString()}`}
-                width={80}
-                tick={{ fontSize: 12 }}
-                domain={['auto', 'auto']}
-                stroke="rgba(255,255,255,0.3)"
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              <Candlestick
-                fill={(data: OHLCData) => (data.open > data.close ? "#ef4444" : "#10b981")}
-                stroke={(data: OHLCData) => (data.open > data.close ? "#ef4444" : "#10b981")}
-                yAccessor={(data: OHLCData) => [data.low, data.open, data.close, data.high]}
-                className="filter-shadow"
-              />
-            </CandlestickChart>
-          </ResponsiveContainer>
+          <div 
+            ref={containerRef}
+            id="tradingview_chart" 
+            className="w-full h-[400px] rounded-md overflow-hidden"
+          />
+        )}
+        
+        {chartData && chartData.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+            <div className="p-3 bg-muted rounded-lg">
+              <div className="text-xs text-muted-foreground">Open</div>
+              <div className="font-medium">
+                ${chartData[chartData.length-1].open.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </div>
+            </div>
+            <div className="p-3 bg-muted rounded-lg">
+              <div className="text-xs text-muted-foreground">Close</div>
+              <div className="font-medium">
+                ${chartData[chartData.length-1].close.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </div>
+            </div>
+            <div className="p-3 bg-muted rounded-lg">
+              <div className="text-xs text-muted-foreground">High</div>
+              <div className="font-medium text-green-500">
+                ${chartData[chartData.length-1].high.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </div>
+            </div>
+            <div className="p-3 bg-muted rounded-lg">
+              <div className="text-xs text-muted-foreground">Low</div>
+              <div className="font-medium text-red-500">
+                ${chartData[chartData.length-1].low.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </div>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>

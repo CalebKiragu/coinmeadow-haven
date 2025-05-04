@@ -25,7 +25,7 @@ declare global {
 }
 
 interface WalletConnectorProps {
-  onConnect: (address: string, name?: string) => void;
+  onConnect: (address: string, name?: string, provider?: any) => void;
   className?: string;
 }
 
@@ -140,29 +140,34 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
   ];
 
   const connectMetamask = async () => {
-    if (!window.ethereum) {
+    if (!window.ethereum?.isMetaMask) {
       console.log("MetaMask not found");
       return null;
     }
 
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      if (accounts.length > 0) {
-        // Get ENS name if available
-        let name;
-        try {
-          if (window.ethers) {
-            const provider = new window.ethers.providers.Web3Provider(window.ethereum);
-            name = await provider.lookupAddress(accounts[0]);
-          }
-        } catch (error) {
-          console.log("Could not fetch ENS name:", error);
-        }
-        
-        return { address: accounts[0], name };
+      // Request accounts directly from MetaMask provider
+      const provider = new window.ethers.providers.Web3Provider(window.ethereum);
+      await provider.send('eth_requestAccounts', []);
+      const signer = provider.getSigner();
+      const address = await signer.getAddress();
+      
+      // Get ENS name if available
+      let name;
+      try {
+        name = await provider.lookupAddress(address);
+      } catch (error) {
+        console.log("Could not fetch ENS name:", error);
       }
+      
+      return { address, name, provider };
     } catch (error) {
       console.error("MetaMask connection error:", error);
+      toast({
+        title: "Connection Error",
+        description: "Failed to connect to MetaMask. Please try again.",
+        variant: "destructive"
+      });
     }
     return null;
   };
@@ -176,12 +181,24 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
     }
 
     try {
-      const { publicKey } = await phantom.connect();
+      // Connect to Phantom wallet
+      const connection = await phantom.connect();
+      const { publicKey } = connection;
       if (publicKey) {
-        return { address: publicKey.toString(), name: undefined };
+        // Here we return only the Phantom-specific provider and data
+        return { 
+          address: publicKey.toString(), 
+          name: undefined,
+          provider: phantom
+        };
       }
     } catch (error) {
       console.error("Phantom connection error:", error);
+      toast({
+        title: "Connection Error",
+        description: "Failed to connect to Phantom. Please try again.",
+        variant: "destructive"
+      });
     }
     return null;
   };
@@ -196,12 +213,20 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
     }
 
     try {
-      const accounts = await coinbaseWallet.request({ method: 'eth_requestAccounts' });
-      if (accounts.length > 0) {
-        return { address: accounts[0], name: undefined };
-      }
+      // Connect to Coinbase wallet
+      const provider = new window.ethers.providers.Web3Provider(coinbaseWallet);
+      await provider.send('eth_requestAccounts', []);
+      const signer = provider.getSigner();
+      const address = await signer.getAddress();
+      
+      return { address, name: undefined, provider };
     } catch (error) {
       console.error("Coinbase Wallet connection error:", error);
+      toast({
+        title: "Connection Error",
+        description: "Failed to connect to Coinbase Wallet. Please try again.",
+        variant: "destructive"
+      });
     }
     return null;
   };
@@ -233,7 +258,7 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
       }
       
       if (result) {
-        onConnect(result.address, result.name);
+        onConnect(result.address, result.name, result.provider);
         setShowWalletSelector(false);
         toast({
           title: "Wallet connected",
