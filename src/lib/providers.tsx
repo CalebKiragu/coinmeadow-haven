@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { configureChains, createConfig, WagmiConfig } from 'wagmi';
 import { mainnet } from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
-import { getEnvironmentConfig } from "./utils";
 import { OnchainProvider } from "@coinbase/onchainkit";
 
 // Create a query client
