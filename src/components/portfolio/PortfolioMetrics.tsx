@@ -1,186 +1,171 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import axios from "axios";
+import { useState, useMemo } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useQuery } from '@tanstack/react-query';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowUp, ArrowDown } from 'lucide-react';
+import axios from 'axios';
+import { cryptoCurrencies } from '@/types/currency';
 
-interface MetricsProps {
+interface PortfolioMetricsProps {
   selectedCrypto: string;
 }
 
-interface CryptoMetrics {
-  marketCap: number;
-  volume: number;
-  dominance: number;
-  performance: number;
+interface MetricData {
+  title: string;
+  value: string;
+  change: number;
+  isIncrease: boolean;
+  timeframe: string;
+  source: string;
 }
 
-const fetchCryptoMetrics = async (symbol: string): Promise<CryptoMetrics> => {
-  try {
-    // Use CoinGecko API to fetch real crypto data
-    const response = await axios.get(`https://api.coingecko.com/api/v3/coins/${getCoinGeckoId(symbol)}`);
-    const data = response.data;
-    
-    return {
-      marketCap: data.market_data.market_cap.usd || 0,
-      volume: data.market_data.total_volume.usd || 0,
-      dominance: data.market_data.market_cap_rank ? 100 / data.market_data.market_cap_rank : 0, // Approximated dominance based on rank
-      performance: data.market_data.price_change_percentage_24h || 0
-    };
-  } catch (error) {
-    console.error("Error fetching crypto metrics:", error);
-    // Fallback data when API fails
-    return {
-      marketCap: getDefaultMetrics(symbol).marketCap,
-      volume: getDefaultMetrics(symbol).volume,
-      dominance: getDefaultMetrics(symbol).dominance,
-      performance: getDefaultMetrics(symbol).performance
-    };
-  }
+interface DataSourceMap {
+  [key: string]: string;
+}
+
+const dataSources: DataSourceMap = {
+  price: "CoinGecko",
+  marketCap: "CoinMarketCap",
+  volume: "Binance",
+  supply: "TradingView"
 };
 
-// Map crypto symbols to CoinGecko IDs
-const getCoinGeckoId = (symbol: string): string => {
-  const mapping: Record<string, string> = {
-    'BTC': 'bitcoin',
-    'ETH': 'ethereum',
-    'SOL': 'solana',
-    'USDT': 'tether',
-    'USDC': 'usd-coin',
-    'XRP': 'ripple',
-    'ADA': 'cardano',
-    'AVAX': 'avalanche-2',
-    'DOGE': 'dogecoin',
-    'DOT': 'polkadot',
-    'LINK': 'chainlink'
-  };
-  
-  return mapping[symbol] || 'bitcoin'; // Default to bitcoin if symbol not in mapping
-};
+const PortfolioMetrics = ({ selectedCrypto }: PortfolioMetricsProps) => {
+  const [activeTimeframe, setActiveTimeframe] = useState<'24h' | '7d' | '30d'>('24h');
 
-// Default metrics for when API fails or for unsupported coins
-const getDefaultMetrics = (symbol: string): CryptoMetrics => {
-  const defaults: Record<string, CryptoMetrics> = {
-    'BTC': {
-      marketCap: 1200000000000,
-      volume: 48000000000,
-      dominance: 42.5,
-      performance: 2.8
+  const { data: coinData, isLoading } = useQuery({
+    queryKey: ['coinMetrics', selectedCrypto, activeTimeframe],
+    queryFn: async () => {
+      try {
+        const id = cryptoCurrencies.find(c => c.symbol === selectedCrypto)?.coinGeckoId || 'bitcoin';
+        const response = await axios.get(`https://api.coingecko.com/api/v3/coins/${id}?market_data=true`);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching coin data:', error);
+        return null;
+      }
     },
-    'ETH': {
-      marketCap: 340000000000,
-      volume: 24000000000,
-      dominance: 18.5,
-      performance: 3.2
-    },
-    'SOL': {
-      marketCap: 48000000000,
-      volume: 3500000000,
-      dominance: 2.5,
-      performance: 5.7
-    },
-    'USDT': {
-      marketCap: 95000000000,
-      volume: 80000000000,
-      dominance: 5.2,
-      performance: 0.1
-    }
-  };
-  
-  return defaults[symbol] || defaults['BTC']; // Default to BTC metrics
-};
-
-const formatValue = (value: number, format: 'currency' | 'percentage') => {
-  if (format === 'currency') {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      maximumFractionDigits: 1,
-    }).format(value);
-  }
-  return `${value.toFixed(2)}%`;
-};
-
-const PortfolioMetrics = ({ selectedCrypto }: MetricsProps) => {
-  const { data: metrics, isLoading } = useQuery({
-    queryKey: ["metrics", selectedCrypto],
-    queryFn: () => fetchCryptoMetrics(selectedCrypto),
-    staleTime: 30000,
+    staleTime: 60000,
   });
 
-  const metricCards = [
-    { title: "Market Cap", value: metrics?.marketCap || 0, format: "currency" as const },
-    { title: "24h Volume", value: metrics?.volume || 0, format: "currency" as const },
-    { title: "Dominance", value: metrics?.dominance || 0, format: "percentage" as const },
-    { title: "Performance", value: metrics?.performance || 0, format: "percentage" as const },
-  ];
+  const metrics = useMemo<MetricData[]>(() => {
+    if (!coinData) {
+      return [
+        { title: 'Price', value: '$0.00', change: 0, isIncrease: false, timeframe: activeTimeframe, source: dataSources.price },
+        { title: 'Market Cap', value: '$0.00', change: 0, isIncrease: false, timeframe: activeTimeframe, source: dataSources.marketCap },
+        { title: '24h Volume', value: '$0.00', change: 0, isIncrease: false, timeframe: activeTimeframe, source: dataSources.volume },
+        { title: 'Circulating Supply', value: '0.00', change: 0, isIncrease: false, timeframe: activeTimeframe, source: dataSources.supply },
+      ];
+    }
+    
+    // Extract relevant metrics from data
+    const price = coinData.market_data?.current_price?.usd || 0;
+    const priceChangeKey = `price_change_percentage_${activeTimeframe}` as keyof typeof coinData.market_data;
+    const priceChange = coinData.market_data[priceChangeKey] || 0;
+    
+    const marketCap = coinData.market_data?.market_cap?.usd || 0;
+    const marketCapChangeKey = `market_cap_change_percentage_${activeTimeframe}` as keyof typeof coinData.market_data;
+    const marketCapChange = coinData.market_data[marketCapChangeKey] || 0;
+    
+    const volume = coinData.market_data?.total_volume?.usd || 0;
+    // Volume change is not directly available, so we use a placeholder or calculate it if available
+    const volumeChange = 0; // Placeholder
+    
+    const circulatingSupply = coinData.market_data?.circulating_supply || 0;
+    const totalSupply = coinData.market_data?.total_supply || circulatingSupply;
+    // Calculate the percentage of circulating supply compared to total
+    const supplyPercentage = totalSupply ? (circulatingSupply / totalSupply) * 100 : 0;
+    
+    return [
+      {
+        title: 'Price',
+        value: `$${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        change: priceChange,
+        isIncrease: priceChange > 0,
+        timeframe: activeTimeframe,
+        source: dataSources.price
+      },
+      {
+        title: 'Market Cap',
+        value: `$${marketCap.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+        change: marketCapChange,
+        isIncrease: marketCapChange > 0,
+        timeframe: activeTimeframe,
+        source: dataSources.marketCap
+      },
+      {
+        title: '24h Volume',
+        value: `$${volume.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+        change: volumeChange,
+        isIncrease: volumeChange > 0,
+        timeframe: activeTimeframe,
+        source: dataSources.volume
+      },
+      {
+        title: 'Circulating Supply',
+        value: `${circulatingSupply.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${selectedCrypto}`,
+        change: supplyPercentage,
+        isIncrease: true, // Always positive since it's a percentage of total
+        timeframe: 'total',
+        source: dataSources.supply
+      },
+    ];
+  }, [coinData, activeTimeframe, selectedCrypto]);
 
   return (
-    <div className="animate-fade-in">
-      <div className="hidden md:grid md:grid-cols-4 gap-4">
-        {metricCards.map((metric) => (
-          <Card 
-            key={metric.title} 
-            className={cn(
-              "p-4 glass-effect transition-all duration-300 hover:scale-[1.02]",
-              isLoading && "animate-pulse"
-            )}
-          >
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">
-              {metric.title}
-            </h3>
-            {isLoading ? (
-              <Skeleton className="h-6 w-24" />
-            ) : (
-              <p className={cn(
-                "text-2xl font-bold",
-                metric.format === "percentage" && metric.value > 0 && "text-green-500",
-                metric.format === "percentage" && metric.value < 0 && "text-red-500"
-              )}>
-                {formatValue(metric.value, metric.format)}
-              </p>
-            )}
-          </Card>
-        ))}
-      </div>
-
-      {/* Mobile View - Combined Card */}
-      <div className="md:hidden">
-        <Card className="p-4 glass-effect">
-          <div className="grid grid-cols-2 gap-4">
-            {metricCards.map((metric, index) => (
-              <div 
-                key={metric.title}
-                className={cn(
-                  "p-3",
-                  index < 2 ? "border-b" : "",
-                  index % 2 === 0 ? "border-r" : "",
-                  "border-white/10"
-                )}
-              >
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                  {metric.title}
-                </h3>
-                {isLoading ? (
-                  <Skeleton className="h-6 w-20" />
-                ) : (
-                  <p className={cn(
-                    "text-xl font-bold",
-                    metric.format === "percentage" && metric.value > 0 && "text-green-500",
-                    metric.format === "percentage" && metric.value < 0 && "text-red-500"
-                  )}>
-                    {formatValue(metric.value, metric.format)}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-    </div>
+    <Card>
+      <CardContent className="p-4">
+        <Tabs 
+          defaultValue="24h" 
+          value={activeTimeframe}
+          onValueChange={(v) => setActiveTimeframe(v as '24h' | '7d' | '30d')}
+          className="mb-4"
+        >
+          <TabsList className="grid grid-cols-3 w-36">
+            <TabsTrigger value="24h">24H</TabsTrigger>
+            <TabsTrigger value="7d">7D</TabsTrigger>
+            <TabsTrigger value="30d">30D</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {isLoading 
+            ? Array(4).fill(0).map((_, i) => (
+                <div key={i} className="p-4 rounded-lg bg-secondary/30">
+                  <Skeleton className="h-6 w-24 mb-2" />
+                  <Skeleton className="h-8 w-32 mb-2" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              ))
+            : metrics.map((metric, i) => (
+                <div key={i} className="p-4 rounded-lg bg-secondary/30">
+                  <h3 className="text-sm text-muted-foreground mb-1">{metric.title}</h3>
+                  <p className="text-xl font-bold">{metric.value}</p>
+                  <div className="flex items-center mt-1">
+                    <span
+                      className={`text-xs font-medium flex items-center ${
+                        metric.isIncrease ? 'text-green-500' : 'text-red-500'
+                      }`}
+                    >
+                      {metric.isIncrease ? (
+                        <ArrowUp className="h-3 w-3 mr-1" />
+                      ) : (
+                        <ArrowDown className="h-3 w-3 mr-1" />
+                      )}
+                      {Math.abs(metric.change).toFixed(2)}%
+                    </span>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      Source: {metric.source}
+                    </span>
+                  </div>
+                </div>
+              ))
+          }
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

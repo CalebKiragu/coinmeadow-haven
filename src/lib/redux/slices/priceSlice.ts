@@ -9,8 +9,6 @@ export interface PriceData {
   date: string;
   currency: string;
   batchId: string;
-  token?: string;
-  usdRate?: number;
 }
 
 interface PriceState {

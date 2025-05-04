@@ -1,3 +1,4 @@
+
 import { useState, Suspense } from "react";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import PortfolioMetrics from "@/components/portfolio/PortfolioMetrics";
