@@ -13,8 +13,9 @@ import { OnchainProvider } from "@coinbase/onchainkit";
 const queryClient = new QueryClient();
 
 // Configure chains and providers for wagmi v1.x
+// Using as const to ensure TypeScript treats the array as a readonly tuple
 const { chains, publicClient, webSocketPublicClient } = configureChains(
-  [mainnet, base, optimism, arbitrum],
+  [mainnet, base, optimism, arbitrum] as const,
   [publicProvider()]
 );
 
