@@ -8,7 +8,7 @@ import {
 } from '../deviceDetection';
 
 describe('Device Detection Utilities', () => {
-  const originalNavigator = globalThis.navigator;
+  const originalNavigator = global.navigator;
   let userAgentGetter: ReturnType<typeof vi.spyOn>;
   
   beforeEach(() => {

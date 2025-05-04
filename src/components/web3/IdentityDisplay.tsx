@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Copy, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { getEnvironmentConfig } from "@/lib/utils";
 import WalletConnector from "./WalletConnector";
 import {
   Tooltip,
@@ -18,7 +19,6 @@ interface IdentityDisplayProps {
   address?: string;
   ensName?: string;
   showDisconnect?: boolean;
-  provider?: any;
 }
 
 const IdentityDisplay = ({ 
@@ -26,13 +26,13 @@ const IdentityDisplay = ({
   showCopy = true,
   showDisconnect = true,
   address,
-  ensName,
-  provider
+  ensName
 }: IdentityDisplayProps) => {
   const { toast } = useToast();
   const [walletAddress, setWalletAddress] = useState<string | undefined>(address);
   const [displayName, setDisplayName] = useState<string | undefined>(ensName);
-  const [walletProvider, setWalletProvider] = useState<any>(provider);
+  const [avatarSrc, setAvatarSrc] = useState<string | undefined>(undefined);
+  const [avatarError, setAvatarError] = useState(false);
   
   // Try to load wallet details from localStorage on component mount
   useEffect(() => {
@@ -46,11 +46,23 @@ const IdentityDisplay = ({
       }
     }
   }, [walletAddress]);
+
+  // Try to generate avatar for the wallet
+  useEffect(() => {
+    if (walletAddress) {
+      // Try to get ENS avatar if available
+      try {
+        setAvatarSrc(`https://effigy.im/a/${walletAddress}.svg`);
+      } catch (error) {
+        console.error("Error fetching avatar:", error);
+        setAvatarError(true);
+      }
+    }
+  }, [walletAddress]);
   
-  const handleWalletConnect = (newAddress: string, name?: string, provider?: any) => {
+  const handleWalletConnect = (newAddress: string, name?: string) => {
     setWalletAddress(newAddress);
     if (name) setDisplayName(name);
-    setWalletProvider(provider);
     
     // Save to localStorage for persistence
     localStorage.setItem('walletAddress', newAddress);
@@ -60,7 +72,6 @@ const IdentityDisplay = ({
   const handleDisconnect = () => {
     setWalletAddress(undefined);
     setDisplayName(undefined);
-    setWalletProvider(undefined);
     
     // Remove from localStorage
     localStorage.removeItem('walletAddress');
@@ -72,9 +83,13 @@ const IdentityDisplay = ({
     });
   };
 
-  const handleCopy = (text?: string) => {
-    if (text) {
-      navigator.clipboard.writeText(text);
+  const shortenAddress = (addr: string) => {
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
+
+  const handleCopy = () => {
+    if (walletAddress) {
+      navigator.clipboard.writeText(walletAddress);
       toast({
         title: "Address copied",
         description: "Wallet address copied to clipboard",
@@ -93,66 +108,69 @@ const IdentityDisplay = ({
   }
 
   return (
-    <div className="flex items-center space-x-2">
-      <Avatar className={compact ? "h-6 w-6" : "h-8 w-8"}>
-        <AvatarImage src={`https://effigy.im/a/${walletAddress}.svg`} alt="User" />
-        <AvatarFallback>WL</AvatarFallback>
+    <div className={`flex items-center ${compact ? "gap-1" : "gap-2"}`}>
+      <Avatar className={compact ? "h-6 w-6" : "h-9 w-9"}>
+        <AvatarImage
+          src={avatarSrc}
+          alt="Wallet"
+          onError={() => setAvatarError(true)}
+        />
+        <AvatarFallback>
+          {displayName?.charAt(0) || walletAddress.charAt(2)}
+        </AvatarFallback>
       </Avatar>
-      
       <div className="flex flex-col">
-        <div className="flex items-center">
+        {displayName && (
           <span className={`font-medium ${compact ? "text-xs" : "text-sm"}`}>
-            {displayName || `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}
+            {displayName}
           </span>
-          
-          {showCopy && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 ml-1"
-                    onClick={() => handleCopy(walletAddress)}
-                  >
-                    <Copy className={`${compact ? "h-3 w-3" : "h-4 w-4"}`} />
-                    <span className="sr-only">Copy address</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Copy wallet address</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-          
-          {showDisconnect && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 text-red-500 hover:text-red-600 hover:bg-red-100"
-                    onClick={handleDisconnect}
-                  >
-                    <LogOut className="h-3 w-3" />
-                    <span className="sr-only">Disconnect wallet</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Disconnect wallet</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </div>
-        {!compact && (
-          <span className="text-xs text-muted-foreground">{walletAddress.slice(0, 10)}...{walletAddress.slice(-8)}</span>
         )}
+        <span className={`text-muted-foreground ${compact ? "text-xs" : "text-sm"}`}>
+          {shortenAddress(walletAddress)}
+        </span>
       </div>
+      {showCopy && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={handleCopy}
+              >
+                <Copy className="h-3 w-3" />
+                <span className="sr-only">Copy address</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Copy wallet address</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+      {showDisconnect && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-red-500 hover:text-red-600 hover:bg-red-100"
+                onClick={handleDisconnect}
+              >
+                <LogOut className="h-3 w-3" />
+                <span className="sr-only">Disconnect wallet</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Disconnect wallet</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
     </div>
   );
-}
+};
 
 export default IdentityDisplay;

@@ -1,4 +1,3 @@
-
 interface TradingViewWidget {
   widget: (config: {
     autosize: boolean;
@@ -9,17 +8,12 @@ interface TradingViewWidget {
     style: string;
     locale: string;
     enable_publishing: boolean;
-    allow_symbol_change?: boolean;
+    allow_symbol_change: boolean;
     container_id: string;
-    hide_side_toolbar?: boolean;
-    hide_top_toolbar?: boolean;
-    hide_legend?: boolean;
-    save_image?: boolean;
-    studies?: string[];
-    time_frames?: Array<{ text: string, resolution: string }>;
-    range?: string;
-    overrides?: {
-      [key: string]: string | boolean | number;
+    hide_side_toolbar: boolean;
+    studies: string[];
+    overrides: {
+      [key: string]: string;
     };
   }) => void;
 }

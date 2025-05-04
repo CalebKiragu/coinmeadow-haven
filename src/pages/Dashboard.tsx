@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,7 +28,6 @@ import KycBanner from "@/components/verification/KycBanner";
 import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { ApiService } from "@/lib/services";
 import { WalletService } from "@/lib/services/walletService";
-import { useToast } from "@/hooks/use-toast";
 
 // Define the Charge interface
 interface Charge {
@@ -66,7 +64,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
-  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("wallet");
   const [showBalance, setShowBalance] = useState(false);
   const [chargeStatus, setChargeStatus] = useState<string | null>(null);
@@ -133,18 +130,6 @@ const Dashboard = () => {
 
   const handleBalanceToggle = (newValue: boolean) => {
     setShowBalance(newValue);
-  };
-  
-  const handleTabChange = (value: string) => {
-    if (value === "trade") {
-      // Show "Coming Soon" toast and don't change tab
-      toast({
-        title: "Coming Soon",
-        description: "Trading functionality will be available soon",
-      });
-    } else {
-      setActiveTab(value);
-    }
   };
 
   return (
@@ -221,9 +206,9 @@ const Dashboard = () => {
         <KycBanner />
 
         <Tabs
-          value={activeTab}
+          defaultValue="wallet"
           className="w-full"
-          onValueChange={handleTabChange}
+          onValueChange={setActiveTab}
         >
           <TabsList className="w-full mb-6 bg-transparent border border-white/10">
             <TabsTrigger
@@ -234,12 +219,9 @@ const Dashboard = () => {
             </TabsTrigger>
             <TabsTrigger
               value="trade"
-              className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/70 relative"
+              className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/70"
             >
               Trade
-              <span className="absolute -top-1 -right-1 text-[8px] bg-amber-500 text-black px-1 rounded-full">
-                Soon
-              </span>
             </TabsTrigger>
           </TabsList>
 

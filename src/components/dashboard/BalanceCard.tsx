@@ -1,6 +1,18 @@
-import { useState, useEffect } from "react";
-import { Eye, EyeOff, ChevronDown, TrendingUp } from "lucide-react";
+
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Eye, EyeOff, ExternalLink, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
+import { useToast } from "@/hooks/use-toast";
+import { setShowBalance } from "@/lib/redux/slices/walletSlice";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import IdentityDisplay from "../web3/IdentityDisplay";
+import WalletConnector from "../web3/WalletConnector";
+import EarnButton from "../web3/EarnButton";
+import axios from "axios";
 import {
   Select,
   SelectContent,
@@ -8,546 +20,312 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import GlassCard from "../ui/GlassCard";
-import { Badge } from "../ui/badge";
-import { cryptoCurrencies, fiatCurrencies } from "@/types/currency";
-import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
-import {
-  setSelectedCrypto,
-  setSelectedFiat,
-  Currency,
-} from "@/lib/redux/slices/walletSlice";
-import { ApiService } from "@/lib/services";
-import { Skeleton } from "../ui/skeleton";
-import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
-import { useToast } from "@/hooks/use-toast";
-import CheckoutDialog from "../web3/CheckoutDialog";
-import Earn from "../web3/Earn";
-import IdentityDisplay from "../web3/IdentityDisplay";
-import WalletConnector from "../web3/WalletConnector";
-import { StakingService } from "@/lib/services/stakingService";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle 
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ethers } from "ethers";
 
-interface BalanceCardProps {
+const timeRanges = [
+  { value: "1h", label: "1H" },
+  { value: "24h", label: "24H" },
+  { value: "7d", label: "7D" },
+  { value: "30d", label: "30D" },
+  { value: "1y", label: "1Y" },
+];
+
+const BalanceCard = ({
+  showBalance,
+  setShowBalance,
+}: {
   showBalance: boolean;
   setShowBalance: (value: boolean) => void;
-}
-
-// Time periods for price changes
-type TimePeriod = "1h" | "6h" | "12h" | "24h" | "7d" | "30d" | "12m";
-
-interface StakingAsset {
-  symbol: string;
-  name: string;
-  balance: string;
-  apy: string;
-  decimals: number;
-}
-
-const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
+}) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const { wallets, loading } = useAppSelector((state) => state.wallet);
+  const priceState = useAppSelector((state) => state.price) || { prices: [] };
+  const prices = priceState?.prices || [];
   const { toast } = useToast();
-  const { verifyPasskey, isPasskeyVerified, isVerifying } = usePasskeyAuth();
-
-  const { prices } = useAppSelector((state) => state.price);
-  const { user, merchant } = useAppSelector((state) => state.auth);
-  const { wallets, selectedCrypto, selectedFiat, lastUpdated } = useAppSelector(
-    (state) => state.wallet
-  );
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
-  const [walletDialogOpen, setWalletDialogOpen] = useState(false);
-  const [earnDialogOpen, setEarnDialogOpen] = useState(false);
   const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
-  const [walletProvider, setWalletProvider] = useState<any>(null);
-  const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("24h");
-  const [stakingAssets, setStakingAssets] = useState<StakingAsset[]>([]);
+  const [connectedWalletName, setConnectedWalletName] = useState<string | null>(null);
+  const [timeRange, setTimeRange] = useState("24h");
+  const [priceChanges, setPriceChanges] = useState<Record<string, number>>({});
+  const [isLoadingPriceChanges, setIsLoadingPriceChanges] = useState(false);
 
-  // Fetch wallet data when component mounts or selected currencies change
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        await ApiService.updateDashboard({
-          email: user?.email || merchant?.email || "",
-          phone: user?.phone || merchant?.phone || "",
-          basePair: selectedFiat,
-          isMerchant: merchant ? "true" : "false",
-        });
-      } catch (error) {
-        console.error("Error updating dashboard: ", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    // Fetch price changes for default timeframe (24h) on component mount
+    fetchPriceChanges(timeRange);
+  }, []);
 
-    if (user || merchant) fetchData();
-  }, [user, merchant, selectedCrypto, selectedFiat]);
-
-  // Load staking assets when connected wallet changes
   useEffect(() => {
-    const loadStakingAssets = async () => {
-      if (connectedWallet && walletProvider) {
-        try {
-          // For Ethereum compatible wallets, we can use ethers.js
-          if (walletProvider.provider?.isMetaMask || walletProvider.isCoinbaseWallet) {
-            const provider = new ethers.providers.Web3Provider(walletProvider);
-            
-            try {
-              const stakingInfo = await StakingService.getStakingInfo(provider, connectedWallet);
-              
-              // Set the staking assets based on real data from the provider
-              setStakingAssets([
-                {
-                  symbol: stakingInfo.tokenSymbol,
-                  name: stakingInfo.tokenName,
-                  balance: stakingInfo.tokenBalance,
-                  apy: stakingInfo.apy,
-                  decimals: stakingInfo.tokenDecimals
-                }
-              ]);
-            } catch (error) {
-              console.error("Error loading real staking data:", error);
-              // Fallback to mock data
-              setStakingAssets(StakingService.getMockStakingAssets());
-            }
-          } else {
-            // For non-ethereum wallets or if ethers not available, use mock data
-            setStakingAssets(StakingService.getMockStakingAssets());
-          }
-        } catch (error) {
-          console.error("Error loading staking assets:", error);
-          setStakingAssets(StakingService.getMockStakingAssets());
+    // Update redux state when showBalance changes
+    dispatch(setShowBalance(showBalance));
+  }, [showBalance, dispatch]);
+
+  const fetchPriceChanges = async (period: string) => {
+    setIsLoadingPriceChanges(true);
+    
+    try {
+      // Fetch price changes for major cryptos from CoinGecko
+      const response = await axios.get('https://api.coingecko.com/api/v3/coins/markets', {
+        params: {
+          vs_currency: 'usd',
+          ids: 'bitcoin,ethereum,solana,ripple,cardano',
+          price_change_percentage: period,
+          per_page: 100,
+          page: 1
         }
-      } else {
-        // If no wallet is connected, use wallet balances or mock data
-        const walletAssets = wallets
-          .filter((w) => ["BTC", "ETH", "USDC", "USDT"].includes(w.currency))
-          .map((w) => ({
-            symbol: w.currency,
-            name: cryptoCurrencies.find((c) => c.symbol === w.currency)?.name || w.currency,
-            balance: w.balance.availableBalance,
-            apy: w.currency === "USDC" ? "4.2%" : w.currency === "USDT" ? "3.8%" : "2.1%",
-            decimals: w.currency === "USDC" || w.currency === "USDT" ? 6 : 18
-          }));
+      });
+      
+      if (response.data && Array.isArray(response.data)) {
+        const changes: Record<string, number> = {};
+        response.data.forEach((coin) => {
+          const symbol = coin.symbol.toUpperCase();
+          const field = `price_change_percentage_${period}`;
+          if (coin[field] !== undefined && coin[field] !== null) {
+            changes[symbol] = coin[field];
+          }
+        });
         
-        setStakingAssets(walletAssets.length > 0 ? walletAssets : StakingService.getMockStakingAssets());
+        setPriceChanges(changes);
       }
-    };
-    
-    loadStakingAssets();
-  }, [connectedWallet, walletProvider, wallets]);
-
-  const handleSelectCrypto = (value: string) => {
-    dispatch(setSelectedCrypto(value));
+    } catch (error) {
+      console.error("Error fetching price changes:", error);
+    } finally {
+      setIsLoadingPriceChanges(false);
+    }
   };
 
-  const handleSelectFiat = (value: string) => {
-    dispatch(setSelectedFiat(value as Currency));
+  const handleTimeRangeChange = (value: string) => {
+    setTimeRange(value);
+    fetchPriceChanges(value);
   };
 
-  const handleSelectTimePeriod = (value: TimePeriod) => {
-    setSelectedTimePeriod(value);
+  const handleConnect = (address: string, name?: string) => {
+    setConnectedWallet(address);
+    setConnectedWalletName(name || null);
+    toast({
+      title: "Wallet Connected",
+      description: `Connected to ${name || address.slice(0, 6) + '...' + address.slice(-4)}`,
+    });
   };
 
-  // Get the selected crypto data
-  const selectedCryptoData = cryptoCurrencies.find(
-    (c) => c.symbol === selectedCrypto
-  );
-
-  // Get the selected fiat data
-  const selectedFiatData = fiatCurrencies.find((f) => f.code === selectedFiat);
-
-  // Get price data for the selected crypto
-  const selectedCryptoPrice = prices?.find(
-    (price) => price.currency === selectedCrypto
-  );
-
-  // Mock price change data for different time periods (replace with real data)
-  const getPriceChangeByPeriod = (period: TimePeriod): number => {
-    // This would be replaced with real API data
-    const mockChanges = {
-      "1h": 0.5,
-      "6h": 1.2,
-      "12h": -0.8,
-      "24h": selectedCryptoPrice ? Number(selectedCryptoPrice.change) : 2.5,
-      "7d": 5.7,
-      "30d": -3.2,
-      "12m": 12.8
-    };
-    
-    // Check for NaN and provide default values
-    const change = mockChanges[period];
-    return isNaN(change) ? 0 : change;
+  const handleDisconnect = () => {
+    setConnectedWallet(null);
+    setConnectedWalletName(null);
+    toast({
+      title: "Wallet Disconnected",
+      description: "Your wallet has been disconnected",
+    });
   };
 
-  const formatPrice = (price: number) => {
-    if (isNaN(price)) return `${selectedFiatData?.symbol || '$'}0.00`;
-    
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: selectedFiat,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(price);
+  const handleFundWallet = () => {
+    navigate("/deposit");
   };
 
   const calculateTotalBalance = () => {
-    if (selectedCrypto === "ALL") {
-      // Calculate total balance across all currencies
-      return (
-        wallets?.reduce((total, wallet) => {
-          const priceData = prices.find((p) => p.currency === wallet.currency);
-          const price = priceData ? parseFloat(priceData.value) : 0; // Default to 0 if price not found
-          const balance = parseFloat(wallet.balance.availableBalance); // Convert balance to number
-
-          return total + balance * price; // Convert to total balance in base currency
-        }, 0) || 0
-      );
-    } else {
-      // Get balance for the selected crypto wallet
-      const wallet = wallets.find((w) => w.currency === selectedCrypto);
-      const price =
-        parseFloat(prices.find((p) => p.currency === selectedCrypto)?.value) ||
-        0;
-      return (parseFloat(wallet?.balance.availableBalance) || 0) * price;
-    }
+    if (!wallets?.length) return 0;
+    return wallets.reduce((acc, wallet) => {
+      const priceInfo = prices.find((p) => p.token === wallet.symbol);
+      const price = priceInfo?.usdRate || 1;
+      return acc + parseFloat(wallet.balance) * price;
+    }, 0);
   };
 
-  const handlePortfolioClick = () => {
-    navigate("/portfolio", { state: { selectedCrypto } });
-  };
-
-  const handleToggleBalance = async () => {
-    // Prevent multiple simultaneous verification attempts
-    if (isVerifying) return;
-
-    // If we're trying to show the balance and passkey hasn't been verified yet
-    if (!showBalance && !isPasskeyVerified) {
-      try {
-        const verified = await verifyPasskey();
-        if (verified) {
-          setShowBalance(true);
-        }
-      } catch (error) {
-        toast({
-          title: "Authentication Failed",
-          description: "Unable to verify your identity",
-          variant: "destructive",
-        });
-      }
-    } else {
-      // If passkey is already verified or we're hiding the balance
-      setShowBalance(!showBalance);
-    }
-  };
-
-  const handleCheckoutClick = () => {
-    setCheckoutDialogOpen(true);
-  };
-
-  const handleEarnButtonClick = () => {
-    setEarnDialogOpen(true);
-  };
-
-  const handleWalletConnect = (address: string, name?: string, provider?: any) => {
-    setConnectedWallet(address);
-    setWalletProvider(provider);
-    toast({
-      title: "Wallet Connected",
-      description: `Connected to ${name || address.slice(0, 6) + "..." + address.slice(-4)}`,
+  const getPriceChange = () => {
+    if (!wallets?.length) return { percentage: 0, isUp: true };
+    
+    // Calculate weighted average of price changes
+    let totalValue = 0;
+    let weightedChangeSum = 0;
+    
+    wallets.forEach((wallet) => {
+      const priceInfo = prices.find((p) => p.token === wallet.symbol);
+      const price = priceInfo?.usdRate || 1;
+      const value = parseFloat(wallet.balance) * price;
+      const change = priceChanges[wallet.symbol] || 0;
+      
+      totalValue += value;
+      weightedChangeSum += value * change;
     });
-    setWalletDialogOpen(false);
-  };
-
-  const handleCheckoutComplete = () => {
-    // Refresh wallet data after checkout
-    if (user || merchant) {
-      ApiService.updateDashboard({
-        email: user?.email || merchant?.email || "",
-        phone: user?.phone || merchant?.phone || "",
-        basePair: selectedFiat,
-        isMerchant: merchant ? "true" : "false",
-      });
+    
+    if (totalValue > 0) {
+      const weightedAverageChange = weightedChangeSum / totalValue;
+      return {
+        percentage: weightedAverageChange,
+        isUp: weightedAverageChange >= 0
+      };
     }
+    
+    return { percentage: 0, isUp: true };
   };
-
-  const refreshStakingAssets = async () => {
-    // Reload staking assets after transactions
-    if (connectedWallet && walletProvider) {
-      try {
-        const provider = new ethers.providers.Web3Provider(walletProvider);
-        const stakingInfo = await StakingService.getStakingInfo(provider, connectedWallet);
-        
-        // Update staking assets with fresh data
-        setStakingAssets([
-          {
-            symbol: stakingInfo.tokenSymbol,
-            name: stakingInfo.tokenName,
-            balance: stakingInfo.tokenBalance,
-            apy: stakingInfo.apy,
-            decimals: stakingInfo.tokenDecimals
-          }
-        ]);
-      } catch (error) {
-        console.error("Error refreshing staking assets:", error);
-      }
-    }
-  };
-
-  const greetName = user?.firstName || merchant?.merchantName || "";
-  const merchantNo = merchant?.merchantNo;
-
-  const greeting = (name?: string): string => {
-    // East Africa Time (EAT) is UTC+3, no daylight savings
-    const now = new Date();
-    const hours = now.getUTCHours() + 3; // Convert UTC time to EAT
-
-    if (hours >= 5 && hours < 12) {
-      return `Good morning, ${name}!`;
-    } else if (hours >= 12 && hours < 18) {
-      return `Good afternoon, ${name}!`;
-    } else {
-      return `Good evening, ${name}!`;
-    }
-  };
+  
+  const priceChange = getPriceChange();
+  const formattedPriceChange = isNaN(priceChange.percentage) ? "0.00" : priceChange.percentage.toFixed(2);
+  const priceChangeDisplay = `${priceChange.isUp ? '+' : ''}${formattedPriceChange}%`;
+  const priceChangeColor = priceChange.isUp ? "text-green-500" : "text-red-500";
 
   return (
-    <GlassCard className="relative animate-scale-in p-2 sm:p-3">
-      {isLoading ? (
-        <div className="space-y-2">
-          <Skeleton className="h-5 w-1/3" />
-          <Skeleton className="h-3 w-1/4" />
-          <Skeleton className="h-7 w-full" />
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-5 w-3/4" />
-        </div>
-      ) : (
-        <div className="flex flex-col gap-1 sm:gap-2">
-          <div className="flex justify-between items-center">
-            <div className="flex flex-col">
-              <h1 className="text-base sm:text-lg font-semibold">
-                {greeting(greetName)}
-              </h1>
-              <div className="mt-1">
-                <IdentityDisplay compact={true} />
-              </div>
-            </div>
-            <button
-              onClick={handleToggleBalance}
-              className="text-gray-600 hover:text-gray-800 transition-colors"
-              disabled={isVerifying}
-            >
-              {showBalance ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-          </div>
-
-          {merchant && merchantNo && (
-            <p className="text-xs text-muted-foreground -mt-1">
-              Merchant No: {merchantNo}
-            </p>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-xl">Total Balance</CardTitle>
+        <button
+          onClick={() => setShowBalance(!showBalance)}
+          className="p-1 hover:bg-white/10 rounded-full transition-colors"
+        >
+          {showBalance ? (
+            <EyeOff className="h-5 w-5 text-muted-foreground" />
+          ) : (
+            <Eye className="h-5 w-5 text-muted-foreground" />
           )}
-
-          <h2 className="text-sm sm:text-base font-medium mt-1">
-            Available Balance:
-          </h2>
-
-          <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-            <Select value={selectedCrypto} onValueChange={handleSelectCrypto}>
-              <SelectTrigger className="w-full sm:w-[100px] h-7 sm:h-8 text-xs">
-                <SelectValue placeholder="Select Wallet" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Wallets</SelectItem>
-                {cryptoCurrencies.map((crypto) => (
-                  <SelectItem key={crypto.symbol} value={crypto.symbol}>
-                    {crypto.name} ({crypto.symbol})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedFiat} onValueChange={handleSelectFiat}>
-              <SelectTrigger className="w-full sm:w-[100px] h-7 sm:h-8 text-xs">
-                <SelectValue placeholder="Select Fiat" />
-              </SelectTrigger>
-              <SelectContent>
-                {fiatCurrencies.map((fiat) => (
-                  <SelectItem key={fiat.code} value={fiat.code}>
-                    {fiat.name} ({fiat.symbol})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        </button>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-8">
+          <div>
+            {loading ? (
+              <>
+                <Skeleton className="h-10 w-40 mb-2" />
+                <Skeleton className="h-5 w-20" />
+              </>
+            ) : (
+              <>
+                <h2 className="text-3xl font-bold">
+                  {showBalance
+                    ? `$${calculateTotalBalance().toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`
+                    : "••••••"}
+                </h2>
+                <div className="flex items-center gap-2">
+                  <div className={cn("flex items-center", priceChangeColor)}>
+                    {isLoadingPriceChanges ? (
+                      <Skeleton className="h-4 w-16" />
+                    ) : (
+                      priceChangeDisplay
+                    )}
+                  </div>
+                  <Select value={timeRange} onValueChange={handleTimeRangeChange}>
+                    <SelectTrigger className="h-7 w-16 text-xs">
+                      <SelectValue placeholder="24H" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeRanges.map((range) => (
+                        <SelectItem key={range.value} value={range.value}>
+                          {range.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
           </div>
 
-          <div
-            className={`text-xl sm:text-2xl font-bold my-1 ${
-              !showBalance ? "blur-content" : ""
-            }`}
-          >
-            {formatPrice(calculateTotalBalance())}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={handleFundWallet}
+              className="bg-dollar-dark hover:bg-dollar text-white"
+            >
+              Fund Wallet
+            </Button>
+            
+            {connectedWallet ? (
+              <div className="flex gap-2">
+                <IdentityDisplay 
+                  address={connectedWallet}
+                  ensName={connectedWalletName || undefined}
+                />
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={handleDisconnect}
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <WalletConnector onConnect={handleConnect} />
+            )}
+            
+            <Button
+              onClick={() => navigate("/receive")}
+              variant="outline"
+              className="text-white"
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Receive
+            </Button>
+            
+            <EarnButton />
           </div>
 
-          <div className="flex flex-wrap gap-1 items-center justify-between text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-            <div className="flex items-center gap-2">
-              <span className={!showBalance ? "blur-content" : ""}>
-                {selectedCrypto === "ALL"
-                  ? "Total balance across all wallets"
-                  : `1 ${selectedCryptoData?.symbol} = ${formatPrice(
-                      Number(selectedCryptoPrice?.value) || 0
-                    )}`}
-              </span>
+          {wallets?.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                My Wallets
+              </h3>
 
-              {lastUpdated && (
-                <span className="text-xs text-gray-500">
-                  • Updated{" "}
-                  {new Date(lastUpdated).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              )}
-            </div>
+              <div className="space-y-3">
+                {loading
+                  ? Array(3)
+                      .fill(null)
+                      .map((_, index) => (
+                        <Skeleton
+                          key={index}
+                          className="h-14 w-full rounded-lg"
+                        />
+                      ))
+                  : wallets.map((wallet) => {
+                      const priceInfo = prices.find((p) => p.token === wallet.symbol);
+                      const price = priceInfo?.usdRate || 1;
+                      const usdValue = parseFloat(wallet.balance) * price;
+                      const walletSymbol = wallet.symbol || "";
 
-            <div className="flex items-center gap-1 flex-wrap">
-              {selectedCryptoPrice && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center">
-                      <Badge
-                        variant="secondary"
-                        className="max-w-fit text-xs h-5 px-1"
-                      >
-                        <span
-                          className={
-                            getPriceChangeByPeriod(selectedTimePeriod) >= 0
-                              ? "text-green-500"
-                              : "text-red-500"
-                          }
-                        >
-                          {getPriceChangeByPeriod(selectedTimePeriod) >= 0 ? "+" : ""}
-                          {getPriceChangeByPeriod(selectedTimePeriod).toFixed(2)}% {selectedTimePeriod}
-                        </span>
-                      </Badge>
-                      <ChevronDown className="h-3 w-3 ml-0.5" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {(["1h", "6h", "12h", "24h", "7d", "30d", "12m"] as TimePeriod[]).map((period) => {
-                      const changeValue = getPriceChangeByPeriod(period);
-                      // Handle NaN values
-                      const displayValue = isNaN(changeValue) ? "0.00" : changeValue.toFixed(2);
-                      const isPositive = !isNaN(changeValue) && changeValue >= 0;
-                      
                       return (
-                        <DropdownMenuItem 
-                          key={period}
-                          onClick={() => handleSelectTimePeriod(period)}
-                          className={selectedTimePeriod === period ? "bg-accent" : ""}
+                        <div
+                          key={walletSymbol}
+                          className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
                         >
-                          <span className="mr-2">{period}</span>
-                          <span
-                            className={isPositive ? "text-green-500" : "text-red-500"}
-                          >
-                            {isPositive ? "+" : ""}{displayValue}%
-                          </span>
-                        </DropdownMenuItem>
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center">
+                              <span>{walletSymbol.charAt(0)}</span>
+                            </div>
+                            <div>
+                              <p className="font-medium">{walletSymbol}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {wallet.name || walletSymbol}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium">
+                              {showBalance
+                                ? `${parseFloat(wallet.balance).toLocaleString(
+                                    undefined,
+                                    {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 6,
+                                    }
+                                  )} ${walletSymbol}`
+                                : "••••••"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {showBalance
+                                ? `$${usdValue.toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })}`
+                                : "••••••"}
+                            </p>
+                          </div>
+                        </div>
                       );
                     })}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-
-              <div className="flex flex-wrap gap-1">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleCheckoutClick} 
-                  className="text-xs h-7 px-3 py-0 bg-[#0052FF] hover:bg-[#0039B3] text-white border-0"
-                >
-                  Fund Wallet
-                </Button>
-
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleEarnButtonClick} 
-                  className="text-xs h-7 px-3 py-0 bg-green-600 hover:bg-green-700 text-white border-0"
-                >
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  Stake to Earn
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handlePortfolioClick}
-                  className="text-xs h-7 px-3 py-0"
-                >
-                  See Portfolio
-                </Button>
               </div>
             </div>
-          </div>
-          
-          {/* Checkout Dialog */}
-          <CheckoutDialog
-            open={checkoutDialogOpen}
-            onOpenChange={setCheckoutDialogOpen}
-            onCheckoutComplete={handleCheckoutComplete}
-          />
-
-          {/* Staking (Earn) Dialog */}
-          <Dialog open={earnDialogOpen} onOpenChange={setEarnDialogOpen}>
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Stake to Earn</DialogTitle>
-                <DialogDescription>
-                  Stake your assets to earn passive income
-                </DialogDescription>
-              </DialogHeader>
-              
-              {connectedWallet ? (
-                <div className="mt-2 space-y-4">
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <span>Connected wallet:</span> <IdentityDisplay address={connectedWallet} compact={true} showCopy={false} showDisconnect={false} />
-                  </p>
-                  
-                  <Earn 
-                    walletAddress={connectedWallet}
-                    walletProvider={walletProvider}
-                    stakingAssets={stakingAssets}
-                    onRefresh={refreshStakingAssets}
-                  />
-                </div>
-              ) : (
-                <div className="mt-4 text-center">
-                  <p className="mb-4">Connect a DeFi wallet to access staking features</p>
-                  <WalletConnector onConnect={handleWalletConnect} />
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
+          )}
         </div>
-      )}
-    </GlassCard>
+      </CardContent>
+    </Card>
   );
 };
 

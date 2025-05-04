@@ -2,11 +2,12 @@
 import { describe, it, expect, vi } from '../../../test/test-imports';
 import { render, screen, userEvent } from '../../../test/test-utils';
 import ThirdPartyAuth from '../ThirdPartyAuth';
-import { useToast } from '@/hooks/use-toast';
 
 // Mock the use-toast hook
 vi.mock('@/hooks/use-toast', () => ({
-  useToast: vi.fn(),
+  useToast: () => ({
+    toast: vi.fn(),
+  }),
 }));
 
 describe('ThirdPartyAuth Component', () => {
@@ -22,8 +23,7 @@ describe('ThirdPartyAuth Component', () => {
   });
 
   it('shows toast when Google authentication is clicked', async () => {
-    const mockToast = vi.fn();
-    vi.mocked(useToast).mockReturnValue({ toast: mockToast, toasts: [], dismiss: vi.fn() });
+    const { toast } = vi.mocked(require('@/hooks/use-toast').useToast());
     
     render(<ThirdPartyAuth />);
     
@@ -31,15 +31,14 @@ describe('ThirdPartyAuth Component', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Continue with Google' }));
     
     // Check toast
-    expect(mockToast).toHaveBeenCalledWith({
+    expect(toast).toHaveBeenCalledWith({
       title: 'Google sign up',
       description: 'This feature is coming soon!',
     });
   });
 
   it('shows toast when Twitter authentication is clicked', async () => {
-    const mockToast = vi.fn();
-    vi.mocked(useToast).mockReturnValue({ toast: mockToast, toasts: [], dismiss: vi.fn() });
+    const { toast } = vi.mocked(require('@/hooks/use-toast').useToast());
     
     render(<ThirdPartyAuth />);
     
@@ -47,7 +46,7 @@ describe('ThirdPartyAuth Component', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Continue with Twitter' }));
     
     // Check toast
-    expect(mockToast).toHaveBeenCalledWith({
+    expect(toast).toHaveBeenCalledWith({
       title: 'Twitter sign up',
       description: 'This feature is coming soon!',
     });
