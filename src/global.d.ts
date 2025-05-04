@@ -16,7 +16,7 @@ declare module '@radix-ui/react-toast';
 // Add declarations for test-related globals
 interface Window {
   IS_REACT_ACT_ENVIRONMENT?: boolean;
-  // Extended wallet declarations
+  // Extended wallet declarations - ensure consistency
   ethereum?: any;
   phantom?: {
     ethereum?: any;

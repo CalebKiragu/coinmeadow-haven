@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -12,17 +11,8 @@ interface BaseAuthProps {
   isSignUp?: boolean;
 }
 
-// Declare ethereum on window to avoid TypeScript errors
-declare global {
-  interface Window {
-    ethereum?: any;
-    phantom?: {
-      solana?: any;
-    };
-    coinbaseWalletExtension?: any;
-    ethers?: any;
-  }
-}
+// Using the global declaration instead of redefining it
+// The window.phantom type is already defined in global.d.ts
 
 const BaseAuth: React.FC<BaseAuthProps> = ({ 
   onComplete,
