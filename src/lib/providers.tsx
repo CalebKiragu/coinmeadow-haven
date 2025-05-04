@@ -3,30 +3,36 @@
 
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createConfig, http, WagmiProvider } from 'wagmi';
+import { configureChains, createConfig, WagmiConfig } from 'wagmi';
 import { mainnet, base, optimism, arbitrum } from 'wagmi/chains';
+import { publicProvider } from 'wagmi/providers/public';
 import { getEnvironmentConfig } from "./utils";
+import { OnchainProvider } from "@coinbase/onchainkit";
 
 // Create a query client
 const queryClient = new QueryClient();
 
+// Configure chains and providers for wagmi v1.x
+const { chains, publicClient, webSocketPublicClient } = configureChains(
+  [mainnet, base, optimism, arbitrum],
+  [publicProvider()]
+);
+
 // Create wagmi config for the supported chains
 const config = createConfig({
-  chains: [mainnet, base, optimism, arbitrum] as const,
-  transports: {
-    [mainnet.id]: http(),
-    [base.id]: http(),
-    [optimism.id]: http(),
-    [arbitrum.id]: http(),
-  },
+  autoConnect: true,
+  publicClient,
+  webSocketPublicClient,
 });
 
 export function Providers(props: { children: ReactNode }) {
   return (
-    <WagmiProvider config={config}>
+    <WagmiConfig config={config}>
       <QueryClientProvider client={queryClient}>
-        {props.children}
+        <OnchainProvider>
+          {props.children}
+        </OnchainProvider>
       </QueryClientProvider>
-    </WagmiProvider>
+    </WagmiConfig>
   );
 }

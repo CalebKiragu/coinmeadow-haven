@@ -11,7 +11,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Wallet, Identity } from "@coinbase/onchainkit";
 
 interface IdentityDisplayProps {
   compact?: boolean;

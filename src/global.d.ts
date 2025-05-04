@@ -18,14 +18,7 @@ declare module '@coinbase/onchainkit/wallet';
 declare module '@coinbase/onchainkit/identity';
 declare module '@coinbase/onchainkit' {
   export const OnchainProvider: React.FC<{children: React.ReactNode}>;
-  export const Wallet: React.FC<{children: React.ReactNode}>;
-  export const Identity: React.FC<{
-    address: string;
-    avatar?: boolean;
-    name?: string;
-    copied?: (text: string) => void;
-    children?: React.ReactNode;
-  }>;
+  export const useWalletClient: () => any;
 }
 
 // Add declarations for test-related globals
