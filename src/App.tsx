@@ -21,41 +21,44 @@ import Settings from "./pages/Settings";
 import Portfolio from "./pages/Portfolio";
 import ApiDocs from "./pages/ApiDocs";
 import { Providers } from "./lib/providers";
+import { OnchainProvider } from "@coinbase/onchainkit";
 import "@coinbase/onchainkit/styles.css";
 
 const App = () => (
   <Providers>
-    <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-        >
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/history" element={<History />} />
-                <Route path="/marketplace" element={<Marketplace />} />
-                <Route path="/send" element={<SendPay />} />
-                <Route path="/verification" element={<Verification />} />
-                <Route path="/deposit" element={<Deposit />} />
-                <Route path="/withdraw" element={<Withdraw />} />
-                <Route path="/receive" element={<Receive />} />
-                <Route path="/account" element={<Account />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/portfolio" element={<Portfolio />} />
-                <Route path="/apidocs" element={<ApiDocs />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </ThemeProvider>
-      </PersistGate>
-    </Provider>
+    <OnchainProvider>
+      <Provider store={store}>
+        <PersistGate loading={null} persistor={persistor}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="light"
+            enableSystem={false}
+          >
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/history" element={<History />} />
+                  <Route path="/marketplace" element={<Marketplace />} />
+                  <Route path="/send" element={<SendPay />} />
+                  <Route path="/verification" element={<Verification />} />
+                  <Route path="/deposit" element={<Deposit />} />
+                  <Route path="/withdraw" element={<Withdraw />} />
+                  <Route path="/receive" element={<Receive />} />
+                  <Route path="/account" element={<Account />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/portfolio" element={<Portfolio />} />
+                  <Route path="/apidocs" element={<ApiDocs />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </ThemeProvider>
+        </PersistGate>
+      </Provider>
+    </OnchainProvider>
   </Providers>
 );
 

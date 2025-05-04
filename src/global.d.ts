@@ -16,7 +16,9 @@ declare module '@radix-ui/react-toast';
 // Add specific sub-module declarations for @coinbase/onchainkit
 declare module '@coinbase/onchainkit/wallet';
 declare module '@coinbase/onchainkit/identity';
-declare module '@coinbase/onchainkit';
+declare module '@coinbase/onchainkit' {
+  export const OnchainProvider: React.FC<{children: React.ReactNode}>;
+}
 
 // Add declarations for test-related globals
 interface Window {
