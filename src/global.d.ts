@@ -12,3 +12,20 @@ declare const __dirname: string;
 
 // Add missing module declarations
 declare module '@radix-ui/react-toast';
+
+// Add declarations for test-related globals
+interface Window {
+  IS_REACT_ACT_ENVIRONMENT?: boolean;
+}
+
+interface GlobalThis {
+  fetch: any;
+  vi: any;
+  afterEach: any;
+  expect: any;
+}
+
+// Tell TypeScript about the TradingView global
+interface Window {
+  TradingView: TradingViewWidget;
+}

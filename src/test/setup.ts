@@ -13,7 +13,7 @@ expect.extend(matchers);
 (globalThis as any).expect = expect;
 
 // Mock fetch for API testing
-global.fetch = vi.fn();
+globalThis.fetch = vi.fn();
 
 // Clear the DOM after each test
 afterEach(() => {

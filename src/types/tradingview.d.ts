@@ -19,7 +19,7 @@ interface TradingViewWidget {
     time_frames?: Array<{ text: string, resolution: string }>;
     range?: string;
     overrides?: {
-      [key: string]: string;
+      [key: string]: string | boolean | number;
     };
   }) => void;
 }
