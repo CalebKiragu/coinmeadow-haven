@@ -58,6 +58,20 @@ const getTimeRangeParam = (timeRange: TimeRange): string => {
   return mapping[timeRange] || '1D';
 };
 
+// Get chart interval based on timeRange
+const getChartInterval = (timeRange: TimeRange): string => {
+  const mapping: Record<TimeRange, string> = {
+    '1D': '60', // 60 minutes
+    '1W': 'D',  // Daily
+    '1M': 'D',  // Daily
+    '3M': 'W',  // Weekly
+    '1Y': 'W',  // Weekly
+    'ALL': 'M',  // Monthly
+  };
+  
+  return mapping[timeRange] || 'D';
+};
+
 // Map CoinGecko IDs for API fallback
 const getCoinGeckoId = (symbol: string): string => {
   const mapping: Record<string, string> = {
@@ -197,24 +211,43 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
 
   // Initialize TradingView widget when component mounts or when dependencies change
   useEffect(() => {
+    // First, clean up any existing chart to prevent duplicates
     const container = containerRef.current;
     if (!container) return;
-
-    // Clean up previous widget if it exists
+    
     container.innerHTML = '';
 
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/tv.js';
-    script.async = true;
-    script.onload = () => {
+    // Create a new container element for the chart
+    const chartElement = document.createElement('div');
+    chartElement.id = 'tradingview_chart';
+    chartElement.style.width = '100%';
+    chartElement.style.height = '100%';
+    container.appendChild(chartElement);
+
+    const loadTradingViewScript = () => {
+      // Check if script is already loaded
+      if (document.getElementById('tradingview-widget-script')) {
+        initializeTradingViewWidget();
+        return;
+      }
+      
+      const script = document.createElement('script');
+      script.id = 'tradingview-widget-script';
+      script.src = 'https://s3.tradingview.com/tv.js';
+      script.async = true;
+      script.onload = initializeTradingViewWidget;
+      document.head.appendChild(script);
+    };
+
+    const initializeTradingViewWidget = () => {
       if (typeof window.TradingView !== 'undefined') {
         new window.TradingView.widget({
           autosize: true,
           symbol: `BINANCE:${getTradingViewSymbol(selectedCrypto)}`,
-          interval: timeRange === '1D' ? '60' : 'D',
+          interval: getChartInterval(timeRange),
           timezone: 'Etc/UTC',
           theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
-          style: '1',
+          style: '1', // Candlestick chart
           locale: 'en',
           enable_publishing: false,
           hide_side_toolbar: false,
@@ -237,13 +270,25 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
             "paneProperties.horzGridProperties.color": document.documentElement.classList.contains('dark') ? "#1e1e1e" : "#e1e1e1",
           }
         });
+        
+        console.log("TradingView widget initialized for", selectedCrypto);
+      } else {
+        console.error("TradingView not available");
       }
     };
-    document.head.appendChild(script);
 
+    loadTradingViewScript();
+
+    // Clean up function
     return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
+      if (container) {
+        container.innerHTML = '';
+      }
+      
+      // Remove the script if needed
+      const oldScript = document.getElementById('tradingview-widget-script');
+      if (oldScript && oldScript.parentNode) {
+        oldScript.parentNode.removeChild(oldScript);
       }
     };
   }, [selectedCrypto, timeRange]);
@@ -311,7 +356,6 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
         ) : (
           <div 
             ref={containerRef}
-            id="tradingview_chart" 
             className="w-full h-[400px] rounded-md overflow-hidden"
           />
         )}

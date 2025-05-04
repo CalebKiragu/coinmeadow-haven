@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Wallet, AlertTriangle } from "lucide-react";
+import { Wallet, AlertTriangle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Dialog,
@@ -45,6 +45,7 @@ const isBrowser = typeof window !== "undefined";
 
 const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className = "" }) => {
   const [isConnecting, setIsConnecting] = useState(false);
+  const [connectingWallet, setConnectingWallet] = useState<WalletType | null>(null);
   const [installedWallets, setInstalledWallets] = useState<Record<WalletType, boolean>>({
     metamask: false,
     phantom: false,
@@ -59,11 +60,32 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
     if (!isBrowser) return;
     
     const checkWalletAvailability = () => {
-      const wallets = {
-        metamask: !!window.ethereum?.isMetaMask,
-        phantom: !!(window.phantom?.solana), 
-        coinbase: !!(window.coinbaseWalletExtension || window.ethereum?.isCoinbaseWallet)
+      const detectMetaMask = () => {
+        return isBrowser && window.ethereum?.isMetaMask;
       };
+      
+      const detectPhantom = () => {
+        return isBrowser && !!window.phantom?.solana;
+      };
+      
+      const detectCoinbase = () => {
+        return isBrowser && (
+          // Direct Coinbase Wallet Extension detection
+          !!window.coinbaseWalletExtension || 
+          // Through ethereum provider
+          (window.ethereum?.isCoinbaseWallet) ||
+          // Additional Coinbase check for mobile
+          !!window.ethereum?.providers?.find((p: any) => p.isCoinbaseWallet)
+        );
+      };
+      
+      const wallets = {
+        metamask: detectMetaMask(),
+        phantom: detectPhantom(), 
+        coinbase: detectCoinbase()
+      };
+      
+      console.log("Detected wallets:", wallets);
       
       setInstalledWallets(wallets);
       const hasAnyWallet = Object.values(wallets).some(Boolean);
@@ -108,7 +130,7 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
         </svg>
       ),
       available: installedWallets.metamask,
-      installUrl: "https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn",
+      installUrl: "https://metamask.io/download/",
       bgColor: "#F6851B"
     },
     {
@@ -146,6 +168,8 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
     }
 
     try {
+      setConnectingWallet("metamask");
+      
       // Request accounts directly from MetaMask provider
       const provider = new window.ethers.providers.Web3Provider(window.ethereum);
       await provider.send('eth_requestAccounts', []);
@@ -168,6 +192,8 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
         description: "Failed to connect to MetaMask. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setConnectingWallet(null);
     }
     return null;
   };
@@ -181,6 +207,8 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
     }
 
     try {
+      setConnectingWallet("phantom");
+      
       // Connect to Phantom wallet
       const connection = await phantom.connect();
       const { publicKey } = connection;
@@ -199,13 +227,35 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
         description: "Failed to connect to Phantom. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setConnectingWallet(null);
     }
     return null;
   };
 
   const connectCoinbase = async () => {
-    const coinbaseWallet = window.coinbaseWalletExtension || 
-                          (window.ethereum?.isCoinbaseWallet ? window.ethereum : null);
+    // Try different ways to access Coinbase Wallet
+    const getCoinbaseProvider = () => {
+      // Direct extension access
+      if (window.coinbaseWalletExtension) {
+        return window.coinbaseWalletExtension;
+      }
+      
+      // Through ethereum provider
+      if (window.ethereum?.isCoinbaseWallet) {
+        return window.ethereum;
+      }
+      
+      // Check if ethereum has providers array (mobile case)
+      if (window.ethereum?.providers) {
+        const coinbaseProvider = window.ethereum.providers.find((p: any) => p.isCoinbaseWallet);
+        if (coinbaseProvider) return coinbaseProvider;
+      }
+      
+      return null;
+    };
+    
+    const coinbaseWallet = getCoinbaseProvider();
     
     if (!coinbaseWallet) {
       console.log("Coinbase Wallet not found");
@@ -213,6 +263,8 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
     }
 
     try {
+      setConnectingWallet("coinbase");
+      
       // Connect to Coinbase wallet
       const provider = new window.ethers.providers.Web3Provider(coinbaseWallet);
       await provider.send('eth_requestAccounts', []);
@@ -227,6 +279,8 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
         description: "Failed to connect to Coinbase Wallet. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setConnectingWallet(null);
     }
     return null;
   };
@@ -298,8 +352,11 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
         className={`bg-[#0052FF] hover:bg-[#0039B3] text-white ${className}`}
         disabled={isConnecting}
       >
-        <Wallet className="mr-2 h-4 w-4" />
-        {isConnecting ? "Connecting..." : "Connect Wallet"}
+        {isConnecting ? (
+          <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Connecting...</>
+        ) : (
+          <><Wallet className="mr-2 h-4 w-4" /> Connect Wallet</>
+        )}
       </Button>
 
       <Dialog open={showWalletSelector} onOpenChange={setShowWalletSelector}>
@@ -317,13 +374,17 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
                 <Button
                   key={wallet.type}
                   onClick={() => wallet.available ? connectWallet(wallet.type) : handleWalletInstall(wallet.installUrl)}
-                  className={`w-full flex justify-start items-center ${wallet.available ? `bg-${wallet.bgColor} hover:bg-opacity-90` : 'bg-gray-200 dark:bg-gray-700'} text-white`}
+                  className={`w-full flex justify-start items-center ${wallet.available ? '' : 'bg-gray-200 dark:bg-gray-700'}`}
                   style={{ backgroundColor: wallet.available ? wallet.bgColor : undefined }}
-                  disabled={isConnecting}
+                  disabled={isConnecting || (connectingWallet === wallet.type)}
                 >
                   <div className="mr-2">{wallet.logo}</div>
-                  <span className="flex-grow text-left">
-                    {wallet.available ? `Connect to ${wallet.name}` : `Install ${wallet.name}`}
+                  <span className="flex-grow text-left text-white">
+                    {connectingWallet === wallet.type ? (
+                      <><Loader2 className="inline mr-2 h-4 w-4 animate-spin" /> Connecting to {wallet.name}</>
+                    ) : (
+                      wallet.available ? `Connect to ${wallet.name}` : `Install ${wallet.name}`
+                    )}
                   </span>
                 </Button>
               ))

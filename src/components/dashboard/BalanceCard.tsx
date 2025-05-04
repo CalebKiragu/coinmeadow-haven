@@ -23,7 +23,7 @@ import { Skeleton } from "../ui/skeleton";
 import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { useToast } from "@/hooks/use-toast";
 import CheckoutDialog from "../web3/CheckoutDialog";
-import EarnButton from "../web3/EarnButton";
+import Earn from "../web3/Earn";
 import IdentityDisplay from "../web3/IdentityDisplay";
 import WalletConnector from "../web3/WalletConnector";
 import { StakingService } from "@/lib/services/stakingService";
@@ -78,10 +78,6 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
   const [walletProvider, setWalletProvider] = useState<any>(null);
   const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("24h");
   const [stakingAssets, setStakingAssets] = useState<StakingAsset[]>([]);
-  const [stakeAmount, setStakeAmount] = useState<Record<string, string>>({});
-  const [isStaking, setIsStaking] = useState(false);
-  const [isUnstaking, setIsUnstaking] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
 
   // Fetch wallet data when component mounts or selected currencies change
   useEffect(() => {
@@ -292,143 +288,26 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
     }
   };
 
-  const handleStakeMax = (symbol: string) => {
-    const asset = stakingAssets.find(a => a.symbol === symbol);
-    if (asset) {
-      setStakeAmount({
-        ...stakeAmount,
-        [symbol]: asset.balance
-      });
-    }
-  };
-
-  const handleStakeAmountChange = (symbol: string, amount: string) => {
-    setStakeAmount({
-      ...stakeAmount,
-      [symbol]: amount
-    });
-  };
-
-  const handleStake = async (asset: StakingAsset) => {
-    if (!connectedWallet || !walletProvider) {
-      toast({
-        title: "Wallet Required",
-        description: "Please connect your wallet first",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const amount = stakeAmount[asset.symbol];
-    if (!amount || parseFloat(amount) <= 0) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid amount to stake",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      setIsStaking(true);
-      setSelectedAsset(asset.symbol);
-      
-      // Get a signer for the transaction
-      const provider = new ethers.providers.Web3Provider(walletProvider);
-      const signer = provider.getSigner();
-      
-      // Execute the staking transaction
-      const tx = await StakingService.stakeTokens(signer, amount, asset.decimals);
-      
-      toast({
-        title: "Staking Transaction Sent",
-        description: `Transaction hash: ${tx.hash.slice(0, 10)}...${tx.hash.slice(-4)}`,
-      });
-      
-      // Wait for transaction confirmation
-      await tx.wait();
-      
-      toast({
-        title: "Staking Successful",
-        description: `Successfully staked ${amount} ${asset.symbol}`,
-      });
-      
-      // Refresh staking assets
-      const updatedStakingAssets = [...stakingAssets];
-      const assetIndex = updatedStakingAssets.findIndex(a => a.symbol === asset.symbol);
-      if (assetIndex >= 0) {
-        const newBalance = parseFloat(updatedStakingAssets[assetIndex].balance) - parseFloat(amount);
-        updatedStakingAssets[assetIndex].balance = newBalance.toString();
+  const refreshStakingAssets = async () => {
+    // Reload staking assets after transactions
+    if (connectedWallet && walletProvider) {
+      try {
+        const provider = new ethers.providers.Web3Provider(walletProvider);
+        const stakingInfo = await StakingService.getStakingInfo(provider, connectedWallet);
+        
+        // Update staking assets with fresh data
+        setStakingAssets([
+          {
+            symbol: stakingInfo.tokenSymbol,
+            name: stakingInfo.tokenName,
+            balance: stakingInfo.tokenBalance,
+            apy: stakingInfo.apy,
+            decimals: stakingInfo.tokenDecimals
+          }
+        ]);
+      } catch (error) {
+        console.error("Error refreshing staking assets:", error);
       }
-      setStakingAssets(updatedStakingAssets);
-      
-    } catch (error) {
-      console.error("Staking error:", error);
-      toast({
-        title: "Staking Failed",
-        description: `Error: ${(error as Error).message || "Unknown error"}`,
-        variant: "destructive"
-      });
-    } finally {
-      setIsStaking(false);
-      setSelectedAsset(null);
-    }
-  };
-
-  const handleUnstake = async (asset: StakingAsset) => {
-    if (!connectedWallet || !walletProvider) {
-      toast({
-        title: "Wallet Required",
-        description: "Please connect your wallet first",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const amount = stakeAmount[asset.symbol];
-    if (!amount || parseFloat(amount) <= 0) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid amount to unstake",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      setIsUnstaking(true);
-      setSelectedAsset(asset.symbol);
-      
-      // Get a signer for the transaction
-      const provider = new ethers.providers.Web3Provider(walletProvider);
-      const signer = provider.getSigner();
-      
-      // Execute the unstaking transaction
-      const tx = await StakingService.unstakeTokens(signer, amount, asset.decimals);
-      
-      toast({
-        title: "Unstaking Transaction Sent",
-        description: `Transaction hash: ${tx.hash.slice(0, 10)}...${tx.hash.slice(-4)}`,
-      });
-      
-      // Wait for transaction confirmation
-      await tx.wait();
-      
-      toast({
-        title: "Unstaking Successful",
-        description: `Successfully unstaked ${amount} ${asset.symbol}`,
-      });
-      
-    } catch (error) {
-      console.error("Unstaking error:", error);
-      toast({
-        title: "Unstaking Failed",
-        description: `Error: ${(error as Error).message || "Unknown error"}`,
-        variant: "destructive"
-      });
-    } finally {
-      setIsUnstaking(false);
-      setSelectedAsset(null);
     }
   };
 
@@ -609,7 +488,7 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => setWalletDialogOpen(true)} 
+                  onClick={handleEarnButtonClick} 
                   className="text-xs h-7 px-3 py-0 bg-green-600 hover:bg-green-700 text-white border-0"
                 >
                   <TrendingUp className="h-3 w-3 mr-1" />
@@ -635,34 +514,7 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
             onCheckoutComplete={handleCheckoutComplete}
           />
 
-          {/* Wallet Connection Dialog */}
-          <Dialog open={walletDialogOpen} onOpenChange={setWalletDialogOpen}>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Connect DeFi Wallet</DialogTitle>
-                <DialogDescription>
-                  Connect your DeFi wallet to access staking features
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="grid gap-4 py-4">
-                <WalletConnector
-                  onConnect={handleWalletConnect}
-                  className="w-full"
-                />
-                
-                {!document.documentElement.classList.contains('has-wallet') && (
-                  <div className="p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md mt-2">
-                    <p className="text-amber-900 dark:text-amber-200 text-sm">
-                      No DeFi wallets detected in your browser. Please install a wallet extension to enable staking features.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          {/* Staking Dialog */}
+          {/* Staking (Earn) Dialog */}
           <Dialog open={earnDialogOpen} onOpenChange={setEarnDialogOpen}>
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>
@@ -678,59 +530,12 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
                     <span>Connected wallet:</span> <IdentityDisplay address={connectedWallet} compact={true} showCopy={false} showDisconnect={false} />
                   </p>
                   
-                  <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                    {stakingAssets.map((asset) => (
-                      <div key={asset.symbol} className="border rounded-lg p-4">
-                        <div className="flex justify-between">
-                          <div>
-                            <h3 className="font-medium">{asset.name} ({asset.symbol})</h3>
-                            <p className="text-sm text-muted-foreground">APY: {asset.apy}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium">{asset.balance} {asset.symbol}</p>
-                            <p className="text-xs text-muted-foreground">Available</p>
-                          </div>
-                        </div>
-                        <div className="mt-3">
-                          <div className="flex gap-2 mb-2">
-                            <input
-                              type="number"
-                              placeholder="Amount"
-                              className="flex-1 px-3 py-2 text-sm border rounded"
-                              min="0"
-                              max={asset.balance}
-                              value={stakeAmount[asset.symbol] || ''}
-                              onChange={(e) => handleStakeAmountChange(asset.symbol, e.target.value)}
-                            />
-                            <Button variant="outline" size="sm" onClick={() => handleStakeMax(asset.symbol)}>Max</Button>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              className="flex-1"
-                              onClick={() => handleStake(asset)}
-                              disabled={isStaking && selectedAsset === asset.symbol}
-                            >
-                              {isStaking && selectedAsset === asset.symbol ? 'Staking...' : `Stake ${asset.symbol}`}
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              className="flex-1"
-                              onClick={() => handleUnstake(asset)}
-                              disabled={isUnstaking && selectedAsset === asset.symbol}
-                            >
-                              {isUnstaking && selectedAsset === asset.symbol ? 'Unstaking...' : `Unstake ${asset.symbol}`}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {stakingAssets.length === 0 && (
-                    <div className="text-center p-8">
-                      <p>No stakable assets found in your wallet</p>
-                    </div>
-                  )}
+                  <Earn 
+                    walletAddress={connectedWallet}
+                    walletProvider={walletProvider}
+                    stakingAssets={stakingAssets}
+                    onRefresh={refreshStakingAssets}
+                  />
                 </div>
               ) : (
                 <div className="mt-4 text-center">
