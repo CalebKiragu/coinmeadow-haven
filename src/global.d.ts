@@ -47,9 +47,9 @@ interface Window {
   TradingView: TradingViewWidget;
 }
 
-// Ensure wagmi v1.x compatibility
-declare module 'wagmi' {
+// Supporting type declarations for wagmi v2.x
+declare module 'viem' {
   interface Chain {
-    // Add any missing properties to ensure compatibility with v1.x
+    // Add any missing properties for viem chain compatibility
   }
 }

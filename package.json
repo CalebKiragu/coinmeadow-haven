@@ -89,7 +89,7 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
     "vi-fetch": "^0.8.0",
-    "viem": "^2.8.4",
+    "viem": "^1.19.13",
     "vitest": "^3.1.1",
     "wagmi": "^1.4.13",
     "zod": "^3.23.8"
