@@ -46,3 +46,10 @@ interface GlobalThis {
 interface Window {
   TradingView: TradingViewWidget;
 }
+
+// Ensure wagmi compatibility
+declare module 'wagmi' {
+  interface Chain {
+    // Add any missing properties to ensure compatibility
+  }
+}

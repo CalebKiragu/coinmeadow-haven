@@ -4,7 +4,7 @@
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { configureChains, createConfig, WagmiConfig } from 'wagmi';
-import { mainnet, base, optimism, arbitrum } from 'wagmi/chains';
+import { mainnet } from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
 import { getEnvironmentConfig } from "./utils";
 import { OnchainProvider } from "@coinbase/onchainkit";
@@ -13,9 +13,9 @@ import { OnchainProvider } from "@coinbase/onchainkit";
 const queryClient = new QueryClient();
 
 // Configure chains and providers for wagmi v1.x
-// Using as const to ensure TypeScript treats the array as a readonly tuple
-const { chains, publicClient, webSocketPublicClient } = configureChains(
-  [mainnet, base, optimism, arbitrum] as const,
+// Using only the mainnet for now to avoid type compatibility issues with other chains
+const { publicClient, webSocketPublicClient } = configureChains(
+  [mainnet],
   [publicProvider()]
 );
 
