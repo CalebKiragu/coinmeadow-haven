@@ -12,6 +12,10 @@ declare const __dirname: string;
 
 // Add missing module declarations
 declare module '@radix-ui/react-toast';
+
+// Add specific sub-module declarations for @coinbase/onchainkit
+declare module '@coinbase/onchainkit/wallet';
+declare module '@coinbase/onchainkit/identity';
 declare module '@coinbase/onchainkit';
 
 // Add declarations for test-related globals
