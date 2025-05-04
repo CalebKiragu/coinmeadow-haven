@@ -17,6 +17,7 @@ declare global {
   interface Window {
     ethereum?: any;
     phantom?: {
+      ethereum?: any;
       solana?: any;
     };
     coinbaseWalletExtension?: any;
@@ -60,16 +61,31 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
     if (!isBrowser) return;
     
     const checkWalletAvailability = () => {
+      console.log("Checking wallet availability...");
+      
+      // Improved MetaMask detection
       const detectMetaMask = () => {
-        return isBrowser && window.ethereum?.isMetaMask;
+        const hasMetaMask = isBrowser && 
+          typeof window.ethereum !== 'undefined' && 
+          (window.ethereum.isMetaMask || 
+          (window.ethereum.providers && 
+            window.ethereum.providers.some((p: any) => p.isMetaMask)));
+        
+        console.log("MetaMask detected:", hasMetaMask);
+        return hasMetaMask;
       };
       
+      // Phantom detection with both Ethereum and Solana support check
       const detectPhantom = () => {
-        return isBrowser && !!window.phantom?.solana;
+        const hasPhantom = isBrowser && 
+          (!!window.phantom?.solana || !!window.phantom?.ethereum);
+        
+        console.log("Phantom detected:", hasPhantom);
+        return hasPhantom;
       };
       
       const detectCoinbase = () => {
-        return isBrowser && (
+        const hasCoinbase = isBrowser && (
           // Direct Coinbase Wallet Extension detection
           !!window.coinbaseWalletExtension || 
           // Through ethereum provider
@@ -77,6 +93,9 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
           // Additional Coinbase check for mobile
           !!window.ethereum?.providers?.find((p: any) => p.isCoinbaseWallet)
         );
+        
+        console.log("Coinbase detected:", hasCoinbase);
+        return hasCoinbase;
       };
       
       const wallets = {
@@ -99,20 +118,291 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
       }
     };
     
+    // Check on load
     checkWalletAvailability();
     
     // Check again after a delay to catch late-loading extensions
     const timeoutId = setTimeout(checkWalletAvailability, 1000);
     
-    // Listen for wallet injections that might happen after page load
+    // Listen for ethereum object changes
+    const handleEthereumChanged = () => {
+      console.log("Ethereum object changed, rechecking wallets");
+      checkWalletAvailability();
+    };
+    
+    window.addEventListener('ethereum#initialized', handleEthereumChanged);
     window.addEventListener('DOMContentLoaded', checkWalletAvailability);
     
     return () => {
+      window.removeEventListener('ethereum#initialized', handleEthereumChanged);
       window.removeEventListener('DOMContentLoaded', checkWalletAvailability);
       clearTimeout(timeoutId);
     };
   }, []);
 
+  // Improved MetaMask connection function
+  const connectMetamask = async () => {
+    console.log("Connecting to MetaMask...");
+    let provider;
+    
+    // Check for MetaMask in window.ethereum directly
+    if (window.ethereum?.isMetaMask) {
+      console.log("Found MetaMask in window.ethereum");
+      provider = window.ethereum;
+    } 
+    // Check for MetaMask in providers array
+    else if (window.ethereum?.providers) {
+      console.log("Looking for MetaMask in providers array");
+      provider = window.ethereum.providers.find((p: any) => p.isMetaMask);
+    }
+    
+    if (!provider) {
+      console.log("MetaMask not found");
+      toast({
+        title: "Connection Error",
+        description: "MetaMask provider not found. Please install MetaMask extension.",
+        variant: "destructive"
+      });
+      return null;
+    }
+
+    try {
+      setConnectingWallet("metamask");
+      
+      // Request accounts from MetaMask provider
+      console.log("Requesting accounts from MetaMask...");
+      const ethersProvider = new window.ethers.providers.Web3Provider(provider, 'any');
+      await ethersProvider.send('eth_requestAccounts', []);
+      const signer = ethersProvider.getSigner();
+      const address = await signer.getAddress();
+      
+      console.log("Connected to MetaMask with address:", address);
+      
+      // Get ENS name if available
+      let name;
+      try {
+        name = await ethersProvider.lookupAddress(address);
+        console.log("ENS name:", name);
+      } catch (error) {
+        console.log("Could not fetch ENS name:", error);
+      }
+      
+      return { address, name, provider: ethersProvider };
+    } catch (error) {
+      console.error("MetaMask connection error:", error);
+      toast({
+        title: "Connection Error",
+        description: `Failed to connect to MetaMask: ${(error as Error).message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setConnectingWallet(null);
+    }
+    return null;
+  };
+
+  // Updated Phantom connection to prioritize Ethereum over Solana
+  const connectPhantom = async () => {
+    console.log("Connecting to Phantom...");
+    
+    // Check if Phantom is available
+    if (!window.phantom) {
+      console.log("Phantom not found");
+      return null;
+    }
+
+    try {
+      setConnectingWallet("phantom");
+      
+      // Prioritize Ethereum connection for Phantom
+      if (window.phantom.ethereum) {
+        console.log("Using Phantom Ethereum provider");
+        const provider = window.phantom.ethereum;
+        
+        // Connect using ethers
+        const ethersProvider = new window.ethers.providers.Web3Provider(provider, 'any');
+        await ethersProvider.send('eth_requestAccounts', []);
+        const signer = ethersProvider.getSigner();
+        const address = await signer.getAddress();
+        
+        console.log("Connected to Phantom EVM with address:", address);
+        
+        return { 
+          address, 
+          name: undefined,
+          provider: ethersProvider
+        };
+      } 
+      // Fall back to Solana if Ethereum is not available
+      else if (window.phantom.solana) {
+        console.log("Using Phantom Solana provider (fallback)");
+        const connection = await window.phantom.solana.connect();
+        const { publicKey } = connection;
+        
+        if (publicKey) {
+          const address = publicKey.toString();
+          console.log("Connected to Phantom Solana with address:", address);
+          toast({
+            title: "Solana Connection",
+            description: "Connected to Solana address. Note that some features may require an Ethereum address.",
+            variant: "warning"
+          });
+          
+          return { 
+            address, 
+            name: undefined,
+            provider: window.phantom.solana
+          };
+        }
+      }
+    } catch (error) {
+      console.error("Phantom connection error:", error);
+      toast({
+        title: "Connection Error",
+        description: `Failed to connect to Phantom: ${(error as Error).message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setConnectingWallet(null);
+    }
+    return null;
+  };
+
+  // Improved Coinbase wallet connection
+  const connectCoinbase = async () => {
+    console.log("Connecting to Coinbase Wallet...");
+    
+    // Try different ways to access Coinbase Wallet
+    const getCoinbaseProvider = () => {
+      // Direct extension access
+      if (window.coinbaseWalletExtension) {
+        console.log("Found Coinbase via window.coinbaseWalletExtension");
+        return window.coinbaseWalletExtension;
+      }
+      
+      // Through ethereum provider
+      if (window.ethereum?.isCoinbaseWallet) {
+        console.log("Found Coinbase via window.ethereum.isCoinbaseWallet");
+        return window.ethereum;
+      }
+      
+      // Check if ethereum has providers array (mobile case)
+      if (window.ethereum?.providers) {
+        const coinbaseProvider = window.ethereum.providers.find((p: any) => p.isCoinbaseWallet);
+        if (coinbaseProvider) {
+          console.log("Found Coinbase via providers array");
+          return coinbaseProvider;
+        }
+      }
+      
+      return null;
+    };
+    
+    const coinbaseWallet = getCoinbaseProvider();
+    
+    if (!coinbaseWallet) {
+      console.log("Coinbase Wallet not found");
+      return null;
+    }
+
+    try {
+      setConnectingWallet("coinbase");
+      
+      // Connect to Coinbase wallet
+      console.log("Requesting accounts from Coinbase...");
+      const provider = new window.ethers.providers.Web3Provider(coinbaseWallet, 'any');
+      await provider.send('eth_requestAccounts', []);
+      const signer = provider.getSigner();
+      const address = await signer.getAddress();
+      
+      console.log("Connected to Coinbase with address:", address);
+      
+      return { address, name: undefined, provider };
+    } catch (error) {
+      console.error("Coinbase Wallet connection error:", error);
+      toast({
+        title: "Connection Error",
+        description: `Failed to connect to Coinbase Wallet: ${(error as Error).message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setConnectingWallet(null);
+    }
+    return null;
+  };
+
+  const connectWallet = async (walletType?: WalletType) => {
+    setIsConnecting(true);
+    
+    try {
+      let result;
+      
+      if (walletType) {
+        // Connect to specific wallet if specified
+        console.log(`Attempting to connect to ${walletType}...`);
+        switch (walletType) {
+          case 'coinbase':
+            result = await connectCoinbase();
+            break;
+          case 'metamask':
+            result = await connectMetamask();
+            break;
+          case 'phantom':
+            result = await connectPhantom();
+            break;
+        }
+      } else {
+        // Try connecting to wallets in order of preference
+        console.log("Trying available wallets in sequence...");
+        result = await connectCoinbase() || 
+                 await connectMetamask() || 
+                 await connectPhantom();
+      }
+      
+      if (result) {
+        onConnect(result.address, result.name, result.provider);
+        setShowWalletSelector(false);
+        toast({
+          title: "Wallet connected",
+          description: `Connected to ${result.address.slice(0, 6)}...${result.address.slice(-4)}`,
+        });
+      } else if (!anyWalletInstalled) {
+        // If no wallet is available, suggest installing one
+        console.log("No wallet available, showing wallet selector");
+        setShowWalletSelector(true);
+      } else {
+        console.log("Connection failed with all available wallets");
+        toast({
+          title: "Connection failed",
+          description: "Could not connect to wallet. Please try again.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Wallet connection error:", error);
+      toast({
+        title: "Connection Error",
+        description: `Error connecting wallet: ${(error as Error).message}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handleConnect = () => {
+    if (installedWallets.coinbase || installedWallets.metamask || installedWallets.phantom) {
+      setShowWalletSelector(true);
+    } else {
+      connectWallet();
+    }
+  };
+
+  const handleWalletInstall = (url: string) => {
+    window.open(url, "_blank");
+  };
+
+  // Create list of wallet objects for UI rendering
   const walletsList: WalletInfo[] = [
     {
       type: "metamask",
@@ -160,190 +450,6 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({ onConnect, className 
       bgColor: "#8A5FFF"
     }
   ];
-
-  const connectMetamask = async () => {
-    if (!window.ethereum?.isMetaMask) {
-      console.log("MetaMask not found");
-      return null;
-    }
-
-    try {
-      setConnectingWallet("metamask");
-      
-      // Request accounts directly from MetaMask provider
-      const provider = new window.ethers.providers.Web3Provider(window.ethereum);
-      await provider.send('eth_requestAccounts', []);
-      const signer = provider.getSigner();
-      const address = await signer.getAddress();
-      
-      // Get ENS name if available
-      let name;
-      try {
-        name = await provider.lookupAddress(address);
-      } catch (error) {
-        console.log("Could not fetch ENS name:", error);
-      }
-      
-      return { address, name, provider };
-    } catch (error) {
-      console.error("MetaMask connection error:", error);
-      toast({
-        title: "Connection Error",
-        description: "Failed to connect to MetaMask. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setConnectingWallet(null);
-    }
-    return null;
-  };
-
-  const connectPhantom = async () => {
-    const phantom = window.phantom?.solana;
-    
-    if (!phantom) {
-      console.log("Phantom not found");
-      return null;
-    }
-
-    try {
-      setConnectingWallet("phantom");
-      
-      // Connect to Phantom wallet
-      const connection = await phantom.connect();
-      const { publicKey } = connection;
-      if (publicKey) {
-        // Here we return only the Phantom-specific provider and data
-        return { 
-          address: publicKey.toString(), 
-          name: undefined,
-          provider: phantom
-        };
-      }
-    } catch (error) {
-      console.error("Phantom connection error:", error);
-      toast({
-        title: "Connection Error",
-        description: "Failed to connect to Phantom. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setConnectingWallet(null);
-    }
-    return null;
-  };
-
-  const connectCoinbase = async () => {
-    // Try different ways to access Coinbase Wallet
-    const getCoinbaseProvider = () => {
-      // Direct extension access
-      if (window.coinbaseWalletExtension) {
-        return window.coinbaseWalletExtension;
-      }
-      
-      // Through ethereum provider
-      if (window.ethereum?.isCoinbaseWallet) {
-        return window.ethereum;
-      }
-      
-      // Check if ethereum has providers array (mobile case)
-      if (window.ethereum?.providers) {
-        const coinbaseProvider = window.ethereum.providers.find((p: any) => p.isCoinbaseWallet);
-        if (coinbaseProvider) return coinbaseProvider;
-      }
-      
-      return null;
-    };
-    
-    const coinbaseWallet = getCoinbaseProvider();
-    
-    if (!coinbaseWallet) {
-      console.log("Coinbase Wallet not found");
-      return null;
-    }
-
-    try {
-      setConnectingWallet("coinbase");
-      
-      // Connect to Coinbase wallet
-      const provider = new window.ethers.providers.Web3Provider(coinbaseWallet);
-      await provider.send('eth_requestAccounts', []);
-      const signer = provider.getSigner();
-      const address = await signer.getAddress();
-      
-      return { address, name: undefined, provider };
-    } catch (error) {
-      console.error("Coinbase Wallet connection error:", error);
-      toast({
-        title: "Connection Error",
-        description: "Failed to connect to Coinbase Wallet. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setConnectingWallet(null);
-    }
-    return null;
-  };
-
-  const connectWallet = async (walletType?: WalletType) => {
-    setIsConnecting(true);
-    
-    try {
-      let result;
-      
-      if (walletType) {
-        // Connect to specific wallet if specified
-        switch (walletType) {
-          case 'coinbase':
-            result = await connectCoinbase();
-            break;
-          case 'metamask':
-            result = await connectMetamask();
-            break;
-          case 'phantom':
-            result = await connectPhantom();
-            break;
-        }
-      } else {
-        // Try connecting to wallets in order of preference
-        result = await connectCoinbase() || 
-                 await connectMetamask() || 
-                 await connectPhantom();
-      }
-      
-      if (result) {
-        onConnect(result.address, result.name, result.provider);
-        setShowWalletSelector(false);
-        toast({
-          title: "Wallet connected",
-          description: `Connected to ${result.address.slice(0, 6)}...${result.address.slice(-4)}`,
-        });
-      } else if (!anyWalletInstalled) {
-        // If no wallet is available, suggest installing one
-        setShowWalletSelector(true);
-      } else {
-        toast({
-          title: "Connection failed",
-          description: "Could not connect to wallet",
-          variant: "destructive"
-        });
-      }
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
-  const handleConnect = () => {
-    if (installedWallets.coinbase || installedWallets.metamask || installedWallets.phantom) {
-      setShowWalletSelector(true);
-    } else {
-      connectWallet();
-    }
-  };
-
-  const handleWalletInstall = (url: string) => {
-    window.open(url, "_blank");
-  };
 
   return (
     <>
