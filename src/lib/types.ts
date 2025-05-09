@@ -1,3 +1,7 @@
+export interface GoogleAuthPayload {
+  token: string;
+  type: string;
+}
 
 export interface LoginPayload {
   email?: string;
@@ -10,7 +14,7 @@ export interface LoginPayload {
 export interface LoginResponse {
   user?: any;
   merchant?: any;
-  token: any;
+  token?: any;
 }
 
 export interface UserRegistrationPayload {

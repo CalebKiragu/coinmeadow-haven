@@ -55,7 +55,7 @@ const TransactionHistory = ({
       }
     };
 
-    fetchTransactions();
+    // fetchTransactions();
   }, [forceRefresh]);
 
   // Memoize filtered and sorted transactions for performance

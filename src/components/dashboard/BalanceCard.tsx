@@ -23,24 +23,16 @@ import { Skeleton } from "../ui/skeleton";
 import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { useToast } from "@/hooks/use-toast";
 import CheckoutDialog from "../web3/CheckoutDialog";
-import EarnButton from "../web3/EarnButton";
+import { Earn } from "@coinbase/onchainkit/earn";
 import IdentityDisplay from "../web3/IdentityDisplay";
-import WalletConnector from "../web3/WalletConnector";
-import { StakingService } from "@/lib/services/stakingService";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle 
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ethers } from "ethers";
+import { getEnvironmentConfig } from "@/lib/utils";
 
 interface BalanceCardProps {
   showBalance: boolean;
@@ -50,38 +42,21 @@ interface BalanceCardProps {
 // Time periods for price changes
 type TimePeriod = "1h" | "6h" | "12h" | "24h" | "7d" | "30d" | "12m";
 
-interface StakingAsset {
-  symbol: string;
-  name: string;
-  balance: string;
-  apy: string;
-  decimals: number;
-}
-
 const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const { verifyPasskey, isPasskeyVerified, isVerifying } = usePasskeyAuth();
-
   const { prices } = useAppSelector((state) => state.price);
   const { user, merchant } = useAppSelector((state) => state.auth);
   const { wallets, selectedCrypto, selectedFiat, lastUpdated } = useAppSelector(
     (state) => state.wallet
   );
-
   const [isLoading, setIsLoading] = useState(false);
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
-  const [walletDialogOpen, setWalletDialogOpen] = useState(false);
   const [earnDialogOpen, setEarnDialogOpen] = useState(false);
-  const [connectedWallet, setConnectedWallet] = useState<string | null>(null);
-  const [walletProvider, setWalletProvider] = useState<any>(null);
-  const [selectedTimePeriod, setSelectedTimePeriod] = useState<TimePeriod>("24h");
-  const [stakingAssets, setStakingAssets] = useState<StakingAsset[]>([]);
-  const [stakeAmount, setStakeAmount] = useState<Record<string, string>>({});
-  const [isStaking, setIsStaking] = useState(false);
-  const [isUnstaking, setIsUnstaking] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
+  const [selectedTimePeriod, setSelectedTimePeriod] =
+    useState<TimePeriod>("24h");
 
   // Fetch wallet data when component mounts or selected currencies change
   useEffect(() => {
@@ -103,60 +78,6 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
 
     if (user || merchant) fetchData();
   }, [user, merchant, selectedCrypto, selectedFiat]);
-
-  // Load staking assets when connected wallet changes
-  useEffect(() => {
-    const loadStakingAssets = async () => {
-      if (connectedWallet && walletProvider) {
-        try {
-          // For Ethereum compatible wallets, we can use ethers.js
-          if (walletProvider.provider?.isMetaMask || walletProvider.isCoinbaseWallet) {
-            const provider = new ethers.providers.Web3Provider(walletProvider);
-            
-            try {
-              const stakingInfo = await StakingService.getStakingInfo(provider, connectedWallet);
-              
-              // Set the staking assets based on real data from the provider
-              setStakingAssets([
-                {
-                  symbol: stakingInfo.tokenSymbol,
-                  name: stakingInfo.tokenName,
-                  balance: stakingInfo.tokenBalance,
-                  apy: stakingInfo.apy,
-                  decimals: stakingInfo.tokenDecimals
-                }
-              ]);
-            } catch (error) {
-              console.error("Error loading real staking data:", error);
-              // Fallback to mock data
-              setStakingAssets(StakingService.getMockStakingAssets());
-            }
-          } else {
-            // For non-ethereum wallets or if ethers not available, use mock data
-            setStakingAssets(StakingService.getMockStakingAssets());
-          }
-        } catch (error) {
-          console.error("Error loading staking assets:", error);
-          setStakingAssets(StakingService.getMockStakingAssets());
-        }
-      } else {
-        // If no wallet is connected, use wallet balances or mock data
-        const walletAssets = wallets
-          .filter((w) => ["BTC", "ETH", "USDC", "USDT"].includes(w.currency))
-          .map((w) => ({
-            symbol: w.currency,
-            name: cryptoCurrencies.find((c) => c.symbol === w.currency)?.name || w.currency,
-            balance: w.balance.availableBalance,
-            apy: w.currency === "USDC" ? "4.2%" : w.currency === "USDT" ? "3.8%" : "2.1%",
-            decimals: w.currency === "USDC" || w.currency === "USDT" ? 6 : 18
-          }));
-        
-        setStakingAssets(walletAssets.length > 0 ? walletAssets : StakingService.getMockStakingAssets());
-      }
-    };
-    
-    loadStakingAssets();
-  }, [connectedWallet, walletProvider, wallets]);
 
   const handleSelectCrypto = (value: string) => {
     dispatch(setSelectedCrypto(value));
@@ -193,17 +114,17 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
       "24h": selectedCryptoPrice ? Number(selectedCryptoPrice.change) : 2.5,
       "7d": 5.7,
       "30d": -3.2,
-      "12m": 12.8
+      "12m": 12.8,
     };
-    
+
     // Check for NaN and provide default values
     const change = mockChanges[period];
     return isNaN(change) ? 0 : change;
   };
 
   const formatPrice = (price: number) => {
-    if (isNaN(price)) return `${selectedFiatData?.symbol || '$'}0.00`;
-    
+    if (isNaN(price)) return `${selectedFiatData?.symbol || "$"}0.00`;
+
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: selectedFiat,
@@ -266,20 +187,6 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
     setCheckoutDialogOpen(true);
   };
 
-  const handleEarnButtonClick = () => {
-    setEarnDialogOpen(true);
-  };
-
-  const handleWalletConnect = (address: string, name?: string, provider?: any) => {
-    setConnectedWallet(address);
-    setWalletProvider(provider);
-    toast({
-      title: "Wallet Connected",
-      description: `Connected to ${name || address.slice(0, 6) + "..." + address.slice(-4)}`,
-    });
-    setWalletDialogOpen(false);
-  };
-
   const handleCheckoutComplete = () => {
     // Refresh wallet data after checkout
     if (user || merchant) {
@@ -289,146 +196,6 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
         basePair: selectedFiat,
         isMerchant: merchant ? "true" : "false",
       });
-    }
-  };
-
-  const handleStakeMax = (symbol: string) => {
-    const asset = stakingAssets.find(a => a.symbol === symbol);
-    if (asset) {
-      setStakeAmount({
-        ...stakeAmount,
-        [symbol]: asset.balance
-      });
-    }
-  };
-
-  const handleStakeAmountChange = (symbol: string, amount: string) => {
-    setStakeAmount({
-      ...stakeAmount,
-      [symbol]: amount
-    });
-  };
-
-  const handleStake = async (asset: StakingAsset) => {
-    if (!connectedWallet || !walletProvider) {
-      toast({
-        title: "Wallet Required",
-        description: "Please connect your wallet first",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const amount = stakeAmount[asset.symbol];
-    if (!amount || parseFloat(amount) <= 0) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid amount to stake",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      setIsStaking(true);
-      setSelectedAsset(asset.symbol);
-      
-      // Get a signer for the transaction
-      const provider = new ethers.providers.Web3Provider(walletProvider);
-      const signer = provider.getSigner();
-      
-      // Execute the staking transaction
-      const tx = await StakingService.stakeTokens(signer, amount, asset.decimals);
-      
-      toast({
-        title: "Staking Transaction Sent",
-        description: `Transaction hash: ${tx.hash.slice(0, 10)}...${tx.hash.slice(-4)}`,
-      });
-      
-      // Wait for transaction confirmation
-      await tx.wait();
-      
-      toast({
-        title: "Staking Successful",
-        description: `Successfully staked ${amount} ${asset.symbol}`,
-      });
-      
-      // Refresh staking assets
-      const updatedStakingAssets = [...stakingAssets];
-      const assetIndex = updatedStakingAssets.findIndex(a => a.symbol === asset.symbol);
-      if (assetIndex >= 0) {
-        const newBalance = parseFloat(updatedStakingAssets[assetIndex].balance) - parseFloat(amount);
-        updatedStakingAssets[assetIndex].balance = newBalance.toString();
-      }
-      setStakingAssets(updatedStakingAssets);
-      
-    } catch (error) {
-      console.error("Staking error:", error);
-      toast({
-        title: "Staking Failed",
-        description: `Error: ${(error as Error).message || "Unknown error"}`,
-        variant: "destructive"
-      });
-    } finally {
-      setIsStaking(false);
-      setSelectedAsset(null);
-    }
-  };
-
-  const handleUnstake = async (asset: StakingAsset) => {
-    if (!connectedWallet || !walletProvider) {
-      toast({
-        title: "Wallet Required",
-        description: "Please connect your wallet first",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const amount = stakeAmount[asset.symbol];
-    if (!amount || parseFloat(amount) <= 0) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid amount to unstake",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      setIsUnstaking(true);
-      setSelectedAsset(asset.symbol);
-      
-      // Get a signer for the transaction
-      const provider = new ethers.providers.Web3Provider(walletProvider);
-      const signer = provider.getSigner();
-      
-      // Execute the unstaking transaction
-      const tx = await StakingService.unstakeTokens(signer, amount, asset.decimals);
-      
-      toast({
-        title: "Unstaking Transaction Sent",
-        description: `Transaction hash: ${tx.hash.slice(0, 10)}...${tx.hash.slice(-4)}`,
-      });
-      
-      // Wait for transaction confirmation
-      await tx.wait();
-      
-      toast({
-        title: "Unstaking Successful",
-        description: `Successfully unstaked ${amount} ${asset.symbol}`,
-      });
-      
-    } catch (error) {
-      console.error("Unstaking error:", error);
-      toast({
-        title: "Unstaking Failed",
-        description: `Error: ${(error as Error).message || "Unknown error"}`,
-        variant: "destructive"
-      });
-    } finally {
-      setIsUnstaking(false);
-      setSelectedAsset(null);
     }
   };
 
@@ -563,31 +330,54 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
                               : "text-red-500"
                           }
                         >
-                          {getPriceChangeByPeriod(selectedTimePeriod) >= 0 ? "+" : ""}
-                          {getPriceChangeByPeriod(selectedTimePeriod).toFixed(2)}% {selectedTimePeriod}
+                          {getPriceChangeByPeriod(selectedTimePeriod) >= 0
+                            ? "+"
+                            : ""}
+                          {getPriceChangeByPeriod(selectedTimePeriod).toFixed(
+                            2
+                          )}
+                          % {selectedTimePeriod}
                         </span>
                       </Badge>
                       <ChevronDown className="h-3 w-3 ml-0.5" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {(["1h", "6h", "12h", "24h", "7d", "30d", "12m"] as TimePeriod[]).map((period) => {
+                    {(
+                      [
+                        "1h",
+                        "6h",
+                        "12h",
+                        "24h",
+                        "7d",
+                        "30d",
+                        "12m",
+                      ] as TimePeriod[]
+                    ).map((period) => {
                       const changeValue = getPriceChangeByPeriod(period);
                       // Handle NaN values
-                      const displayValue = isNaN(changeValue) ? "0.00" : changeValue.toFixed(2);
-                      const isPositive = !isNaN(changeValue) && changeValue >= 0;
-                      
+                      const displayValue = isNaN(changeValue)
+                        ? "0.00"
+                        : changeValue.toFixed(2);
+                      const isPositive =
+                        !isNaN(changeValue) && changeValue >= 0;
+
                       return (
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           key={period}
                           onClick={() => handleSelectTimePeriod(period)}
-                          className={selectedTimePeriod === period ? "bg-accent" : ""}
+                          className={
+                            selectedTimePeriod === period ? "bg-accent" : ""
+                          }
                         >
                           <span className="mr-2">{period}</span>
                           <span
-                            className={isPositive ? "text-green-500" : "text-red-500"}
+                            className={
+                              isPositive ? "text-green-500" : "text-red-500"
+                            }
                           >
-                            {isPositive ? "+" : ""}{displayValue}%
+                            {isPositive ? "+" : ""}
+                            {displayValue}%
                           </span>
                         </DropdownMenuItem>
                       );
@@ -597,19 +387,19 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
               )}
 
               <div className="flex flex-wrap gap-1">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleCheckoutClick} 
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={handleCheckoutClick}
                   className="text-xs h-7 px-3 py-0 bg-[#0052FF] hover:bg-[#0039B3] text-white border-0"
                 >
                   Fund Wallet
                 </Button>
 
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setWalletDialogOpen(true)} 
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setEarnDialogOpen(true)}
                   className="text-xs h-7 px-3 py-0 bg-green-600 hover:bg-green-700 text-white border-0"
                 >
                   <TrendingUp className="h-3 w-3 mr-1" />
@@ -618,7 +408,7 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
 
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="lg"
                   onClick={handlePortfolioClick}
                   className="text-xs h-7 px-3 py-0"
                 >
@@ -627,7 +417,7 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
               </div>
             </div>
           </div>
-          
+
           {/* Checkout Dialog */}
           <CheckoutDialog
             open={checkoutDialogOpen}
@@ -635,109 +425,14 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
             onCheckoutComplete={handleCheckoutComplete}
           />
 
-          {/* Wallet Connection Dialog */}
-          <Dialog open={walletDialogOpen} onOpenChange={setWalletDialogOpen}>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Connect DeFi Wallet</DialogTitle>
-                <DialogDescription>
-                  Connect your DeFi wallet to access staking features
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="grid gap-4 py-4">
-                <WalletConnector
-                  onConnect={handleWalletConnect}
-                  className="w-full"
-                />
-                
-                {!document.documentElement.classList.contains('has-wallet') && (
-                  <div className="p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md mt-2">
-                    <p className="text-amber-900 dark:text-amber-200 text-sm">
-                      No DeFi wallets detected in your browser. Please install a wallet extension to enable staking features.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </DialogContent>
-          </Dialog>
-
           {/* Staking Dialog */}
           <Dialog open={earnDialogOpen} onOpenChange={setEarnDialogOpen}>
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Stake to Earn</DialogTitle>
-                <DialogDescription>
-                  Stake your assets to earn passive income
-                </DialogDescription>
-              </DialogHeader>
-              
-              {connectedWallet ? (
-                <div className="mt-2 space-y-4">
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <span>Connected wallet:</span> <IdentityDisplay address={connectedWallet} compact={true} showCopy={false} showDisconnect={false} />
-                  </p>
-                  
-                  <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                    {stakingAssets.map((asset) => (
-                      <div key={asset.symbol} className="border rounded-lg p-4">
-                        <div className="flex justify-between">
-                          <div>
-                            <h3 className="font-medium">{asset.name} ({asset.symbol})</h3>
-                            <p className="text-sm text-muted-foreground">APY: {asset.apy}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium">{asset.balance} {asset.symbol}</p>
-                            <p className="text-xs text-muted-foreground">Available</p>
-                          </div>
-                        </div>
-                        <div className="mt-3">
-                          <div className="flex gap-2 mb-2">
-                            <input
-                              type="number"
-                              placeholder="Amount"
-                              className="flex-1 px-3 py-2 text-sm border rounded"
-                              min="0"
-                              max={asset.balance}
-                              value={stakeAmount[asset.symbol] || ''}
-                              onChange={(e) => handleStakeAmountChange(asset.symbol, e.target.value)}
-                            />
-                            <Button variant="outline" size="sm" onClick={() => handleStakeMax(asset.symbol)}>Max</Button>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              className="flex-1"
-                              onClick={() => handleStake(asset)}
-                              disabled={isStaking && selectedAsset === asset.symbol}
-                            >
-                              {isStaking && selectedAsset === asset.symbol ? 'Staking...' : `Stake ${asset.symbol}`}
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              className="flex-1"
-                              onClick={() => handleUnstake(asset)}
-                              disabled={isUnstaking && selectedAsset === asset.symbol}
-                            >
-                              {isUnstaking && selectedAsset === asset.symbol ? 'Unstaking...' : `Unstake ${asset.symbol}`}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {stakingAssets.length === 0 && (
-                    <div className="text-center p-8">
-                      <p>No stakable assets found in your wallet</p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="mt-4 text-center">
-                  <p className="mb-4">Connect a DeFi wallet to access staking features</p>
-                  <WalletConnector onConnect={handleWalletConnect} />
-                </div>
-              )}
+            <DialogContent className="sm:max-w-fit pt-10 animate-fade-in glass-effect">
+              <Earn
+                vaultAddress={`0x${getEnvironmentConfig().baseVaultAddress.slice(
+                  2
+                )}`}
+              />
             </DialogContent>
           </Dialog>
         </div>

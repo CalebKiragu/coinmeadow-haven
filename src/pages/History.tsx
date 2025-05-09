@@ -106,7 +106,7 @@ const History = () => {
       }
     };
 
-    fetchTransactions();
+    // fetchTransactions();
   }, [transactions.length, dispatch, toast]);
 
   // Memoize filtered transactions for better performance

@@ -1,7 +1,5 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 import {
   ArrowLeft,
   ArrowRight,
@@ -27,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { TransactionSummary } from "@/components/send/TransactionSummary";
 import { StepIndicator } from "@/components/send/StepIndicator";
+import { useAppSelector } from "@/lib/redux/hooks";
 
 const Deposit = () => {
   const navigate = useNavigate();
@@ -39,7 +38,7 @@ const Deposit = () => {
     "success" | "error" | null
   >(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const auth = useSelector((state: RootState) => state.auth);
+  const auth = useAppSelector((state: any) => state.auth);
   const [selectedCountryCode, setSelectedCountryCode] = useState("254"); // Kenya by default
 
   // Currency handling

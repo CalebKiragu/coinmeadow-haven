@@ -30,8 +30,8 @@ export interface Transaction {
   netCurrency: string;
   fee: Fee[] | Fee | null | undefined;
   status: "INPROGRESS" | "CONFIRMED" | "SETTLED" | "CANCELLED";
-  timestamp: bigint;
-  updatedAt: bigint;
+  timestamp: string;
+  updatedAt: string;
   ids: TxIds | string;
 }
 
@@ -47,6 +47,29 @@ const initialState: TransactionState = {
   error: null,
 };
 
+const parseBigIntValues = <T extends Transaction[]>(
+  entity: T
+): Transaction[] => {
+  if (!entity || entity.length === 0) return [];
+
+  try {
+    return entity.map((txObj) => ({
+      ...txObj,
+      timestamp:
+        typeof txObj.timestamp === "bigint"
+          ? BigInt(txObj.timestamp).toString()
+          : txObj.timestamp.toString(),
+      updatedAt:
+        typeof txObj.updatedAt === "bigint"
+          ? BigInt(txObj.updatedAt).toString()
+          : txObj.updatedAt.toString(),
+    }));
+  } catch (error) {
+    console.error("Failed to parse transaction bigint values:", error);
+    return entity;
+  }
+};
+
 const transactionSlice = createSlice({
   name: "transaction",
   initialState,
@@ -56,7 +79,8 @@ const transactionSlice = createSlice({
       state.error = null;
     },
     fetchTransactionsSuccess: (state, action: PayloadAction<Transaction[]>) => {
-      state.transactions = action.payload;
+      if (action.payload.length > 0)
+        state.transactions = parseBigIntValues(action.payload);
       state.isLoading = false;
     },
     fetchTransactionsFailure: (state, action: PayloadAction<string>) => {
@@ -64,7 +88,7 @@ const transactionSlice = createSlice({
       state.error = action.payload;
     },
     addNewTransaction: (state, action: PayloadAction<Transaction>) => {
-      state.transactions.unshift(action.payload);
+      state.transactions.unshift(parseBigIntValues([action.payload])[0]);
     },
   },
 });

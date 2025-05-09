@@ -1,6 +1,14 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-export type Currency = "USD" | "EUR" | "GBP" | "KES" | "NGN" | "ZAR";
+export type Currency =
+  | "USD"
+  | "EUR"
+  | "GBP"
+  | "KES"
+  | "UGX"
+  | "TZS"
+  | "NGN"
+  | "ZAR";
 
 export interface Wallet {
   currency: string;
@@ -115,5 +123,4 @@ export const {
   setShowBalance,
   toggleShowBalance,
 } = walletSlice.actions;
-
 export default walletSlice.reducer;

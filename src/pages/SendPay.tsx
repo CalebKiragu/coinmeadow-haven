@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 import { ArrowLeft, CheckCircle, XCircle } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import { StepIndicator } from "@/components/send/StepIndicator";
@@ -16,6 +15,7 @@ import { TransactionSummary } from "@/components/send/TransactionSummary";
 import { ApiService } from "@/lib/services";
 import { TransferResponse } from "@/lib/services/transactionService";
 import { BlockchainTransfer } from "@/components/send/BlockchainTransfer";
+import { useAppSelector } from "@/lib/redux/hooks";
 
 const SendPayContent = () => {
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ const SendPayContent = () => {
     "success" | "error" | null
   >(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const auth = useSelector((state: RootState) => state.auth);
+  const auth = useAppSelector((state: any) => state.auth);
 
   const {
     mobileNumber,
@@ -213,7 +213,9 @@ const SendPayContent = () => {
         };
       }
 
-      const response: TransferResponse = await ApiService.transferFunds(payload);
+      const response: TransferResponse = await ApiService.transferFunds(
+        payload
+      );
 
       if (response.success || response.msg === "Transaction successful") {
         setTransactionStatus("success");

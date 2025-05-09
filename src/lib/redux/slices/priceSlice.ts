@@ -1,10 +1,9 @@
-
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface PriceData {
   basePair: string;
   source: string;
-  timestamp: bigint;
+  timestamp: string;
   value: string;
   date: string;
   currency: string;
@@ -23,6 +22,23 @@ const initialState: PriceState = {
   error: null,
 };
 
+const parseTimestamps = <T extends PriceData[]>(entity: T): PriceData[] => {
+  if (!entity || entity.length === 0) return [];
+
+  try {
+    return entity.map((priceObj) => ({
+      ...priceObj,
+      timestamp:
+        typeof priceObj.timestamp === "bigint"
+          ? BigInt(priceObj.timestamp).toString()
+          : priceObj.timestamp.toString(),
+    }));
+  } catch (error) {
+    console.error("Failed to parse price timestamps data:", error);
+    return entity;
+  }
+};
+
 const priceSlice = createSlice({
   name: "price",
   initialState,
@@ -32,7 +48,9 @@ const priceSlice = createSlice({
       state.error = null;
     },
     fetchPricesSuccess: (state, action: PayloadAction<PriceData[]>) => {
-      state.prices = action.payload;
+      if (action.payload.length > 0)
+        state.prices = parseTimestamps(action.payload);
+
       state.isLoading = false;
     },
     fetchPricesFailure: (state, action: PayloadAction<string>) => {
@@ -45,9 +63,9 @@ const priceSlice = createSlice({
       );
 
       if (index !== -1) {
-        state.prices[index] = action.payload;
+        state.prices[index] = parseTimestamps([action.payload])[0];
       } else {
-        state.prices.push(action.payload);
+        state.prices.push(parseTimestamps([action.payload])[0]);
       }
     },
   },

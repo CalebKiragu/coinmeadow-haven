@@ -1,4 +1,3 @@
-
 import { ClassValue, clsx } from "clsx";
 import { base, baseSepolia } from "wagmi/chains"; // add baseSepolia for testing
 import { twMerge } from "tailwind-merge";
@@ -7,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const formatTimestamp = (timestamp: bigint): string => {
+export const formatTimestamp = (timestamp: string): string => {
   const date = new Date(Number(timestamp));
   return date.toLocaleDateString("en-US", {
     year: "numeric",
@@ -146,6 +145,7 @@ export const aws = () => {
  */
 export const getEnvironmentConfig = () => {
   const env = import.meta.env.VITE_APP_ENV || "production";
+  // const env = import.meta.env.VITE_APP_ENV || "development";
 
   const configs = {
     development: {
@@ -166,7 +166,18 @@ export const getEnvironmentConfig = () => {
       onchainkitApiKey:
         import.meta.env.VITE_PUBLIC_ONCHAINKIT_API_KEY ||
         "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
-      walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016"
+      walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016",
+      googleScriptSrc: "https://accounts.google.com/gsi/client",
+      googleClientId:
+        "339887597881-dtj402e9975k4r8stoejgovj1me8gicn.apps.googleusercontent.com",
+      baseSchemaId:
+        "0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9",
+      baseVaultAddress: "0x7BfA7C4f149E7415b73bdeDfe609237e29CBF34A",
+      ETH_RPC_URL:
+        "https://eth-sepolia.g.alchemy.com/v2/8Yz1ZLNi87s0MCcIL8s6jzoiLXfLhVSK",
+
+      CHAIN_ID: 11155111, // sepolia chain_id
+      BASE_CHAIN_ID: 11155111,
     },
     staging: {
       apiUrl: "https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/",
@@ -186,7 +197,17 @@ export const getEnvironmentConfig = () => {
       onchainkitApiKey:
         import.meta.env.VITE_PUBLIC_ONCHAINKIT_API_KEY ||
         "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
-      walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016"
+      walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016",
+      googleScriptSrc: "https://accounts.google.com/gsi/client",
+      googleClientId:
+        "339887597881-dtj402e9975k4r8stoejgovj1me8gicn.apps.googleusercontent.com",
+      baseSchemaId:
+        "0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9",
+      baseVaultAddress: "0x7BfA7C4f149E7415b73bdeDfe609237e29CBF34A",
+      ETH_RPC_URL:
+        "https://eth-sepolia.g.alchemy.com/v2/8Yz1ZLNi87s0MCcIL8s6jzoiLXfLhVSK",
+      CHAIN_ID: 11155111, // sepolia chain_id
+      BASE_CHAIN_ID: 11155111,
     },
     production: {
       apiUrl: "https://qckp089yob.execute-api.us-east-1.amazonaws.com/Prod/",
@@ -206,7 +227,17 @@ export const getEnvironmentConfig = () => {
       onchainkitApiKey:
         import.meta.env.VITE_PUBLIC_ONCHAINKIT_API_KEY ||
         "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
-      walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016"
+      walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016",
+      googleScriptSrc: "https://accounts.google.com/gsi/client",
+      googleClientId:
+        "339887597881-dtj402e9975k4r8stoejgovj1me8gicn.apps.googleusercontent.com",
+      baseSchemaId:
+        "0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9",
+      baseVaultAddress: "0x7BfA7C4f149E7415b73bdeDfe609237e29CBF34A",
+      ETH_RPC_URL:
+        "https://eth-mainnet.g.alchemy.com/v2/8Yz1ZLNi87s0MCcIL8s6jzoiLXfLhVSK",
+      CHAIN_ID: 1, // mainnet chain_id
+      BASE_CHAIN_ID: 8453,
     },
   };
 

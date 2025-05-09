@@ -1,7 +1,14 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Copy, QrCode, RefreshCw, MoreVertical, Check, AlertTriangle, Camera } from "lucide-react";
+import {
+  Copy,
+  QrCode,
+  RefreshCw,
+  MoreVertical,
+  Check,
+  AlertTriangle,
+  Camera,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -10,13 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
@@ -24,8 +31,6 @@ import { ApiService } from "@/lib/services";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cryptoCurrencies } from "@/types/currency";
 import { QRCodeSVG } from "qrcode.react";
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib/redux/store";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import html2canvas from "html2canvas";
+import { useAppSelector } from "@/lib/redux/hooks";
 
 const Receive = () => {
   const navigate = useNavigate();
@@ -46,10 +52,11 @@ const Receive = () => {
   const [isFetchingAddresses, setIsFetchingAddresses] = useState(false);
   const [showFreshAddressDialog, setShowFreshAddressDialog] = useState(false);
   const receivePageRef = useRef<HTMLDivElement>(null);
-  
-  const user = useSelector((state: RootState) => state.auth.user);
-  const merchant = useSelector((state: RootState) => state.auth.merchant);
-  const userIdentifier = user?.email || user?.phone || merchant?.email || merchant?.phone || "";
+
+  const user = useAppSelector((state: any) => state.auth.user);
+  const merchant = useAppSelector((state: any) => state.auth.merchant);
+  const userIdentifier =
+    user?.email || user?.phone || merchant?.email || merchant?.phone || "";
   const isMerchant = !!merchant;
 
   useEffect(() => {
@@ -69,19 +76,19 @@ const Receive = () => {
     try {
       setIsLoading(true);
       setIsFetchingAddresses(true);
-      
+
       console.log("Fetching deposit addresses for", currency);
-      
+
       // Fetch previously generated addresses
       const addresses = await ApiService.getDepositAddresses({
         userIdentifier,
         currency,
-        isMerchant
+        isMerchant,
       });
-      
+
       console.log("Received addresses:", addresses);
       setPreviousAddresses(addresses);
-      
+
       // If there are previous addresses, use the first one as the current address
       if (addresses && addresses.length > 0) {
         setDepositAddress(addresses[0]);
@@ -93,9 +100,9 @@ const Receive = () => {
             userIdentifier,
             currency,
             isMerchant,
-            fresh: false
+            fresh: false,
           });
-          
+
           console.log("Generated address:", address);
           if (address) {
             setDepositAddress(address);
@@ -103,7 +110,8 @@ const Receive = () => {
             toast({
               variant: "destructive",
               title: "Error",
-              description: "Failed to generate deposit address. Please try again later.",
+              description:
+                "Failed to generate deposit address. Please try again later.",
             });
           }
         } catch (genError) {
@@ -111,7 +119,8 @@ const Receive = () => {
           toast({
             variant: "destructive",
             title: "Error",
-            description: "Failed to generate deposit address. Please try again later.",
+            description:
+              "Failed to generate deposit address. Please try again later.",
           });
         }
       }
@@ -131,28 +140,28 @@ const Receive = () => {
   const generateFreshAddress = async () => {
     try {
       setIsLoading(true);
-      
+
       console.log("Generating fresh address for", selectedCrypto);
-      
+
       const address = await ApiService.generateDepositAddress({
         userIdentifier,
         currency: selectedCrypto,
         isMerchant,
-        fresh: true
+        fresh: true,
       });
-      
+
       console.log("Fresh address generated:", address);
       setDepositAddress(address);
-      
+
       // Refresh the list of addresses
       const addresses = await ApiService.getDepositAddresses({
         userIdentifier,
         currency: selectedCrypto,
-        isMerchant
+        isMerchant,
       });
-      
+
       setPreviousAddresses(addresses);
-      
+
       toast({
         title: "Success",
         description: "New deposit address generated successfully",
@@ -162,7 +171,8 @@ const Receive = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to generate a new deposit address. Please try again later.",
+        description:
+          "Failed to generate a new deposit address. Please try again later.",
       });
     } finally {
       setIsLoading(false);
@@ -172,7 +182,7 @@ const Receive = () => {
 
   const handleCopy = async () => {
     if (!depositAddress) return;
-    
+
     try {
       await navigator.clipboard.writeText(depositAddress);
       toast({
@@ -191,11 +201,11 @@ const Receive = () => {
 
   const handleScreenshot = async () => {
     if (!receivePageRef.current) return;
-    
+
     try {
       const canvas = await html2canvas(receivePageRef.current);
       const image = canvas.toDataURL("image/png");
-      
+
       // Create a temporary anchor element to download the image
       const link = document.createElement("a");
       link.href = image;
@@ -203,7 +213,7 @@ const Receive = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       toast({
         title: "Screenshot captured!",
         description: "Your screenshot has been saved.",
@@ -219,7 +229,7 @@ const Receive = () => {
   };
 
   const getCryptoDetails = (symbol: string) => {
-    const crypto = cryptoCurrencies.find(c => c.symbol === symbol);
+    const crypto = cryptoCurrencies.find((c) => c.symbol === symbol);
     return crypto?.details || "";
   };
 
@@ -227,23 +237,26 @@ const Receive = () => {
     <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
       <NavigationHeader title="Receive" />
 
-      <div ref={receivePageRef} className="max-w-md mx-auto glass-effect p-6 rounded-lg space-y-6">
+      <div
+        ref={receivePageRef}
+        className="max-w-md mx-auto glass-effect p-6 rounded-lg space-y-6"
+      >
         {isLoading ? (
           <div className="space-y-4 animate-pulse">
             <div className="space-y-2">
               <Skeleton className="h-4 w-40" />
               <Skeleton className="h-10 w-full" />
             </div>
-            
+
             <div className="flex justify-center p-4 bg-white rounded-lg">
               <Skeleton className="w-48 h-48" />
             </div>
-            
+
             <div className="space-y-2">
               <Skeleton className="h-12 w-full" />
               <Skeleton className="h-10 w-full" />
             </div>
-            
+
             <Skeleton className="h-10 w-full" />
           </div>
         ) : (
@@ -287,9 +300,11 @@ const Receive = () => {
                               </div>
                             </div>
                           )}
-                          {crypto.details && crypto.symbol !== "ETH" && 
-                            <span className="ml-2 text-xs text-gray-500">{crypto.details}</span>
-                          }
+                          {crypto.details && crypto.symbol !== "ETH" && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              {crypto.details}
+                            </span>
+                          )}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -301,25 +316,28 @@ const Receive = () => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setShowFreshAddressDialog(true)}>
+                      <DropdownMenuItem
+                        onClick={() => setShowFreshAddressDialog(true)}
+                      >
                         Generate Fresh Address
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-                {getCryptoDetails(selectedCrypto) && selectedCrypto !== "ETH" && (
-                  <p className="mt-1 text-xs text-gray-400">
-                    {getCryptoDetails(selectedCrypto)}
-                  </p>
-                )}
+                {getCryptoDetails(selectedCrypto) &&
+                  selectedCrypto !== "ETH" && (
+                    <p className="mt-1 text-xs text-gray-400">
+                      {getCryptoDetails(selectedCrypto)}
+                    </p>
+                  )}
               </div>
             </div>
 
             <div className="flex justify-center p-4 bg-white rounded-lg">
               {depositAddress ? (
-                <QRCodeSVG 
-                  value={depositAddress} 
-                  size={192} 
+                <QRCodeSVG
+                  value={depositAddress}
+                  size={192}
                   fgColor="#000000"
                   bgColor="#FFFFFF"
                   level="H"
@@ -327,14 +345,18 @@ const Receive = () => {
                 />
               ) : (
                 <div className="w-48 h-48 flex items-center justify-center bg-gray-200 rounded-lg">
-                  <p className="text-gray-600 text-sm text-center">No address available</p>
+                  <p className="text-gray-600 text-sm text-center">
+                    No address available
+                  </p>
                 </div>
               )}
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <code className="text-sm break-all">{depositAddress || "No address available"}</code>
+                <code className="text-sm break-all">
+                  {depositAddress || "No address available"}
+                </code>
               </div>
               <div className="flex gap-2">
                 <Button
@@ -358,24 +380,27 @@ const Receive = () => {
 
             <p className="text-xs text-red-500 text-center font-medium">
               <AlertTriangle className="h-4 w-4 inline-block mr-1" />
-              Warning: Please ensure you send only {selectedCrypto} to this address.
-              Funds sent to the wrong address or blockchain will be lost forever.
+              Warning: Please ensure you send only {selectedCrypto} to this
+              address. Funds sent to the wrong address or blockchain will be
+              lost forever.
             </p>
 
             {previousAddresses.length > 1 && (
               <div className="mt-4">
-                <h3 className="text-sm font-medium text-gray-200 mb-2">Previous Addresses</h3>
+                <h3 className="text-sm font-medium text-gray-200 mb-2">
+                  Previous Addresses
+                </h3>
                 <div className="space-y-2">
                   {previousAddresses.slice(1).map((address, index) => (
-                    <div 
-                      key={index} 
+                    <div
+                      key={index}
                       className="p-2 rounded-md bg-gradient-to-r from-gray-800/50 to-gray-700/30 text-xs"
                     >
                       <code className="break-all">{address}</code>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="ml-2 h-6 w-6 p-0" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="ml-2 h-6 w-6 p-0"
                         onClick={() => navigator.clipboard.writeText(address)}
                       >
                         <Copy className="h-3 w-3" />
@@ -389,24 +414,35 @@ const Receive = () => {
         )}
       </div>
 
-      <Dialog open={showFreshAddressDialog} onOpenChange={setShowFreshAddressDialog}>
+      <Dialog
+        open={showFreshAddressDialog}
+        onOpenChange={setShowFreshAddressDialog}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Generate Fresh Address</DialogTitle>
             <DialogDescription>
-              Are you sure you want to generate a new {selectedCrypto} address? 
+              Are you sure you want to generate a new {selectedCrypto} address?
               Additional fees may apply for generating new addresses.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowFreshAddressDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowFreshAddressDialog(false)}
+            >
               Cancel
             </Button>
             <Button onClick={generateFreshAddress} disabled={isLoading}>
               {isLoading ? (
-                <><RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Generating...</>
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />{" "}
+                  Generating...
+                </>
               ) : (
-                <><Check className="h-4 w-4 mr-2" /> Confirm</>
+                <>
+                  <Check className="h-4 w-4 mr-2" /> Confirm
+                </>
               )}
             </Button>
           </DialogFooter>

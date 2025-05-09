@@ -67,7 +67,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("wallet");
   const [showBalance, setShowBalance] = useState(false);
   const [chargeStatus, setChargeStatus] = useState<string | null>(null);
-  
+
   const { verifyPasskey, isPasskeyVerified } = usePasskeyAuth();
 
   const { isAuthenticated } = useAppSelector((state) => state.auth);
@@ -86,7 +86,7 @@ const Dashboard = () => {
         console.log("Initial passkey verification skipped or failed");
       }
     };
-    
+
     const prefetchData = async () => {
       try {
         await ApiService.getTransactionHistory();
@@ -94,33 +94,35 @@ const Dashboard = () => {
         console.error("Error prefetching transaction data:", error);
       }
     };
-    
+
     // Check for chargeId in URL query parameters
     const queryParams = new URLSearchParams(location.search);
-    const chargeId = queryParams.get('chargeId');
-    
+    const chargeId = queryParams.get("chargeId");
+
     if (chargeId) {
       const checkChargeStatus = async () => {
         try {
-          const charge = await WalletService.queryCharge({ chargeId }) as Charge;
-          if (charge && typeof charge.status === 'string') {
+          const charge = (await WalletService.queryCharge({
+            chargeId,
+          })) as Charge;
+          if (charge && typeof charge.status === "string") {
             setChargeStatus(charge.status);
             // Further processing based on status can be done here
-            console.log('Charge status:', charge.status);
+            console.log("Charge status:", charge.status);
           } else {
-            setChargeStatus('unknown');
+            setChargeStatus("unknown");
           }
         } catch (error) {
-          console.error('Error querying charge:', error);
-          setChargeStatus('error');
+          console.error("Error querying charge:", error);
+          setChargeStatus("error");
         }
       };
-      
+
       checkChargeStatus();
     }
-    
+
     initPasskeyAuth();
-    prefetchData();
+    // prefetchData();
   }, [isAuthenticated, navigate, verifyPasskey, location.search]);
 
   const handleLogout = () => {

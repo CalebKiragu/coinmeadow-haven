@@ -26,7 +26,9 @@ const KycBanner = () => {
     }
 
     // Otherwise, verification is needed
-    return true;
+    return false;
+    // return true;
+
   };
 
   // If verification is not needed, don't render anything

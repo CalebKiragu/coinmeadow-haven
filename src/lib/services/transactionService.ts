@@ -1,4 +1,3 @@
-
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { store } from "../redux/store";
 import { getEnvironmentConfig } from "../utils";
@@ -101,7 +100,13 @@ export const TransactionService = {
     try {
       const response: AxiosResponse<ApiResponse<TransferResponse>> =
         await api.post("v1/transfer", data);
-      return response.data.data || { success: false, msg: "No response data", error: "No response data" };
+      return (
+        response.data.data || {
+          success: false,
+          msg: "No response data",
+          error: "No response data",
+        }
+      );
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
       const errorMessage =
@@ -117,7 +122,9 @@ export const TransactionService = {
     try {
       const response: AxiosResponse<ApiResponse<TransferResponse>> =
         await api.post("v1/deposit", data);
-      return response.data.data || { success: false, error: "No response data" };
+      return (
+        response.data.data || { success: false, error: "No response data" }
+      );
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
       const errorMessage =
@@ -133,7 +140,9 @@ export const TransactionService = {
     try {
       const response: AxiosResponse<ApiResponse<TransferResponse>> =
         await api.post("v1/withdraw", data);
-      return response.data.data || { success: false, error: "No response data" };
+      return (
+        response.data.data || { success: false, error: "No response data" }
+      );
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
       const errorMessage =
@@ -277,22 +286,9 @@ export const TransactionService = {
         return [];
       }
 
-      // Ensure we convert timestamp and updatedAt to BigInt for consistency
-      const processedTransactions = response.data.data.map((tx) => ({
-        ...tx,
-        timestamp:
-          typeof tx.timestamp === "number"
-            ? BigInt(tx.timestamp)
-            : tx.timestamp,
-        updatedAt:
-          typeof tx.updatedAt === "number"
-            ? BigInt(tx.updatedAt)
-            : tx.updatedAt,
-      }));
-
-      console.log(`Found ${processedTransactions.length} transactions`);
-      store.dispatch(fetchTransactionsSuccess(processedTransactions));
-      return processedTransactions;
+      console.log(`Found ${response.data.data.length} transactions`);
+      store.dispatch(fetchTransactionsSuccess(response.data.data));
+      return response.data.data;
     } catch (error) {
       let errorMessage = "Failed to fetch transaction history";
       if (error instanceof Error) {

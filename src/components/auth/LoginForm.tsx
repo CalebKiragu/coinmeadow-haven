@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,7 @@ import ChangePinForm from "./ChangePinForm";
 import OTPInput from "./OTPInput";
 import { ApiService } from "@/lib/services";
 import { useAppSelector } from "@/lib/redux/hooks";
+import { getEnvironmentConfig } from "@/lib/utils";
 
 const LoginForm = () => {
   const [showPin, setShowPin] = useState(false);
@@ -41,8 +41,8 @@ const LoginForm = () => {
   // Load Google Identity Services script
   useEffect(() => {
     const loadGoogleScript = () => {
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
+      const script = document.createElement("script");
+      script.src = getEnvironmentConfig().googleScriptSrc;
       script.async = true;
       script.defer = true;
       script.onload = () => {
@@ -55,9 +55,9 @@ const LoginForm = () => {
 
     return () => {
       // Cleanup any Google sign-in instances
-      const buttonContainer = document.getElementById('google-signin-button');
+      const buttonContainer = document.getElementById("google-signin-button");
       if (buttonContainer) {
-        buttonContainer.innerHTML = '';
+        buttonContainer.innerHTML = "";
       }
     };
   }, []);
@@ -67,21 +67,21 @@ const LoginForm = () => {
     if (googleScriptLoaded && window.google) {
       try {
         window.google.accounts.id.initialize({
-          client_id: '339887597881-dtj402e9975k4r8stoejgovj1me8gicn.apps.googleusercontent.com',
-          callback: handleGoogleSignIn
+          client_id: getEnvironmentConfig().googleClientId,
+          callback: handleGoogleSignIn,
         });
-        
+
         window.google.accounts.id.renderButton(
-          document.getElementById('google-signin-button'),
-          { 
-            theme: 'filled_blue', 
-            size: 'large',
-            text: 'continue_with',
-            width: '100%'
+          document.getElementById("google-signin-button"),
+          {
+            theme: "filled_blue",
+            size: "large",
+            text: "continue_with",
+            width: "100%",
           }
         );
       } catch (error) {
-        console.error('Error initializing Google Sign-In:', error);
+        console.error("Error initializing Google Sign-In:", error);
       }
     }
   }, [googleScriptLoaded]);
@@ -91,18 +91,17 @@ const LoginForm = () => {
       setIsLoading(true);
       // Extract the credential from the response
       const { credential } = response;
-      
-      // Here you would send the token to your backend for verification
-      // and further processing
-      console.log("Google Sign-In successful", credential);
-      
+      // send the token to backend for verification
+      // and authentication
+      const credentials = {
+        token: credential,
+        type: "user",
+      };
+      await ApiService.googleAuth(credentials);
       toast({
         title: "Google authentication successful",
         description: "Logging you in...",
       });
-      
-      // For now, we'll just navigate to the dashboard
-      // In a real application, you'd verify this token with your backend
       navigate("/dashboard", { replace: true });
     } catch (error) {
       toast({
@@ -283,16 +282,7 @@ const LoginForm = () => {
           </div>
         </div>
         <div className="grid grid-cols-1 gap-3">
-          <div id="google-signin-button" className="w-full"></div>
-          
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleBaseSignin}
-            className="bg-[#0052FF] hover:bg-[#0039B3] text-white"
-          >
-            Continue with Base
-          </Button>
+          <div id="google-signin-button" className="w-full "></div>
         </div>
       </div>
       <div className="text-center text-sm mt-4">

@@ -1,5 +1,3 @@
-
-import React, { useState } from "react";
 import { useAppSelector } from "@/lib/redux/hooks";
 import GlassCard from "@/components/ui/GlassCard";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
@@ -25,9 +23,7 @@ const Account = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4">
-      <NavigationHeader
-        title="Account"
-      />
+      <NavigationHeader title="Account" />
 
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Profile Card */}
@@ -35,7 +31,7 @@ const Account = () => {
           <div className="flex flex-col items-center text-center space-y-4">
             <Avatar className="h-24 w-24">
               <AvatarImage
-                src={user.avatar || "/placeholder.svg"}
+                src={user.profileImg || "/placeholder.svg"}
                 alt={`${user.firstName} ${user.lastName}`}
               />
               <AvatarFallback className="text-xl">
@@ -53,13 +49,13 @@ const Account = () => {
                 <p className="text-sm text-gray-400">{user.phone}</p>
               )}
             </div>
-            
-            <Card className="w-full max-w-sm bg-white/10">
+
+            <Card className="w-full max-w-fit bg-white/10">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Connected Wallet</CardTitle>
               </CardHeader>
               <CardContent>
-                <IdentityDisplay showCopy={true} showDisconnect={true} compact={false} />
+                <IdentityDisplay showDisconnect={true} compact={false} />
               </CardContent>
             </Card>
           </div>

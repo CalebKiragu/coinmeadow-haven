@@ -18,6 +18,7 @@ import {
   UserResponse,
   MerchantResponse,
   OtpVerificationResponse,
+  GoogleAuthPayload,
 } from "../types";
 
 // Replace with your actual API base URL
@@ -249,6 +250,24 @@ export const AuthService = {
     }
   },
 
+  googleAuth: async (
+    credentials: GoogleAuthPayload
+  ): Promise<LoginResponse> => {
+    store.dispatch(loginStart());
+    try {
+      const response: AxiosResponse<ApiResponse<LoginResponse>> =
+        await api.post("v1/auth/google", credentials);
+      store.dispatch(loginSuccess(response.data.data));
+      return response.data.data;
+    } catch (error) {
+      const axiosError = error as AxiosError<ApiResponse<null>>;
+      const errorMessage =
+        axiosError.response?.data?.message || axiosError.response?.data?.error;
+      store.dispatch(loginFailure(errorMessage));
+      throw new Error(errorMessage);
+    }
+  },
+
   // Signup User
   signupUser: async (
     userData: UserRegistrationPayload
@@ -445,7 +464,7 @@ export const AuthService = {
   // Get wallet challenge for signature
   getWalletChallenge: async (): Promise<{ challenge: string }> => {
     try {
-      const response = await api.get('v1/auth/wallet/challenge');
+      const response = await api.get("v1/auth/wallet/challenge");
       return response.data.data;
     } catch (error) {
       const axiosError = error as AxiosError<ApiResponse<null>>;
@@ -458,13 +477,13 @@ export const AuthService = {
   },
 
   // Verify wallet signature
-  verifyWalletSignature: async (params: { 
-    address: string; 
-    signature: string; 
+  verifyWalletSignature: async (params: {
+    address: string;
+    signature: string;
     challenge: string;
   }): Promise<{ user: any; token: any; isNewUser: boolean }> => {
     try {
-      const response = await api.post('v1/auth/wallet/verify', params);
+      const response = await api.post("v1/auth/wallet/verify", params);
       return {
         user: response.data.data.user,
         token: response.data.data.token,
@@ -487,7 +506,7 @@ export const AuthService = {
     lastName?: string;
   }): Promise<{ user: any; token: any }> => {
     try {
-      const response = await api.post('v1/auth/wallet/complete', params);
+      const response = await api.post("v1/auth/wallet/complete", params);
       return {
         user: response.data.data.user,
         token: response.data.data.token,

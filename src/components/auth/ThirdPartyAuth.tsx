@@ -1,14 +1,89 @@
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { getEnvironmentConfig } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ThirdPartyAuth = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
 
-  const handleThirdPartySignup = (provider: string) => {
-    toast({
-      title: `${provider} sign up`,
-      description: "This feature is coming soon!",
-    });
+  // Load Google Identity Services script
+  useEffect(() => {
+    const loadGoogleScript = () => {
+      const script = document.createElement("script");
+      script.src = getEnvironmentConfig().googleScriptSrc;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        setGoogleScriptLoaded(true);
+      };
+      document.body.appendChild(script);
+    };
+
+    loadGoogleScript();
+
+    return () => {
+      // Cleanup any Google sign-in instances
+      const buttonContainer = document.getElementById("google-signin-button");
+      if (buttonContainer) {
+        buttonContainer.innerHTML = "";
+      }
+    };
+  }, []);
+
+  // Initialize Google Sign-In button when script is loaded
+  useEffect(() => {
+    if (googleScriptLoaded && window.google) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: getEnvironmentConfig().googleClientId,
+          callback: handleGoogleSignIn,
+        });
+
+        window.google.accounts.id.renderButton(
+          document.getElementById("google-signin-button"),
+          {
+            theme: "filled_blue",
+            size: "large",
+            text: "continue_with",
+            width: "100%",
+          }
+        );
+      } catch (error) {
+        console.error("Error initializing Google Sign-In:", error);
+      }
+    }
+  }, [googleScriptLoaded]);
+
+  const handleGoogleSignIn = async (response: any) => {
+    try {
+      setIsLoading(true);
+      // Extract the credential from the response
+      const { credential } = response;
+
+      // Here you would send the token to your backend for verification
+      // and further processing
+      console.log("Google Sign-In successful", credential);
+
+      toast({
+        title: "Google authentication successful",
+        description: "Logging you in...",
+      });
+
+      // For now, we'll just navigate to the dashboard
+      // In a real application, you'd verify this token with your backend
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      toast({
+        title: "Google Sign-In Failed",
+        description: "Could not authenticate with Google. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -22,22 +97,7 @@ const ThirdPartyAuth = () => {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => handleThirdPartySignup("Google")}
-          className="bg-[#4285F4] hover:bg-[#357ABD] text-white border-none"
-        >
-          Continue with Google
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => handleThirdPartySignup("Twitter")}
-          className="bg-[#1DA1F2] hover:bg-[#1A8CD8] text-white border-none"
-        >
-          Continue with Twitter
-        </Button>
+        <div id="google-signin-button" className="w-full "></div>
       </div>
     </div>
   );

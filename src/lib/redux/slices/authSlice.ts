@@ -10,7 +10,7 @@ export interface Kyc {
   govId?: string;
   images?: string[];
   by?: string;
-  at?: bigint;
+  at?: string;
   create?: boolean;
 }
 
@@ -26,13 +26,13 @@ export interface Preferences {
 
 export interface AltEmails {
   email: string;
-  added: bigint;
+  added: string;
 }
 
 export interface Banned {
   by: string;
   reason: string;
-  at: bigint;
+  at: string;
 }
 
 export interface Token {
@@ -56,8 +56,8 @@ export interface User {
   phone: string;
   wallets: Wallets[];
   profileImg: string;
-  dateOfBirth: bigint | null;
-  dateOfSignup: bigint | null;
+  dateOfBirth: string | null;
+  dateOfSignup: string | null;
   gender: "M" | "F" | "N";
   nationality: string;
   kyc: Kyc | null;
@@ -78,7 +78,7 @@ export interface Merchant {
   wallets: Wallets[];
   profileImg: string;
   dateOfIncorporation: string | null;
-  dateOfSignup: bigint;
+  dateOfSignup: string;
   country: string;
   location: string;
   kyc: Kyc | null;
@@ -100,7 +100,7 @@ export interface VerificationStatus {
   govDoc: string;
   reviewed: string;
   approved: string;
-  timestamp: number;
+  timestamp: string | number;
   status: string;
   isMerchant: number;
 }
@@ -127,13 +127,55 @@ const initialState: AuthState = {
   error: null,
 };
 
-// Helper function to parse JSON string in kyc field
+// Helper function to parse JSON string in kyc, altEmails and banned fields and handle bigint values
 const parseKycData = <T extends User | Merchant>(entity: T): T => {
   if (entity && entity.kyc && typeof entity.kyc === "string") {
     try {
       entity.kyc = JSON.parse(entity.kyc as unknown as string) as Kyc;
+      if (entity.kyc.at && typeof entity.kyc.at === "bigint") {
+        entity.kyc.at = BigInt(entity.kyc.at).toString();
+      }
     } catch (error) {
       console.error("Failed to parse kyc data:", error);
+    }
+  }
+  if (entity && entity.altEmail && typeof entity.altEmail === "string") {
+    try {
+      entity.altEmail = JSON.parse(
+        entity.altEmail as unknown as string
+      ) as AltEmails[];
+      if (entity.altEmail.length > 0) {
+        entity.altEmail = entity.altEmail.map((email) => ({
+          ...email,
+          added:
+            typeof email.added === "bigint"
+              ? BigInt(email.added).toString()
+              : email.added.toString(),
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to parse altEmail data:", error);
+    }
+  }
+  if (entity && entity.banned && typeof entity.banned === "string") {
+    try {
+      entity.banned = JSON.parse(entity.banned as unknown as string) as Banned;
+      if (entity.banned && typeof entity.banned.at === "bigint") {
+        entity.banned.at = BigInt(entity.banned.at).toString();
+      }
+    } catch (error) {
+      console.error("Failed to parse banned data:", error);
+    }
+  }
+  if (
+    entity &&
+    entity.dateOfSignup &&
+    typeof entity.dateOfSignup === "bigint"
+  ) {
+    try {
+      entity.dateOfSignup = BigInt(entity.dateOfSignup).toString();
+    } catch (error) {
+      console.error("Failed to convert dateOfSignup bigint:", error);
     }
   }
   return entity;
@@ -157,7 +199,7 @@ const authSlice = createSlice({
       }>
     ) => {
       state.isAuthenticated = true;
-      state.otp = action.payload.otp;
+      state.otp = action.payload.otp || null;
 
       // Parse kyc data if it exists as a string
       if (action.payload.user) {

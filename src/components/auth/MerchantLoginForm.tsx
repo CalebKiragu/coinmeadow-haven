@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,7 @@ import ChangePinForm from "./ChangePinForm";
 import OTPInput from "./OTPInput";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { ApiService } from "@/lib/services";
+import { getEnvironmentConfig } from "@/lib/utils";
 
 const MerchantLoginForm = () => {
   const [showPin, setShowPin] = useState(false);
@@ -37,8 +37,8 @@ const MerchantLoginForm = () => {
   // Load Google Identity Services script
   useEffect(() => {
     const loadGoogleScript = () => {
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
+      const script = document.createElement("script");
+      script.src = getEnvironmentConfig().googleScriptSrc;
       script.async = true;
       script.defer = true;
       script.onload = () => {
@@ -51,9 +51,11 @@ const MerchantLoginForm = () => {
 
     return () => {
       // Cleanup any Google sign-in instances
-      const buttonContainer = document.getElementById('merchant-google-signin-button');
+      const buttonContainer = document.getElementById(
+        "merchant-google-signin-button"
+      );
       if (buttonContainer) {
-        buttonContainer.innerHTML = '';
+        buttonContainer.innerHTML = "";
       }
     };
   }, []);
@@ -63,21 +65,21 @@ const MerchantLoginForm = () => {
     if (googleScriptLoaded && window.google) {
       try {
         window.google.accounts.id.initialize({
-          client_id: '339887597881-dtj402e9975k4r8stoejgovj1me8gicn.apps.googleusercontent.com',
-          callback: handleGoogleSignIn
+          client_id: getEnvironmentConfig().googleClientId,
+          callback: handleGoogleSignIn,
         });
-        
+
         window.google.accounts.id.renderButton(
-          document.getElementById('merchant-google-signin-button'),
-          { 
-            theme: 'filled_blue', 
-            size: 'large',
-            text: 'continue_with',
-            width: '100%'
+          document.getElementById("merchant-google-signin-button"),
+          {
+            theme: "filled_blue",
+            size: "large",
+            text: "continue_with",
+            width: "100%",
           }
         );
       } catch (error) {
-        console.error('Error initializing Google Sign-In:', error);
+        console.error("Error initializing Google Sign-In:", error);
       }
     }
   }, [googleScriptLoaded]);
@@ -87,18 +89,17 @@ const MerchantLoginForm = () => {
       setIsLoading(true);
       // Extract the credential from the response
       const { credential } = response;
-      
-      // Here you would send the token to your backend for verification
-      // and further processing
-      console.log("Google Sign-In successful for merchant", credential);
-      
+      // send the token to backend for verification
+      // and authentication
+      const credentials = {
+        token: credential,
+        type: "merchant",
+      };
+      await ApiService.googleAuth(credentials);
       toast({
         title: "Google authentication successful",
-        description: "Logging you in as merchant...",
+        description: "Logging in merchant...",
       });
-      
-      // For now, we'll just navigate to the dashboard
-      // In a real application, you'd verify this token with your backend
       navigate("/dashboard", { replace: true });
     } catch (error) {
       toast({
@@ -166,13 +167,6 @@ const MerchantLoginForm = () => {
       description: "You have successfully logged in as a merchant.",
     });
     navigate("/dashboard", { replace: true });
-  };
-
-  const handleBaseSignin = () => {
-    toast({
-      title: "Base authentication",
-      description: "This feature is coming soon!",
-    });
   };
 
   if (showOTP) {
@@ -275,15 +269,6 @@ const MerchantLoginForm = () => {
         </div>
         <div className="grid grid-cols-1 gap-3">
           <div id="merchant-google-signin-button" className="w-full"></div>
-          
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleBaseSignin}
-            className="bg-[#0052FF] hover:bg-[#0039B3] text-white"
-          >
-            Continue with Base
-          </Button>
         </div>
       </div>
       <div className="text-center text-sm mt-4">
