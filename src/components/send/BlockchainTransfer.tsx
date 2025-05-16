@@ -42,7 +42,6 @@ export const BlockchainTransfer = ({
   const [isAddressValid, setIsAddressValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
-
   const auth = useAppSelector((state) => state.auth);
   const userPhone = auth.user?.phone || auth.merchant?.phone || "";
   const userEmail = auth.user?.email || auth.merchant?.email || "";
@@ -140,13 +139,6 @@ export const BlockchainTransfer = ({
       setIsLoading(false);
     }
   };
-
-  // Submit on the final step
-  useEffect(() => {
-    if (currentStep === 3 && blockchainPin.length === 4) {
-      handleBlockchainTransfer();
-    }
-  }, [currentStep, blockchainPin]);
 
   const handleQRScan = (data: string) => {
     setBlockchainAddress(data);
@@ -258,14 +250,6 @@ export const BlockchainTransfer = ({
           required
           disabled={isSubmitting}
         />
-        {isSubmitting && (
-          <div className="text-center">
-            <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
-            <p className="text-sm text-gray-400 mt-2">
-              Processing your transaction...
-            </p>
-          </div>
-        )}
       </div>
     );
   }

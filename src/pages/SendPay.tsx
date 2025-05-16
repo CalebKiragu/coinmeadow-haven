@@ -16,6 +16,7 @@ import { ApiService } from "@/lib/services";
 import { TransferResponse } from "@/lib/services/transactionService";
 import { BlockchainTransfer } from "@/components/send/BlockchainTransfer";
 import { useAppSelector } from "@/lib/redux/hooks";
+import AnimatedCheckmark from "@/components/ui/animated-checkmark";
 
 const SendPayContent = () => {
   const navigate = useNavigate();
@@ -447,8 +448,9 @@ const SendPayContent = () => {
               <div className="text-center space-y-4 animate-scale-in">
                 {transactionStatus === "success" ? (
                   <>
-                    <CheckCircle className="w-24 h-24 mx-auto text-green-500" />
-                    <h3 className="text-2xl font-bold">
+                    {/* <CheckCircle className="w-24 h-24 mx-auto text-green-500" /> */}
+                    <AnimatedCheckmark />
+                    <h3 className="text-2xl font-bold text-green-600">
                       Transaction Successful!
                     </h3>
                     <p className="text-gray-500">

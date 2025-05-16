@@ -73,6 +73,8 @@ export const Web3WalletProvider = ({ children }: { children: ReactNode }) => {
           },
         })
       );
+    } else {
+      dispatch(resetWeb3Wallet());
     }
   }, [address, chainId, connector]);
 
@@ -106,17 +108,19 @@ export const Web3WalletProvider = ({ children }: { children: ReactNode }) => {
     switchChain?.({ chainId });
     toast({
       title: "Chain switched successfully",
-      description: `Switched to ${chainName}`,
+      description: `${chainName} is active.`,
     });
   };
 
   const disconnectAll = useCallback(() => {
-    if (!isConnected)
+    if (!isConnected) {
+      dispatch(resetWeb3Wallet());
       return toast({
         title: "Disconnection failed",
         description: "No wallet connected",
         variant: "destructive",
       });
+    }
     disconnect();
     dispatch(resetWeb3Wallet());
     toast({

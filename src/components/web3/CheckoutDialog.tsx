@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -40,6 +41,7 @@ import { ApiService } from "@/lib/services";
 import { getEnvironmentConfig } from "@/lib/utils";
 import ChainSwitcher from "./ChainSwitcher";
 import { BigNumber } from "ethers";
+import SuccessStep from "./SuccessStep";
 
 interface CheckoutDialogProps {
   open: boolean;
@@ -81,6 +83,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [canSend, setCanSend] = useState(false);
   const [max, setMax] = useState<string>("0.0");
+  const [amountToSend, setAmountToSend] = useState<string>("0.0");
   const [walletBalance, setWalletBalance] = useState<string>("0.0");
   const [showBalanceError, setShowBalanceError] = useState(false);
   const [balanceErrorMessage, setBalanceErrorMessage] = useState("");
@@ -106,6 +109,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
 
   useEffect(() => {
     const ethAmount = walletForm.watch("ethAmount").toString();
+    setAmountToSend(ethAmount);
     let balance, gasPrice, maxSendable;
     const fetchWalletBalance = async () => {
       if (wallet) {
@@ -129,9 +133,9 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
           setShowBalanceError(true);
         }
 
-        console.log("====================================");
-        console.log("max sendable >> ", formatEther(maxSendable));
-        console.log("====================================");
+        // console.log("====================================");
+        // console.log("max sendable >> ", formatEther(maxSendable));
+        // console.log("====================================");
 
         // Fetch deposit address(es)
         const addresses = await ApiService.getDepositAddresses({
@@ -169,7 +173,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
         ) {
           setCanSend(false);
           setNetworkErrorMessage(
-            `Cannot send from ${wallet?.chain} testnet to mainnet`
+            `Cannot fund from ${wallet?.chain} testnet to mainnet`
           );
           setShowNetworkError(true);
         } else if (
@@ -178,7 +182,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
         ) {
           setCanSend(false);
           setNetworkErrorMessage(
-            `Cannot send from ${wallet?.chain} mainnet to testnet`
+            `Cannot fund from ${wallet?.chain} mainnet to testnet`
           );
           setShowNetworkError(true);
         } else if (
@@ -187,7 +191,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
         ) {
           setCanSend(false);
           setNetworkErrorMessage(
-            `Cannot send from ${wallet?.chain} mainnet to testnet`
+            `Cannot fund from ${wallet?.chain} mainnet to testnet`
           );
           setShowNetworkError(true);
         } else {
@@ -202,7 +206,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
 
   const handleWalletFunding = async (values: z.infer<typeof ethFormSchema>) => {
     if (!wallet) {
-      toast({ title: "Wallet not connected", variant: "destructive" });
+      toast({ title: "No wallet connected", variant: "destructive" });
       return;
     }
 
@@ -226,7 +230,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
         description: `TX Hash: ${tx}`,
       });
       setTxHash(tx);
-      // setStep("result");
+      setStep("result");
       onOpenChange(false);
       onCheckoutComplete?.();
     } catch (error: any) {
@@ -264,6 +268,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
         });
         onOpenChange(false);
         if (onCheckoutComplete) {
+          setStep("result");
           onCheckoutComplete();
         }
       } else {
@@ -486,11 +491,27 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
           </Form>
         )}
 
-        {step === "result" && txHash && (
+        {step === "result" && (
           <div className="text-center space-y-2">
-            <p className="text-green-600">Transaction sent successfully!</p>
+            <p className="text-green-600">{`Sent ${
+              amountToSend || "0.00"
+            } ${wallet?.chain?.toUpperCase()} to ${depositAddress}`}</p>
+            <SuccessStep
+              message={"Transaction Successful"}
+              subtext={"Your funds have been sent."}
+              txHash={txHash}
+              explorerUrl={
+                wallet?.chain.includes("Base")
+                  ? `https://basescan.org/tx/`
+                  : `https://etherscan.io/tx/`
+              }
+            />
             <a
-              href={`https://etherscan.io/tx/${txHash}`}
+              href={
+                wallet?.chain.includes("Base")
+                  ? `https://basescan.org/tx/${txHash}`
+                  : `https://etherscan.io/tx/${txHash}`
+              }
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-500 underline"
