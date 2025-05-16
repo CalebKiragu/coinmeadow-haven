@@ -33,7 +33,6 @@ const TransactionHistory = ({
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const { verifyPasskey, isPasskeyVerified, isVerifying } = usePasskeyAuth();
-
   const { transactions } = useAppSelector((state) => state.transaction);
 
   // Memoize transactions fetching to prevent unnecessary requests
@@ -129,7 +128,7 @@ const TransactionHistory = ({
 
   return (
     <GlassCard className="animate-fade-in">
-      <div className="flex flex-col gap-4 mb-6">
+      <div className="flex flex-col gap-4 mb-2">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold">Transaction History</h2>
           <Button
@@ -141,9 +140,9 @@ const TransactionHistory = ({
             aria-label={showBalance ? "Hide Balance" : "Show Balance"}
           >
             {showBalance ? (
-              <EyeOff className="h-4 w-4" />
+              <EyeOff className="hidden self-start h-4 w-4" />
             ) : (
-              <Eye className="h-4 w-4" />
+              <Eye className="hidden self-start h-4 w-4" />
             )}
           </Button>
         </div>

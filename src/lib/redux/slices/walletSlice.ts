@@ -43,7 +43,7 @@ const initialState: WalletState = {
     total: "0",
   },
   selectedFiat: "USD",
-  selectedCrypto: "BTC",
+  selectedCrypto: "ETH",
   wallets: [],
   lastUpdated: null,
   showBalance: true,

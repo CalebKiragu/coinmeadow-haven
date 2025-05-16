@@ -98,7 +98,7 @@ const MerchantLoginForm = () => {
       await ApiService.googleAuth(credentials);
       toast({
         title: "Google authentication successful",
-        description: "Logging in merchant...",
+        description: "You are logged in as merchant.",
       });
       navigate("/dashboard", { replace: true });
     } catch (error) {

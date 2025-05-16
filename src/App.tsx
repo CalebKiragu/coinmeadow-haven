@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { store, persistor } from "./lib/redux/store";
-import { Web3WalletProvider } from "./contexts/Web3ProviderContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import History from "./pages/History";
@@ -22,6 +21,7 @@ import Portfolio from "./pages/Portfolio";
 import ApiDocs from "./pages/ApiDocs";
 import { Providers } from "./lib/providers";
 import "@coinbase/onchainkit/styles.css";
+import { Web3WalletProvider } from "./contexts/Web3ContextProvider";
 
 const App = () => (
   <Providers>

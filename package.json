@@ -13,7 +13,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.772.0",
     "@aws-sdk/credential-providers": "^3.772.0",
-    "@coinbase/onchainkit": "^0.38.9",
+    "@coinbase/onchainkit": "^0.38.13",
     "@coinbase/wallet-sdk": "^3.9.3",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -48,6 +48,8 @@
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.4",
     "@reduxjs/toolkit": "^2.1.0",
+    "@reown/appkit": "^1.7.4",
+    "@reown/appkit-adapter-wagmi": "^1.7.4",
     "@tanstack/react-query": "^5.24.1",
     "@tanstack/react-query-devtools": "^5.24.1",
     "@testing-library/jest-dom": "^6.4.6",
@@ -55,6 +57,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/axios": "^0.14.4",
     "@types/canvas-confetti": "^1.9.0",
+    "@wagmi/core": "^2.17.1",
     "@web3-react/coinbase-wallet": "^8.2.3",
     "@web3-react/core": "^6.1.9",
     "@web3-react/injected-connector": "^6.0.7",
@@ -93,7 +96,9 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
     "vi-fetch": "^0.8.0",
+    "viem": "^2.29.2",
     "vitest": "^3.1.1",
+    "wagmi": "^2.15.2",
     "zod": "^3.23.8"
   },
   "devDependencies": {

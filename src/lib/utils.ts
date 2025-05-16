@@ -149,7 +149,8 @@ export const getEnvironmentConfig = () => {
 
   const configs = {
     development: {
-      apiUrl: "https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/",
+      currentEnv: env,
+      apiUrl: "https://v8885hujef.execute-api.us-east-1.amazonaws.com/Prod/",
       aws: {
         s3: {
           REGION: "us-east-1",
@@ -163,9 +164,7 @@ export const getEnvironmentConfig = () => {
         mockTransactions: false,
       },
       base: baseSepolia,
-      onchainkitApiKey:
-        import.meta.env.VITE_PUBLIC_ONCHAINKIT_API_KEY ||
-        "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
+      onchainkitKey: "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
       walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016",
       googleScriptSrc: "https://accounts.google.com/gsi/client",
       googleClientId:
@@ -177,10 +176,11 @@ export const getEnvironmentConfig = () => {
         "https://eth-sepolia.g.alchemy.com/v2/8Yz1ZLNi87s0MCcIL8s6jzoiLXfLhVSK",
 
       CHAIN_ID: 11155111, // sepolia chain_id
-      BASE_CHAIN_ID: 11155111,
+      BASE_CHAIN_ID: 84532,
     },
     staging: {
-      apiUrl: "https://nnjjyk2mlf.execute-api.us-east-1.amazonaws.com/Prod/",
+      currentEnv: env,
+      apiUrl: "https://v8885hujef.execute-api.us-east-1.amazonaws.com/Prod/",
       aws: {
         s3: {
           REGION: "us-east-1",
@@ -194,9 +194,7 @@ export const getEnvironmentConfig = () => {
         mockTransactions: false,
       },
       base: baseSepolia,
-      onchainkitApiKey:
-        import.meta.env.VITE_PUBLIC_ONCHAINKIT_API_KEY ||
-        "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
+      onchainkitKey: "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
       walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016",
       googleScriptSrc: "https://accounts.google.com/gsi/client",
       googleClientId:
@@ -207,9 +205,10 @@ export const getEnvironmentConfig = () => {
       ETH_RPC_URL:
         "https://eth-sepolia.g.alchemy.com/v2/8Yz1ZLNi87s0MCcIL8s6jzoiLXfLhVSK",
       CHAIN_ID: 11155111, // sepolia chain_id
-      BASE_CHAIN_ID: 11155111,
+      BASE_CHAIN_ID: 84532,
     },
     production: {
+      currentEnv: env,
       apiUrl: "https://qckp089yob.execute-api.us-east-1.amazonaws.com/Prod/",
       aws: {
         s3: {
@@ -224,9 +223,7 @@ export const getEnvironmentConfig = () => {
         mockTransactions: false,
       },
       base,
-      onchainkitApiKey:
-        import.meta.env.VITE_PUBLIC_ONCHAINKIT_API_KEY ||
-        "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
+      onchainkitKey: "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
       walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016",
       googleScriptSrc: "https://accounts.google.com/gsi/client",
       googleClientId:

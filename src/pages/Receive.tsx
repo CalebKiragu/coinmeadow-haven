@@ -44,7 +44,7 @@ const Receive = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedCrypto, setSelectedCrypto] = useState(
-    cryptoCurrencies[0].symbol
+    cryptoCurrencies[1].symbol
   );
   const [depositAddress, setDepositAddress] = useState("");
   const [previousAddresses, setPreviousAddresses] = useState<string[]>([]);
@@ -52,7 +52,6 @@ const Receive = () => {
   const [isFetchingAddresses, setIsFetchingAddresses] = useState(false);
   const [showFreshAddressDialog, setShowFreshAddressDialog] = useState(false);
   const receivePageRef = useRef<HTMLDivElement>(null);
-
   const user = useAppSelector((state: any) => state.auth.user);
   const merchant = useAppSelector((state: any) => state.auth.merchant);
   const userIdentifier =
@@ -80,6 +79,7 @@ const Receive = () => {
       console.log("Fetching deposit addresses for", currency);
 
       // Fetch previously generated addresses
+
       const addresses = await ApiService.getDepositAddresses({
         userIdentifier,
         currency,
@@ -87,10 +87,10 @@ const Receive = () => {
       });
 
       console.log("Received addresses:", addresses);
-      setPreviousAddresses(addresses);
 
       // If there are previous addresses, use the first one as the current address
       if (addresses && addresses.length > 0) {
+        setPreviousAddresses(addresses);
         setDepositAddress(addresses[0]);
       } else {
         console.log("No previous addresses, generating a new one");
@@ -100,7 +100,7 @@ const Receive = () => {
             userIdentifier,
             currency,
             isMerchant,
-            fresh: false,
+            fresh: true,
           });
 
           console.log("Generated address:", address);
@@ -141,7 +141,7 @@ const Receive = () => {
     try {
       setIsLoading(true);
 
-      console.log("Generating fresh address for", selectedCrypto);
+      // console.log("Generating fresh address for", selectedCrypto);
 
       const address = await ApiService.generateDepositAddress({
         userIdentifier,
@@ -150,7 +150,7 @@ const Receive = () => {
         fresh: true,
       });
 
-      console.log("Fresh address generated:", address);
+      // console.log("Fresh address generated:", address);
       setDepositAddress(address);
 
       // Refresh the list of addresses
@@ -234,7 +234,7 @@ const Receive = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
       <NavigationHeader title="Receive" />
 
       <div

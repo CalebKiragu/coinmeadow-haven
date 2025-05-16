@@ -34,8 +34,11 @@ import { cryptoCurrencies } from "@/types/currency";
 import { WalletService } from "@/lib/services/walletService";
 import { formatEther, parseEther } from "ethers/lib/utils";
 import { useAppSelector } from "@/lib/redux/hooks";
-import WalletConnector from "./WalletConnector";
-import { useWeb3Wallet } from "@/contexts/Web3ProviderContext";
+import Web3Connector from "./Web3Connector";
+import { useWallet } from "@/contexts/Web3ContextProvider";
+import { ApiService } from "@/lib/services";
+import { getEnvironmentConfig } from "@/lib/utils";
+import ChainSwitcher from "./ChainSwitcher";
 import { BigNumber } from "ethers";
 
 interface CheckoutDialogProps {
@@ -56,7 +59,7 @@ const formSchema = z.object({
 
 // Define ETH form schema
 const ethFormSchema = z.object({
-  ethAmount: z.string().min(1, { message: "ETH amount is required." }),
+  ethAmount: z.string().min(1, { message: "Amount is required." }),
 });
 
 const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
@@ -64,18 +67,28 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
   onOpenChange,
   onCheckoutComplete,
 }) => {
-  const { provider } = useWeb3Wallet();
+  const { getBalance, getGasPrice, sendTransaction, switchNetwork } =
+    useWallet();
   const { toast } = useToast();
   const { wallet } = useAppSelector((state) => state.web3);
+  const user = useAppSelector((state: any) => state.auth.user);
+  const merchant = useAppSelector((state: any) => state.auth.merchant);
+  const userIdentifier =
+    user?.email || user?.phone || merchant?.email || merchant?.phone || "";
+  const isMerchant = !!merchant;
+  const [depositAddress, setDepositAddress] = useState("");
+  const [previousAddresses, setPreviousAddresses] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [canSend, setCanSend] = useState(false);
-  const [max, setMax] = useState<BigNumber>();
-  const [showError, setShowError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [max, setMax] = useState<string>("0.0");
+  const [walletBalance, setWalletBalance] = useState<string>("0.0");
+  const [showBalanceError, setShowBalanceError] = useState(false);
+  const [balanceErrorMessage, setBalanceErrorMessage] = useState("");
+  const [showNetworkError, setShowNetworkError] = useState(false);
+  const [networkErrorMessage, setNetworkErrorMessage] = useState("");
   const [step, setStep] = useState<
     "selection" | "coinbase" | "wallet" | "result"
   >("selection");
-  const [walletBalance, setWalletBalance] = useState<string>("0.0");
   const [txHash, setTxHash] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -93,24 +106,99 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
 
   useEffect(() => {
     const ethAmount = walletForm.watch("ethAmount").toString();
-    const fetchBalance = async () => {
-      if (provider && wallet) {
-        const balance = await provider.getBalance(wallet?.address);
-        const gasPrice = await provider.getGasPrice();
-        // assume 21000 gas limit for a basic ETH transfer
-        const estimatedGasFee = gasPrice.mul(21000);
-        const maxSendable = balance.sub(estimatedGasFee);
-        setMax(maxSendable);
-        balance.gte(parseEther("0.00")) ? setCanSend(true) : null;
-        setWalletBalance(formatEther(balance));
+    let balance, gasPrice, maxSendable;
+    const fetchWalletBalance = async () => {
+      if (wallet) {
+        balance = formatEther(await getBalance());
+        setWalletBalance(balance);
+        gasPrice = await getGasPrice();
+        // maxSendable = formatEther(parseEther(balance).sub(gasPrice));
+        maxSendable = parseEther(balance).gte(gasPrice)
+          ? parseEther(balance).sub(gasPrice)
+          : 0n;
+
+        if (BigNumber.from(maxSendable).gt(parseEther(ethAmount || "0.0"))) {
+          setCanSend(true);
+          setMax(formatEther(maxSendable));
+          setBalanceErrorMessage("");
+          setShowBalanceError(false);
+        } else {
+          setCanSend(false);
+          setMax("0.0");
+          setBalanceErrorMessage("Insufficient balance");
+          setShowBalanceError(true);
+        }
+
+        console.log("====================================");
+        console.log("max sendable >> ", formatEther(maxSendable));
+        console.log("====================================");
+
+        // Fetch deposit address(es)
+        const addresses = await ApiService.getDepositAddresses({
+          userIdentifier,
+          currency: "ETH",
+          isMerchant,
+        });
+        // If there are previous addresses, use the first one as the current address
+        if (addresses && addresses.length > 0) {
+          setPreviousAddresses(addresses);
+          setDepositAddress(addresses[0]);
+        } else {
+          // If no previous addresses, generate a new one
+          const address = await ApiService.generateDepositAddress({
+            userIdentifier,
+            currency: "ETH",
+            isMerchant,
+            fresh: true,
+          });
+          if (address) {
+            setDepositAddress(address);
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description:
+                "Failed to generate deposit address. Please try again later.",
+            });
+          }
+        }
+
+        if (
+          wallet?.chain?.includes("Sepolia") &&
+          getEnvironmentConfig().currentEnv === "production"
+        ) {
+          setCanSend(false);
+          setNetworkErrorMessage(
+            `Cannot send from ${wallet?.chain} testnet to mainnet`
+          );
+          setShowNetworkError(true);
+        } else if (
+          !wallet?.chain?.includes("Sepolia") &&
+          getEnvironmentConfig().currentEnv === "development"
+        ) {
+          setCanSend(false);
+          setNetworkErrorMessage(
+            `Cannot send from ${wallet?.chain} mainnet to testnet`
+          );
+          setShowNetworkError(true);
+        } else if (
+          !wallet?.chain?.includes("Sepolia") &&
+          getEnvironmentConfig().currentEnv !== "production"
+        ) {
+          setCanSend(false);
+          setNetworkErrorMessage(
+            `Cannot send from ${wallet?.chain} mainnet to testnet`
+          );
+          setShowNetworkError(true);
+        } else {
+          setCanSend(true);
+          setNetworkErrorMessage("");
+          setShowNetworkError(false);
+        }
       }
     };
-    fetchBalance();
-    if (parseEther(walletBalance).lt(parseEther(ethAmount || "0.0"))) {
-      setErrorMessage("Insufficient balance");
-      setShowError(true);
-    }
-  }, [provider, wallet, walletForm.watch("ethAmount")]);
+    fetchWalletBalance();
+  }, [wallet, walletForm.watch("ethAmount")]);
 
   const handleWalletFunding = async (values: z.infer<typeof ethFormSchema>) => {
     if (!wallet) {
@@ -118,29 +206,26 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
       return;
     }
 
+    if (showBalanceError)
+      return toast({ title: `${balanceErrorMessage}`, variant: "destructive" });
+    if (showNetworkError)
+      return toast({ title: `${networkErrorMessage}`, variant: "destructive" });
+
     try {
       const amountInEther = values.ethAmount;
       const amountInWei = parseEther(amountInEther);
-
       const balanceWei = parseEther(walletBalance);
       if (balanceWei.lt(amountInWei)) {
         toast({ title: "Insufficient funds", variant: "destructive" });
         return;
       }
-
       setIsLoading(true);
-      const signer = provider.getSigner();
-      const tx = await signer.sendTransaction({
-        to: "0xb679b48a6026cadc429af8972bca77a100b05282", // replace with your ETH/Base address
-        value: amountInWei,
-      });
-
-      await tx.wait();
+      const tx = await sendTransaction(depositAddress, amountInWei);
       toast({
         title: "Transaction Successful",
-        description: `TX Hash: ${tx.hash}`,
+        description: `TX Hash: ${tx}`,
       });
-      setTxHash(tx.hash);
+      setTxHash(tx);
       // setStep("result");
       onOpenChange(false);
       onCheckoutComplete?.();
@@ -163,9 +248,9 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
         currency: values.currency,
         orderId: `order-${Date.now()}`,
         type: "customer",
-        success_url: `https://duka.pesatoken.org/dashboard?chargeId={chargeId}`,
-        cancel_url: `https://duka.pesatoken.org/dashboard?chargeId={chargeId}`,
       });
+      // let success_url = `https://duka.pesatoken.org/dashboard?chargeId=${charge.id}`,
+      //   cancel_url = `https://duka.pesatoken.org/dashboard?chargeId=${chargeId}`;
 
       if (charge && charge.id) {
         if (charge.hosted_url) {
@@ -214,9 +299,8 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
                 Fund with Linked Wallet
               </Button>
             ) : (
-              <WalletConnector />
+              <Web3Connector />
             )}
-
             <Button onClick={() => setStep("coinbase")}>
               Fund with Coinbase
             </Button>
@@ -234,7 +318,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
                 name="ethAmount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Amount (ETH)</FormLabel>
+                    <FormLabel>Amount ({wallet?.chain})</FormLabel>
                     <FormControl>
                       <div className="flex justify-center">
                         <Input
@@ -248,10 +332,14 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
                           type="button"
                           variant="outline"
                           onClick={() => {
-                            walletForm.setValue(
-                              "ethAmount",
-                              max?.toString() || "0.0"
-                            );
+                            if (
+                              BigNumber.from(parseEther(max)) >
+                              BigNumber.from(0n)
+                            )
+                              walletForm.setValue(
+                                "ethAmount",
+                                max?.toString() || "0.0"
+                              );
                           }}
                         >
                           Max
@@ -259,10 +347,31 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
                       </div>
                     </FormControl>
                     <FormDescription>Enter ETH amount to send</FormDescription>
-                    {showError && (
-                      <FormDescription className="text-red-600">
-                        {errorMessage}
-                      </FormDescription>
+                    {(showBalanceError || showNetworkError) && (
+                      <div className="flex flex-col">
+                        {balanceErrorMessage && (
+                          <FormDescription className="text-red-600">
+                            {balanceErrorMessage}
+                          </FormDescription>
+                        )}
+                        <div className="flex items-center">
+                          {networkErrorMessage && (
+                            <FormDescription className="text-red-600">
+                              {networkErrorMessage}
+                            </FormDescription>
+                          )}
+                          {showNetworkError && (
+                            <ChainSwitcher switchNetwork={switchNetwork} />
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {depositAddress && (
+                      <div className="flex flex-col">
+                        <h6 className="text-sm">Address:</h6>
+                        <FormDescription>{depositAddress}</FormDescription>
+                      </div>
                     )}
 
                     <FormMessage />
@@ -277,7 +386,10 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
                 >
                   Back
                 </Button>
-                <Button type="submit" disabled={isLoading || !canSend}>
+                <Button
+                  type="submit"
+                  disabled={isLoading || showBalanceError || showNetworkError}
+                >
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

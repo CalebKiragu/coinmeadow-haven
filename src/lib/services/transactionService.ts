@@ -49,6 +49,7 @@ export interface TransferResponse {
 interface DepositAddressResponse {
   address?: string;
   addresses?: string[];
+  data?: string[];
   error?: string;
 }
 
@@ -60,7 +61,8 @@ interface BlockchainTransferParams {
   recipientFirstName: string;
   recipientLastName: string;
   inOut: string;
-  phone: string;
+  phone?: string;
+  email?: string;
   pin: string;
   recipient: string;
   amount: string;
@@ -161,24 +163,24 @@ export const TransactionService = {
   }): Promise<string[]> => {
     try {
       const { userIdentifier, currency, isMerchant } = params;
-      console.log(
-        `Fetching addresses for ${userIdentifier}, currency: ${currency}, isMerchant: ${isMerchant}`
-      );
+      // console.log(
+      //   `Fetching addresses for ${userIdentifier}, currency: ${currency}, isMerchant: ${isMerchant}`
+      // );
 
-      const response: AxiosResponse<ApiResponse<DepositAddressResponse>> =
+      const response: AxiosResponse<ApiResponse<DepositAddressResponse | any>> =
         await api.get(
           `v1/wallets/address/get/${userIdentifier}?fresh=false&currency=${currency.toLowerCase()}&isMerchant=${isMerchant}&raw=false`
         );
 
-      console.log("Address response:", response.data);
+      // console.log("Address response:", response.data);
 
       if (response.data.data?.error) {
         throw new Error(response.data.data.error);
       }
 
       // Handle case where addresses might be undefined
-      const addresses = response.data.data?.addresses || [];
-      console.log("Returning addresses:", addresses);
+      const addresses = response.data.data || [];
+      // console.log("Returning addresses:", addresses);
       return addresses;
     } catch (error) {
       console.error("Error fetching deposit addresses:", error);
@@ -200,7 +202,7 @@ export const TransactionService = {
         `Generating address for ${userIdentifier}, currency: ${currency}, isMerchant: ${isMerchant}, fresh: ${fresh}`
       );
 
-      const response: AxiosResponse<ApiResponse<DepositAddressResponse>> =
+      const response: AxiosResponse<ApiResponse<DepositAddressResponse | any>> =
         await api.get(
           `v1/wallets/address/generate/${userIdentifier}?currency=${currency.toLowerCase()}&isMerchant=${isMerchant}&fresh=${fresh}&raw=false`
         );

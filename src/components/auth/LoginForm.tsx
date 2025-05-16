@@ -100,7 +100,7 @@ const LoginForm = () => {
       await ApiService.googleAuth(credentials);
       toast({
         title: "Google authentication successful",
-        description: "Logging you in...",
+        description: "You are logged in.",
       });
       navigate("/dashboard", { replace: true });
     } catch (error) {

@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface Web3Wallet {
   address: string;
+  chain: string;
   chainId: string | number;
   connectorName: string;
   connected?: boolean;

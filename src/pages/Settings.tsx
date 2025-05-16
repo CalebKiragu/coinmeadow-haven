@@ -27,7 +27,7 @@ const Settings = () => {
   const { user, merchant } = useAppSelector((state) => state.auth);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
       <NavigationHeader title="Settings" />
 
       <div className="max-w-4xl mx-auto space-y-8 animate-fade-in">

@@ -69,7 +69,7 @@ const ThirdPartyAuth = () => {
 
       toast({
         title: "Google authentication successful",
-        description: "Logging you in...",
+        description: "You are logged in.",
       });
 
       // For now, we'll just navigate to the dashboard

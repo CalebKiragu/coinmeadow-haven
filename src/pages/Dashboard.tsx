@@ -28,6 +28,7 @@ import KycBanner from "@/components/verification/KycBanner";
 import { usePasskeyAuth } from "@/hooks/usePasskeyAuth";
 import { ApiService } from "@/lib/services";
 import { WalletService } from "@/lib/services/walletService";
+import { useToast } from "@/hooks/use-toast";
 
 // Define the Charge interface
 interface Charge {
@@ -67,10 +68,9 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("wallet");
   const [showBalance, setShowBalance] = useState(false);
   const [chargeStatus, setChargeStatus] = useState<string | null>(null);
-
   const { verifyPasskey, isPasskeyVerified } = usePasskeyAuth();
-
   const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -135,7 +135,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8 flex-wrap gap-2">
           <div className="flex flex-col items-start">
@@ -221,6 +221,13 @@ const Dashboard = () => {
             </TabsTrigger>
             <TabsTrigger
               value="trade"
+              disabled={true}
+              onClick={() =>
+                toast({
+                  title: "Coming soon",
+                  description: "Trade feature coming soon",
+                })
+              }
               className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/70"
             >
               Trade

@@ -19,7 +19,7 @@ const Index = () => {
   }, [isAuthenticated, navigate]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-coffee-light via-coffee to-dollar-dark">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black">
       <div className="w-full max-w-md">
         {isMerchant ? (
           showLogin ? (

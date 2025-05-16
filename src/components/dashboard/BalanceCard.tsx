@@ -183,10 +183,6 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
     }
   };
 
-  const handleCheckoutClick = () => {
-    setCheckoutDialogOpen(true);
-  };
-
   const handleCheckoutComplete = () => {
     // Refresh wallet data after checkout
     if (user || merchant) {
@@ -239,7 +235,7 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
             </div>
             <button
               onClick={handleToggleBalance}
-              className="text-gray-600 hover:text-gray-800 transition-colors"
+              className="self-start text-gray-600 hover:text-gray-800 transition-colors"
               disabled={isVerifying}
             >
               {showBalance ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -390,7 +386,7 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
                 <Button
                   variant="outline"
                   size="lg"
-                  onClick={handleCheckoutClick}
+                  onClick={() => setCheckoutDialogOpen(true)}
                   className="text-xs h-7 px-3 py-0 bg-[#0052FF] hover:bg-[#0039B3] text-white border-0"
                 >
                   Fund Wallet

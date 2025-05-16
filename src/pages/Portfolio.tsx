@@ -1,4 +1,3 @@
-
 import { useState, Suspense } from "react";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
 import PortfolioMetrics from "@/components/portfolio/PortfolioMetrics";
@@ -18,7 +17,7 @@ const Portfolio = () => {
   const [selectedCrypto, setSelectedCrypto] = useState("BTC");
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-coffee-light via-coffee dark:from-coffee-dark dark:via-coffee-dark to-black/40 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         <NavigationHeader title="Portfolio" />
 

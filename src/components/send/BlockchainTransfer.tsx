@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { useSendPay } from "@/contexts/SendPayContext";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -21,7 +21,7 @@ export const BlockchainTransfer = ({
 }: {
   currentStep: number;
 }) => {
-  const { 
+  const {
     blockchainAddress,
     setBlockchainAddress,
     blockchainAmount,
@@ -35,28 +35,40 @@ export const BlockchainTransfer = ({
     rates,
     setIsLoading,
     setIsSuccess,
-    setError
+    setError,
   } = useSendPay();
-  
+
   const { toast } = useToast();
   const [isAddressValid, setIsAddressValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
-  
-  const auth = useAppSelector(state => state.auth);
-  const userPhone = auth.user?.phone || "";
+
+  const auth = useAppSelector((state) => state.auth);
+  const userPhone = auth.user?.phone || auth.merchant?.phone || "";
+  const userEmail = auth.user?.email || auth.merchant?.email || "";
+  const initiator =
+    auth.user?.email ||
+    auth.user?.phone ||
+    auth.merchant?.email ||
+    auth.merchant?.phone ||
+    "";
   const userFirstName = auth.user?.firstName || "";
   const userLastName = auth.user?.lastName || "";
-  
+
   // Basic validation for blockchain address
   useEffect(() => {
     // This is a very basic validation - in a real app, this would be more sophisticated
     setIsAddressValid(blockchainAddress.length > 25);
   }, [blockchainAddress]);
-  
+
   // Function to handle blockchain transfer
   const handleBlockchainTransfer = async () => {
-    if (!blockchainAddress || !blockchainAmount || !blockchainPin || !selectedCryptoCurrency) {
+    if (
+      !blockchainAddress ||
+      !blockchainAmount ||
+      !blockchainPin ||
+      !selectedCryptoCurrency
+    ) {
       toast({
         title: "Missing information",
         description: "Please fill out all required fields",
@@ -64,7 +76,7 @@ export const BlockchainTransfer = ({
       });
       return;
     }
-    
+
     if (!isAddressValid) {
       toast({
         title: "Invalid address",
@@ -73,48 +85,50 @@ export const BlockchainTransfer = ({
       });
       return;
     }
-    
+
     setIsSubmitting(true);
     setIsLoading(true);
-    
+
     try {
       const response = await TransactionService.sendBlockchain({
         txType: "BCWITHDRAW",
-        initiator: userPhone,
+        initiator,
         senderFirstName: userFirstName,
         senderLastName: userLastName,
         recipientFirstName: "Recipient", // Default values since we don't collect these
         recipientLastName: "User",
         inOut: `${selectedCryptoCurrency}-${selectedCryptoCurrency}`,
-        phone: userPhone,
+        ...(userPhone ? { phone: userPhone } : { email: userEmail }),
         pin: blockchainPin,
         recipient: blockchainAddress,
         amount: blockchainAmount,
-        currency: selectedCryptoCurrency.toLowerCase()
+        currency: selectedCryptoCurrency.toLowerCase(),
       });
-      
+
       if (response.success) {
         setIsSuccess(true);
         toast({
           title: "Transfer Initiated",
-          description: "Your blockchain withdrawal has been submitted successfully",
+          description:
+            "Your blockchain withdrawal has been submitted successfully",
         });
       } else {
         setError(response.error || "Transaction failed");
         toast({
           title: "Transaction Failed",
-          description: response.error || "There was an error processing your transaction",
+          description:
+            response.error || "There was an error processing your transaction",
           variant: "destructive",
         });
       }
     } catch (error) {
       console.error("Blockchain transfer error:", error);
       let errorMessage = "An unexpected error occurred";
-      
+
       if (error instanceof Error) {
         errorMessage = error.message;
       }
-      
+
       setError(errorMessage);
       toast({
         title: "Transaction Failed",
@@ -126,7 +140,7 @@ export const BlockchainTransfer = ({
       setIsLoading(false);
     }
   };
-  
+
   // Submit on the final step
   useEffect(() => {
     if (currentStep === 3 && blockchainPin.length === 4) {
@@ -138,7 +152,7 @@ export const BlockchainTransfer = ({
     setBlockchainAddress(data);
     console.log("QR Code scanned:", data);
   };
-  
+
   if (currentStep === 1) {
     return (
       <div className="space-y-4 animate-fade-in">
@@ -148,12 +162,14 @@ export const BlockchainTransfer = ({
             placeholder="Enter blockchain address"
             value={blockchainAddress}
             onChange={(e) => setBlockchainAddress(e.target.value)}
-            className={`flex-1 ${!isAddressValid && blockchainAddress ? 'border-red-500' : ''}`}
+            className={`flex-1 ${
+              !isAddressValid && blockchainAddress ? "border-red-500" : ""
+            }`}
             required
           />
-          <Button 
-            variant="outline" 
-            size="icon" 
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => setIsQRScannerOpen(true)}
             type="button"
             className="flex-shrink-0"
@@ -162,10 +178,12 @@ export const BlockchainTransfer = ({
           </Button>
         </div>
         {!isAddressValid && blockchainAddress && (
-          <p className="text-xs text-red-500 mt-1">Please enter a valid blockchain address</p>
+          <p className="text-xs text-red-500 mt-1">
+            Please enter a valid blockchain address
+          </p>
         )}
 
-        <QRScannerModal 
+        <QRScannerModal
           isOpen={isQRScannerOpen}
           onClose={() => setIsQRScannerOpen(false)}
           onScan={handleQRScan}
@@ -173,7 +191,7 @@ export const BlockchainTransfer = ({
       </div>
     );
   }
-  
+
   if (currentStep === 2) {
     return (
       <div className="space-y-4 animate-fade-in">
@@ -186,7 +204,7 @@ export const BlockchainTransfer = ({
             required
             className="flex-grow"
           />
-          
+
           <Select
             value={selectedCryptoCurrency}
             onValueChange={setSelectedCryptoCurrency}
@@ -203,13 +221,23 @@ export const BlockchainTransfer = ({
             </SelectContent>
           </Select>
         </div>
-        
+
         {blockchainAmount && (
           <div className="text-sm bg-white/10 p-3 rounded-lg">
             <p className="text-emerald-400">
-              ≈ {convertCryptoToFiat(blockchainAmount, selectedCryptoCurrency, selectedFiatCurrency)} {selectedFiatCurrency}
+              ≈{" "}
+              {convertCryptoToFiat(
+                blockchainAmount,
+                selectedCryptoCurrency,
+                selectedFiatCurrency
+              )}{" "}
+              {selectedFiatCurrency}
               <span className="block text-xs text-blue-300 mt-1">
-                1 {selectedCryptoCurrency} = {rates[`${selectedCryptoCurrency}-${selectedFiatCurrency}`]?.toFixed(2) || '0.00'} {selectedFiatCurrency}
+                1 {selectedCryptoCurrency} ={" "}
+                {rates[
+                  `${selectedCryptoCurrency}-${selectedFiatCurrency}`
+                ]?.toFixed(2) || "0.00"}{" "}
+                {selectedFiatCurrency}
               </span>
             </p>
           </div>
@@ -217,7 +245,7 @@ export const BlockchainTransfer = ({
       </div>
     );
   }
-  
+
   if (currentStep === 3) {
     return (
       <div className="space-y-4 animate-fade-in">
@@ -233,7 +261,9 @@ export const BlockchainTransfer = ({
         {isSubmitting && (
           <div className="text-center">
             <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
-            <p className="text-sm text-gray-400 mt-2">Processing your transaction...</p>
+            <p className="text-sm text-gray-400 mt-2">
+              Processing your transaction...
+            </p>
           </div>
         )}
       </div>

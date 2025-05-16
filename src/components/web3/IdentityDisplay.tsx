@@ -7,7 +7,6 @@ import {
 } from "@coinbase/onchainkit/identity";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import WalletConnector from "./WalletConnector";
 import {
   Tooltip,
   TooltipContent,
@@ -16,7 +15,9 @@ import {
 } from "@/components/ui/tooltip";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { getEnvironmentConfig } from "@/lib/utils";
-import { useWeb3Wallet } from "@/contexts/Web3ProviderContext";
+import { useWallet } from "@/contexts/Web3ContextProvider";
+import Web3Connector from "./Web3Connector";
+import ChainSwitcher from "./ChainSwitcher";
 
 interface IdentityDisplayProps {
   compact?: boolean;
@@ -28,47 +29,56 @@ const IdentityDisplay = ({
   showDisconnect = true,
 }: IdentityDisplayProps) => {
   const { wallet } = useAppSelector((state) => state.web3);
-  const { disconnectWallet } = useWeb3Wallet();
+  const { switchNetwork, disconnectAll } = useWallet();
 
   // If no wallet is connected, show connect button
   if (!wallet || !wallet.address) {
-    return <WalletConnector className={compact ? "text-xs py-1 h-7" : ""} />;
+    return <Web3Connector className={compact ? "text-xs py-1 h-7" : ""} />;
   }
 
   return (
-    <div className={`flex items-center ${compact ? "gap-1" : "gap-2"}`}>
-      <Identity
-        address={`0x${wallet?.address?.slice(2)}`}
-        schemaId={`0x${getEnvironmentConfig().baseSchemaId?.slice(2)}`}
-        className="rounded-full"
-      >
-        <Avatar />
-        <Name>
-          <Badge tooltip={true} />
-        </Name>
-        <Address />
-      </Identity>
+    <div className={`flex flex-col -mb-4`}>
+      <div className={`flex items-center ${compact ? "gap-1" : "gap-2"}`}>
+        <Identity
+          address={`0x${wallet?.address?.slice(2)}`}
+          schemaId={`0x${getEnvironmentConfig().baseSchemaId?.slice(2)}`}
+          className="rounded-full"
+        >
+          <Avatar />
+          <Name>
+            <Badge tooltip={true} />
+          </Name>
+          <Address />
+        </Identity>
 
-      {showDisconnect && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 text-red-500 hover:text-red-600 hover:bg-red-100"
-                onClick={disconnectWallet}
-              >
-                <LogOut className="h-3 w-3" />
-                <span className="sr-only">Disconnect wallet</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Disconnect wallet</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
+        {showDisconnect && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 text-red-500 hover:text-red-600 hover:bg-red-100"
+                  onClick={disconnectAll}
+                >
+                  <LogOut className="h-3 w-3" />
+                  <span className="sr-only">Disconnect wallet</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Disconnect wallet</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
+
+      <div className={`ml-2 flex items-center`}>
+        <h4 className={`font-bold text-sm px-2`}>{wallet?.chain}</h4>
+        <span className="h-2 w-2 bg-green-500 rounded-full shadow-green-500 shadow-md inline-block" />
+
+        <ChainSwitcher switchNetwork={switchNetwork} />
+      </div>
     </div>
   );
 };
