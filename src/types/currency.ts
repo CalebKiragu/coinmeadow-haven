@@ -1,4 +1,3 @@
-
 export type CryptoCurrency = {
   symbol: string;
   name: string;
@@ -25,10 +24,22 @@ export const cryptoCurrencies: CryptoCurrency[] = [
     name: "Ethereum",
     price: 3450.2,
     details: "Supports native ERC-20 tokens",
-    coinGeckoId: "ethereum"
+    coinGeckoId: "ethereum",
+  },
+  {
+    symbol: "ETH_BASE",
+    name: "Base",
+    price: 3450.2,
+    coinGeckoId: "ethereum",
   },
   { symbol: "LTC", name: "Litecoin", price: 80.45, coinGeckoId: "litecoin" },
-  { symbol: "CELO", name: "Celo", price: 0.95, details: "Supports cUSD", coinGeckoId: "celo" },
+  {
+    symbol: "CELO",
+    name: "Celo",
+    price: 0.95,
+    details: "Supports cUSD",
+    coinGeckoId: "celo",
+  },
 ];
 
 export const fiatCurrencies: FiatCurrency[] = [
