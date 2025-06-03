@@ -137,7 +137,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8 flex-wrap gap-2">
+        <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
           <div className="flex flex-col items-start">
             <h1 className="text-2xl font-bold text-white">CoinDuka</h1>
             <span className="text-sm text-white/70">
@@ -212,7 +212,7 @@ const Dashboard = () => {
           className="w-full"
           onValueChange={setActiveTab}
         >
-          <TabsList className="w-full mb-6 bg-transparent border border-white/10">
+          <TabsList className="w-full mb-2 bg-transparent border border-white/10">
             <TabsTrigger
               value="wallet"
               className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/70"

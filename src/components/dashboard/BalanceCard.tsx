@@ -216,11 +216,11 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
     <GlassCard className="relative animate-scale-in p-2 sm:p-3">
       {isLoading ? (
         <div className="space-y-2">
-          <Skeleton className="h-5 w-1/3" />
-          <Skeleton className="h-3 w-1/4" />
-          <Skeleton className="h-7 w-full" />
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-5 w-3/4" />
+          <Skeleton height="h-5" width="w-1/3" />
+          <Skeleton height="h-3" width="w-1/4" />
+          <Skeleton height="h-7" width="w-full" />
+          <Skeleton height="h-8" width="w-full" />
+          <Skeleton height="h-5" width="w-3/4" />
         </div>
       ) : (
         <div className="flex flex-col gap-1 sm:gap-2">

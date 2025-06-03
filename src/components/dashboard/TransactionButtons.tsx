@@ -1,4 +1,3 @@
-
 import { Send, Wallet, CreditCard, ArrowDownToLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -42,7 +41,7 @@ const TransactionButtons = ({ isLoading = false }: TransactionButtonsProps) => {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-pulse">
         {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={i} className="h-20 rounded-lg" />
+          <Skeleton key={i} height="h-20" className="rounded-lg" />
         ))}
       </div>
     );

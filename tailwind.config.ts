@@ -19,7 +19,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['San Francisco Display', 'system-ui', 'sans-serif'],
+        sans: ["San Francisco Display", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -97,5 +97,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("tailwind-scrollbar")],
 } satisfies Config;

@@ -299,7 +299,7 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
         </div>
 
         {isLoading ? (
-          <Skeleton className="h-4 w-32 mt-1" />
+          <Skeleton height="h-4" width="w-32" className="mt-1" />
         ) : (
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xl md:text-2xl font-bold">
@@ -328,7 +328,7 @@ const PortfolioChart = ({ selectedCrypto }: PortfolioChartProps) => {
 
       <CardContent>
         {isLoading ? (
-          <Skeleton className="h-[300px] w-full" />
+          <Skeleton height="h-[300px]" width="w-full" />
         ) : (
           <div
             id="tradingview_chart"

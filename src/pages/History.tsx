@@ -300,11 +300,11 @@ const History = () => {
             className="p-3 bg-white/10 rounded-lg flex justify-between items-center"
           >
             <div className="flex flex-col gap-2 w-2/3">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-3 w-1/2" />
+              <Skeleton height="h-4" width="w-full" />
+              <Skeleton height="h-3" width="w-1/2" />
             </div>
             <div className="text-right w-1/3">
-              <Skeleton className="h-4 w-full" />
+              <Skeleton height="h-4" width="w-full" />
             </div>
           </div>
         ))}

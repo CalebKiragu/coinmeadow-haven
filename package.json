@@ -8,7 +8,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.772.0",
@@ -62,6 +63,7 @@
     "@web3-react/core": "^6.1.9",
     "@web3-react/injected-connector": "^6.0.7",
     "@web3-react/walletlink-connector": "^6.2.14",
+    "@xmtp/xmtp-js": "^13.0.4",
     "@yudiel/react-qr-scanner": "^2.2.1",
     "axios": "^1.7.9",
     "canvas-confetti": "^1.9.3",
@@ -93,10 +95,12 @@
     "redux-persist": "^6.0.0",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.2",
+    "tailwind-scrollbar": "^3.1.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
     "vi-fetch": "^0.8.0",
     "viem": "^2.29.2",
+    "vite-plugin-wasm": "^3.4.1",
     "vitest": "^3.1.1",
     "wagmi": "^2.15.2",
     "zod": "^3.23.8"
@@ -115,10 +119,17 @@
     "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
     "lovable-tagger": "^1.1.7",
+    "patch-package": "^8.0.0",
     "postcss": "^8.4.47",
+    "postinstall-postinstall": "^2.1.0",
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.1.6"
+  },
+  "overrides": {
+    "@xmtp/xmtp-js": {
+      "viem": "2.29.2"
+    }
   }
 }

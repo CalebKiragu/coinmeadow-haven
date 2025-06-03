@@ -69,19 +69,18 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
   onOpenChange,
   onCheckoutComplete,
 }) => {
-  const { getBalance, getGasPrice, sendTransaction, switchNetwork } =
-    useWallet();
+  const {
+    getBalance,
+    getGasPrice,
+    sendTransaction,
+    switchNetwork,
+    depositAddress,
+  } = useWallet();
   const { toast } = useToast();
   const { wallet } = useAppSelector((state) => state.web3);
   const user = useAppSelector((state: any) => state.auth.user);
   const merchant = useAppSelector((state: any) => state.auth.merchant);
-  const userIdentifier =
-    user?.email || user?.phone || merchant?.email || merchant?.phone || "";
-  const isMerchant = !!merchant;
-  const [depositAddress, setDepositAddress] = useState("");
-  const [previousAddresses, setPreviousAddresses] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [canSend, setCanSend] = useState(false);
   const [max, setMax] = useState<string>("0.0");
   const [amountToSend, setAmountToSend] = useState<string>("0.0");
   const [walletBalance, setWalletBalance] = useState<string>("0.0");
@@ -122,56 +121,19 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
           : 0n;
 
         if (BigNumber.from(maxSendable).gt(parseEther(ethAmount || "0.0"))) {
-          setCanSend(true);
           setMax(formatEther(maxSendable));
           setBalanceErrorMessage("");
           setShowBalanceError(false);
         } else {
-          setCanSend(false);
           setMax("0.0");
           setBalanceErrorMessage("Insufficient balance");
           setShowBalanceError(true);
-        }
-
-        // console.log("====================================");
-        // console.log("max sendable >> ", formatEther(maxSendable));
-        // console.log("====================================");
-
-        // Fetch deposit address(es)
-        const addresses = await ApiService.getDepositAddresses({
-          userIdentifier,
-          currency: "ETH",
-          isMerchant,
-        });
-        // If there are previous addresses, use the first one as the current address
-        if (addresses && addresses.length > 0) {
-          setPreviousAddresses(addresses);
-          setDepositAddress(addresses[0]);
-        } else {
-          // If no previous addresses, generate a new one
-          const address = await ApiService.generateDepositAddress({
-            userIdentifier,
-            currency: "ETH",
-            isMerchant,
-            fresh: true,
-          });
-          if (address) {
-            setDepositAddress(address);
-          } else {
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description:
-                "Failed to generate deposit address. Please try again later.",
-            });
-          }
         }
 
         if (
           wallet?.chain?.includes("Sepolia") &&
           getEnvironmentConfig().currentEnv === "production"
         ) {
-          setCanSend(false);
           setNetworkErrorMessage(
             `Cannot fund from ${wallet?.chain} testnet to mainnet`
           );
@@ -180,7 +142,6 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
           !wallet?.chain?.includes("Sepolia") &&
           getEnvironmentConfig().currentEnv === "development"
         ) {
-          setCanSend(false);
           setNetworkErrorMessage(
             `Cannot fund from ${wallet?.chain} mainnet to testnet`
           );
@@ -189,13 +150,11 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
           !wallet?.chain?.includes("Sepolia") &&
           getEnvironmentConfig().currentEnv !== "production"
         ) {
-          setCanSend(false);
           setNetworkErrorMessage(
             `Cannot fund from ${wallet?.chain} mainnet to testnet`
           );
           setShowNetworkError(true);
         } else {
-          setCanSend(true);
           setNetworkErrorMessage("");
           setShowNetworkError(false);
         }

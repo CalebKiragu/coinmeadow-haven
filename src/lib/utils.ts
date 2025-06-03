@@ -165,6 +165,7 @@ export const getEnvironmentConfig = () => {
       },
       base: baseSepolia,
       onchainkitKey: "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
+      agentAddress: "0x97143F6376CAA5647389D733D72b836444B0cf50",
       walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016",
       googleScriptSrc: "https://accounts.google.com/gsi/client",
       googleClientId:
@@ -195,6 +196,7 @@ export const getEnvironmentConfig = () => {
       },
       base: baseSepolia,
       onchainkitKey: "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
+      agentAddress: "0x97143F6376CAA5647389D733D72b836444B0cf50",
       walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016",
       googleScriptSrc: "https://accounts.google.com/gsi/client",
       googleClientId:
@@ -224,6 +226,7 @@ export const getEnvironmentConfig = () => {
       },
       base,
       onchainkitKey: "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
+      agentAddress: "0x97143F6376CAA5647389D733D72b836444B0cf50",
       walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016",
       googleScriptSrc: "https://accounts.google.com/gsi/client",
       googleClientId:

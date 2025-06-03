@@ -5,19 +5,12 @@ import {
   Badge,
   Address,
 } from "@coinbase/onchainkit/identity";
-import { LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { getEnvironmentConfig } from "@/lib/utils";
 import { useWallet } from "@/contexts/Web3ContextProvider";
 import Web3Connector from "./Web3Connector";
 import ChainSwitcher from "./ChainSwitcher";
+import DisconnectButton from "./DisconnectButton";
 
 interface IdentityDisplayProps {
   compact?: boolean;
@@ -29,7 +22,7 @@ const IdentityDisplay = ({
   showDisconnect = true,
 }: IdentityDisplayProps) => {
   const { wallet } = useAppSelector((state) => state.web3);
-  const { switchNetwork, disconnectAll } = useWallet();
+  const { switchNetwork } = useWallet();
 
   // If no wallet is connected, show connect button
   if (!wallet || !wallet.address) {
@@ -51,26 +44,7 @@ const IdentityDisplay = ({
           <Address />
         </Identity>
 
-        {showDisconnect && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 text-red-500 hover:text-red-600 hover:bg-red-100"
-                  onClick={disconnectAll}
-                >
-                  <LogOut className="h-3 w-3" />
-                  <span className="sr-only">Disconnect wallet</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Disconnect wallet</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
+        {showDisconnect && <DisconnectButton />}
       </div>
 
       <div className={`ml-2 flex items-center`}>

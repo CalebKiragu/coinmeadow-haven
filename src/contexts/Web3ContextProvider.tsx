@@ -5,6 +5,7 @@ import {
   useCallback,
   ReactNode,
   useEffect,
+  useState,
 } from "react";
 import {
   useAccount,
@@ -19,10 +20,11 @@ import {
   Connector,
 } from "wagmi";
 import { useAppKit } from "@reown/appkit/react"; // Only provides open/close
-import { useAppDispatch } from "@/lib/redux/hooks";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { resetWeb3Wallet, setWeb3Wallet } from "@/lib/redux/slices/web3Slice";
 import { useToast } from "@/hooks/use-toast";
 import { BigNumber } from "ethers";
+import { ApiService } from "@/lib/services";
 
 type WalletContextType = {
   address?: string;
@@ -41,6 +43,8 @@ type WalletContextType = {
   openReownModal: () => Promise<void>;
   switchNetwork: (chainId: number, chainName: string) => void;
   chains: ReturnType<typeof useSwitchChain>["chains"];
+  depositAddress: string;
+  previousAddresses: string[];
   disconnectAll: () => void;
 };
 
@@ -48,9 +52,16 @@ const WalletContext = createContext<WalletContextType | null>(null);
 
 export const Web3WalletProvider = ({ children }: { children: ReactNode }) => {
   const { address, isConnected, connector, chain } = useAccount();
+  const user = useAppSelector((state: any) => state.auth.user);
+  const merchant = useAppSelector((state: any) => state.auth.merchant);
+  const userIdentifier =
+    user?.email || user?.phone || merchant?.email || merchant?.phone || "";
+  const isMerchant = !!merchant;
   const chainId = useChainId();
   const chainClient = usePublicClient({ chainId });
   const { data: walletClient } = useWalletClient();
+  const [depositAddress, setDepositAddress] = useState("");
+  const [previousAddresses, setPreviousAddresses] = useState<string[]>([]);
   const { connect, connectors, status, data: pendingConnector } = useConnect();
   const ensName = useEnsName({ address });
   const ensAvatar = useEnsAvatar({ name: ensName.data });
@@ -59,6 +70,38 @@ export const Web3WalletProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const dispatch = useAppDispatch();
   const { disconnect } = useDisconnect();
+
+  const getDepositAddresses = async () => {
+    // Fetch deposit address(es)
+    const addresses = await ApiService.getDepositAddresses({
+      userIdentifier,
+      currency: "ETH",
+      isMerchant,
+    });
+    // If there are previous addresses, use the first one as the current address
+    if (addresses && addresses.length > 0) {
+      setPreviousAddresses(addresses);
+      setDepositAddress(addresses[0]);
+    } else {
+      // If no previous addresses, generate a new one
+      const address = await ApiService.generateDepositAddress({
+        userIdentifier,
+        currency: "ETH",
+        isMerchant,
+        fresh: true,
+      });
+      if (address) {
+        setDepositAddress(address);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description:
+            "Failed to generate deposit address. Please try again later.",
+        });
+      }
+    }
+  };
 
   useEffect(() => {
     if (address && chainId) {
@@ -76,7 +119,10 @@ export const Web3WalletProvider = ({ children }: { children: ReactNode }) => {
     } else {
       dispatch(resetWeb3Wallet());
     }
-  }, [address, chainId, connector]);
+
+    if (!depositAddress && previousAddresses?.length === 0)
+      getDepositAddresses();
+  }, [address, chainId, connector, depositAddress, previousAddresses]);
 
   const getBalance = async () => {
     if (!address) return;
@@ -147,6 +193,8 @@ export const Web3WalletProvider = ({ children }: { children: ReactNode }) => {
       openReownModal,
       switchNetwork,
       chains,
+      depositAddress,
+      previousAddresses,
       disconnectAll,
     }),
     [
@@ -165,6 +213,8 @@ export const Web3WalletProvider = ({ children }: { children: ReactNode }) => {
       openReownModal,
       switchNetwork,
       chains,
+      depositAddress,
+      previousAddresses,
       disconnectAll,
     ]
   );

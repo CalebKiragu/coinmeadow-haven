@@ -1,5 +1,4 @@
-
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Bell, BellRing } from "lucide-react";
 import {
   DropdownMenu,
@@ -7,41 +6,45 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useAppSelector, useAppDispatch } from "@/lib/redux/hooks";
 import { ApiService } from "@/lib/services";
-import { markAllAsRead } from "@/lib/redux/slices/notificationSlice";
-import { formatDistanceToNow } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import Chats from "./Chats";
+import Notifications from "./Notifications";
 
 const NotificationBell = () => {
-  const dispatch = useAppDispatch();
-  const { notifications, unreadCount } = useAppSelector((state) => state.notification);
+  const [activeTab, setActiveTab] = useState("chats");
+
+  const { unreadChats, unreadNotifications } = useAppSelector(
+    (state) => state.notification
+  );
 
   // Request notification permission when component mounts
   useEffect(() => {
     const requestPermission = async () => {
       await ApiService.requestPermission();
     };
-    
+
     requestPermission();
   }, []);
-  
-  const handleMarkAllAsRead = () => {
-    dispatch(markAllAsRead());
-  };
+
+  /**
+   * Add separate tabs for Chats & Notifications
+   * then integrate XMTP messaging to conveniently make txns.
+   */
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="relative p-2 hover:bg-white/10 rounded-full transition-colors">
-          {unreadCount > 0 ? (
+          {unreadChats > 0 ? (
             <>
               <BellRing className="h-6 w-6 text-white" />
               <Badge
                 variant="destructive"
                 className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center rounded-full text-xs"
               >
-                {unreadCount > 9 ? "9+" : unreadCount}
+                {unreadChats > 9 ? "9+" : unreadChats}
               </Badge>
             </>
           ) : (
@@ -49,62 +52,38 @@ const NotificationBell = () => {
           )}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[320px] max-h-[400px] overflow-auto p-0">
-        <div className="flex items-center justify-between p-4">
-          <p className="font-medium">Notifications</p>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={handleMarkAllAsRead}
+      <DropdownMenuContent
+        align="end"
+        className="w-[320px] overflow-y-scroll scrollbar-none"
+      >
+        <Tabs
+          defaultValue="chats"
+          className="w-full"
+          onValueChange={setActiveTab}
+        >
+          <TabsList className="w-full bg-transparent border border-white/10">
+            <TabsTrigger
+              value="chats"
+              className="data-[state=active]:bg-gray-400 data-[state=active]:text-gray-800 text-gray-500"
             >
-              Mark all as read
-            </Button>
-          )}
-        </div>
-        <div className="border-t"></div>
-        
-        {notifications.length === 0 ? (
-          <div className="p-4 text-center text-muted-foreground text-sm">
-            No notifications yet
-          </div>
-        ) : (
-          <div>
-            {notifications.slice(0, 10).map((notification) => (
-              <div
-                key={notification.id}
-                className={`cursor-pointer py-3 px-3 flex flex-col items-start gap-1 border-b ${
-                  !notification.read ? "bg-muted/30" : ""
-                }`}
-              >
-                <div className="flex items-start justify-between w-full gap-2">
-                  <p className="font-medium text-sm">
-                    {notification.title}
-                    {!notification.read && (
-                      <Badge
-                        variant="outline"
-                        className="ml-2 h-4 text-[10px] px-1 bg-blue-500/10 text-blue-500 border-blue-500/20"
-                      >
-                        New
-                      </Badge>
-                    )}
-                  </p>
-                  <span className="text-muted-foreground text-xs whitespace-nowrap">
-                    {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground">{notification.message}</p>
-              </div>
-            ))}
-            
-            {notifications.length > 10 && (
-              <div className="py-2 text-center text-muted-foreground text-sm">
-                + {notifications.length - 10} more notifications
-              </div>
-            )}
-          </div>
-        )}
+              Chats
+            </TabsTrigger>
+            <TabsTrigger
+              value="notifications"
+              className="data-[state=active]:bg-gray-400 data-[state=active]:text-gray-800 text-gray-500"
+            >
+              Notifications
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="chats" className="flex justify-center">
+            <Chats />
+          </TabsContent>
+
+          <TabsContent value="notifications">
+            <Notifications />
+          </TabsContent>
+        </Tabs>
       </DropdownMenuContent>
     </DropdownMenu>
   );

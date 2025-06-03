@@ -44,11 +44,11 @@ const Portfolio = () => {
           </Select>
         </div>
 
-        <Suspense fallback={<Skeleton className="h-[200px] w-full" />}>
+        <Suspense fallback={<Skeleton height="h-[200px]" width="w-full" />}>
           <PortfolioMetrics selectedCrypto={selectedCrypto} />
         </Suspense>
 
-        <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
+        <Suspense fallback={<Skeleton height="h-[400px]" width="w-full" />}>
           <PortfolioChart selectedCrypto={selectedCrypto} />
         </Suspense>
       </div>
