@@ -12,20 +12,14 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    // Also disable sourcemaps in the dev server
-    // resolve: {
-    //   dedupe: ["@xmtp/xmtp-js"],
-    // },
     mimeTypes: {
-      // 👇 Add this override
       "application/wasm": ["wasm"],
     },
   },
   assetsInclude: ["**/*.wasm"], // 👈 This ensures WASM is served
   plugins: [
     react(),
-    wasm(),
-    // stripSourceMappingURL(),
+    wasm(), // Also disable sourcemaps in the dev server
     mode === "development" && componentTagger(),
   ].filter(Boolean),
   resolve: {
@@ -35,12 +29,17 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: "dist",
-    // Prevent Vite from trying to load missing “.map” files in node_modules
     sourcemap: true,
-    // sourcemap: false,
+    target: "esnext", // Required for top-level await
   },
-  optimizeDeps: {
-    include: ["react", "react-dom", "react-router-dom"],
-    // exclude: ["@xmtp/xmtp-js"], // ensure it's not pre-bundled
-  },
+  // optimizeDeps: {
+  //   exclude: [
+  //     "react",
+  //     "react-dom",
+  //     "react-router-dom",
+  //     "@xmtp/wasm-bindings",
+  //     "@xmtp/browser-sdk",
+  //   ],
+  //   include: ["@xmtp/proto"],
+  // },
 }));

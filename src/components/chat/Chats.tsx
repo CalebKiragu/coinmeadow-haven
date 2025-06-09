@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAppSelector } from "@/lib/redux/hooks";
 import { Button } from "../ui/button";
-import { useXMTP } from "@/contexts/xmtp/useXMTP";
 import { useWallet } from "@/contexts/Web3ContextProvider";
 import { ChatBubble } from "./ChatBubble";
 import { Address } from "@coinbase/onchainkit/identity";
@@ -9,15 +8,8 @@ import Web3Connector from "../web3/Web3Connector";
 import ChainSwitcher from "../web3/ChainSwitcher";
 import DisconnectButton from "../web3/DisconnectButton";
 import { Skeleton } from "../ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../ui/tooltip";
-import { Link } from "lucide-react";
-import { ApiService } from "@/lib/services";
-import { useToast } from "@/hooks/use-toast";
+import { Send } from "lucide-react";
+import ConnectPeer from "../web3/ConnectPeer";
 import { getEnvironmentConfig } from "@/lib/utils";
 
 interface ChatsProps {
@@ -27,8 +19,9 @@ interface ChatsProps {
 
 const Chats = ({ compact = true, showDisconnect = true }: ChatsProps) => {
   const { wallet, xmtp } = useAppSelector((state) => state.web3);
-  const { address, switchNetwork, depositAddress } = useWallet();
   const {
+    address,
+    switchNetwork,
     conversation,
     startConversation,
     resetConversation,
@@ -36,7 +29,7 @@ const Chats = ({ compact = true, showDisconnect = true }: ChatsProps) => {
     messages,
     isXMTPConnected,
     xmtpLoading,
-  } = useXMTP();
+  } = useWallet();
   const [peer, setPeer] = useState("");
   const [text, setText] = useState("");
   const [sendDisabled, setSendDisabled] = useState(true);
@@ -124,56 +117,16 @@ const Chats = ({ compact = true, showDisconnect = true }: ChatsProps) => {
               {xmtp ? (
                 <div className="flex flex-col">
                   <span className="text-sm mt-2">My Agent:</span>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-blue-500 hover:text-blue-600 hover:bg-red-100"
-                          onClick={() =>
-                            handleStartConvo(
-                              getEnvironmentConfig().agentAddress
-                            )
-                          }
-                        >
-                          <Address
-                            address={`0x${getEnvironmentConfig().agentAddress?.slice(
-                              2
-                            )}`}
-                            hasCopyAddressOnClick={false}
-                          />
-                          <Link className="h-3 w-3" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Connect peer</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <ConnectPeer
+                    handleStartConversation={handleStartConvo}
+                    isAgent
+                  />
 
                   <span className="text-sm mt-2">Recents:</span>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-blue-500 hover:text-blue-600 hover:bg-red-100"
-                          onClick={() => handleStartConvo(xmtp?.peer)}
-                        >
-                          <Address
-                            address={xmtp?.peer}
-                            hasCopyAddressOnClick={false}
-                          />
-                          <Link className="h-3 w-3" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Connect peer</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <ConnectPeer
+                    handleStartConversation={handleStartConvo}
+                    peerAddress={xmtp?.peer}
+                  />
                 </div>
               ) : null}
             </>
@@ -181,7 +134,7 @@ const Chats = ({ compact = true, showDisconnect = true }: ChatsProps) => {
             <div className="text-sm">
               <span>Signature request not successful.</span>
               <br></br>
-              <span>Please try again.</span>
+              <span>Please reload the page or reconnect your wallet.</span>
             </div>
           )}
         </div>
@@ -191,7 +144,13 @@ const Chats = ({ compact = true, showDisconnect = true }: ChatsProps) => {
         <>
           <div>
             <div className="flex items-center justify-evenly">
-              <Address address={xmtp?.peer} />
+              {getEnvironmentConfig().agentAddress ===
+              conversation?.peerAddress ? (
+                <span className="text-sm font-black">My Agent</span>
+              ) : (
+                <Address address={`0x${conversation?.peerAddress.slice(2)}`} />
+              )}
+
               <Button variant="link" onClick={() => resetConversation()}>
                 Change Peer
               </Button>
@@ -214,11 +173,13 @@ const Chats = ({ compact = true, showDisconnect = true }: ChatsProps) => {
               ?.slice()
               .reverse()
               .map((msg, i) => (
-                <ChatBubble
-                  key={i}
-                  text={msg.content}
-                  fromSelf={msg.senderAddress === address}
-                />
+                <div onClick={() => setText(msg.content)}>
+                  <ChatBubble
+                    key={i}
+                    text={msg.content}
+                    fromSelf={msg.senderAddress === address}
+                  />
+                </div>
               ))}
           </div>
 
@@ -231,10 +192,10 @@ const Chats = ({ compact = true, showDisconnect = true }: ChatsProps) => {
             />
             <Button
               onClick={handleSendMessage}
-              className="bg-green-600 text-white p-2 rounded"
+              className="bg-green-600 text-white rounded"
               disabled={sendDisabled}
             >
-              Send
+              <Send className="h-3 w-3" />
             </Button>
           </div>
         </>

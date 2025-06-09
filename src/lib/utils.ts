@@ -18,6 +18,22 @@ export const formatTimestamp = (timestamp: string): string => {
   });
 };
 
+export const formatToCamelCase = (str: string, pascalCase = true): string => {
+  const words = str
+    .toLowerCase()
+    .split(/[\s-_]+/)
+    .filter(Boolean); // remove empty parts
+
+  const formatted = words.map((word, index) => {
+    if (index === 0 && !pascalCase) {
+      return word;
+    }
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  });
+
+  return formatted.join("");
+};
+
 export const formatCryptoValue = (
   value: string | number | null | undefined
 ): string => {
@@ -175,7 +191,6 @@ export const getEnvironmentConfig = () => {
       baseVaultAddress: "0x7BfA7C4f149E7415b73bdeDfe609237e29CBF34A",
       ETH_RPC_URL:
         "https://eth-sepolia.g.alchemy.com/v2/8Yz1ZLNi87s0MCcIL8s6jzoiLXfLhVSK",
-
       CHAIN_ID: 11155111, // sepolia chain_id
       BASE_CHAIN_ID: 84532,
     },

@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from "react";
 import confetti from "canvas-confetti";
 import { ShieldCheck, ShieldX, Headset } from "lucide-react";
@@ -81,7 +80,7 @@ const VerificationStatus = () => {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 p-6 bg-white shadow-lg rounded-lg">
+    <div className="max-w-full overflow-x-hidden mx-auto space-y-8 p-6 bg-white shadow-lg rounded-lg">
       <div className="text-center">
         {currentVerificationStatus?.status === "APPROVED" ? (
           <>

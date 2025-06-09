@@ -25,6 +25,9 @@ import { resetWeb3Wallet, setWeb3Wallet } from "@/lib/redux/slices/web3Slice";
 import { useToast } from "@/hooks/use-toast";
 import { BigNumber } from "ethers";
 import { ApiService } from "@/lib/services";
+import { useXMTP } from "./xmtp/useXMTP";
+// import { getEnvironmentConfig } from "@/lib/utils";
+// import { useSimulatedXmtpChat } from "./xmtp/useSimulatedXMTPChat";
 
 type WalletContextType = {
   address?: string;
@@ -46,6 +49,13 @@ type WalletContextType = {
   depositAddress: string;
   previousAddresses: string[];
   disconnectAll: () => void;
+  conversation?: any;
+  startConversation: (peerAddress: string) => Promise<void>;
+  resetConversation: () => void;
+  sendMessage: (text: string) => Promise<void>;
+  messages: any[];
+  isXMTPConnected: boolean;
+  xmtpLoading: boolean;
 };
 
 const WalletContext = createContext<WalletContextType | null>(null);
@@ -70,6 +80,16 @@ export const Web3WalletProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const dispatch = useAppDispatch();
   const { disconnect } = useDisconnect();
+  const {
+    conversation,
+    startConversation,
+    resetConversation,
+    sendMessage,
+    messages,
+    isXMTPConnected,
+    xmtpLoading,
+    // xmtpClient,
+  } = useXMTP();
 
   const getDepositAddresses = async () => {
     // Fetch deposit address(es)
@@ -196,6 +216,13 @@ export const Web3WalletProvider = ({ children }: { children: ReactNode }) => {
       depositAddress,
       previousAddresses,
       disconnectAll,
+      conversation,
+      startConversation,
+      resetConversation,
+      sendMessage,
+      messages,
+      isXMTPConnected,
+      xmtpLoading,
     }),
     [
       address,
@@ -216,6 +243,13 @@ export const Web3WalletProvider = ({ children }: { children: ReactNode }) => {
       depositAddress,
       previousAddresses,
       disconnectAll,
+      conversation,
+      startConversation,
+      resetConversation,
+      sendMessage,
+      messages,
+      isXMTPConnected,
+      xmtpLoading,
     ]
   );
 

@@ -313,168 +313,164 @@ const History = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        <NavigationHeader title="Transaction History" />
+    <div className="min-h-screen max-w-full mx-auto overflow-x-hidden bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 p-4 md:p-8">
+      <NavigationHeader title="Transaction History" />
 
-        <div className="space-y-6">
-          {/* Improved mobile layout - 2 columns on mobile, more rows */}
-          <div
-            className={`grid ${
-              isMobile ? "grid-cols-2" : "flex flex-wrap"
-            } gap-4`}
-          >
-            <Select value={transactionType} onValueChange={setTransactionType}>
-              <SelectTrigger
-                className={`${
-                  isMobile ? "w-full" : "w-[180px]"
-                } bg-white dark:bg-gray-800`}
-              >
-                <Filter className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Transaction Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Transactions</SelectItem>
-                <SelectItem value="SEND">Send</SelectItem>
-                <SelectItem value="RECEIVE">Receive</SelectItem>
-                <SelectItem value="DEPOSIT">Deposit</SelectItem>
-                <SelectItem value="WITHDRAW">Withdraw</SelectItem>
-                <SelectItem value="BCWITHDRAW">Blockchain Withdraw</SelectItem>
-              </SelectContent>
-            </Select>
+      <div className="space-y-6">
+        {/* Improved mobile layout - 2 columns on mobile, more rows */}
+        <div
+          className={`grid ${
+            isMobile ? "grid-cols-2" : "flex flex-wrap"
+          } gap-4`}
+        >
+          <Select value={transactionType} onValueChange={setTransactionType}>
+            <SelectTrigger
+              className={`${
+                isMobile ? "w-full" : "w-[180px]"
+              } bg-white dark:bg-gray-800`}
+            >
+              <Filter className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Transaction Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Transactions</SelectItem>
+              <SelectItem value="SEND">Send</SelectItem>
+              <SelectItem value="RECEIVE">Receive</SelectItem>
+              <SelectItem value="DEPOSIT">Deposit</SelectItem>
+              <SelectItem value="WITHDRAW">Withdraw</SelectItem>
+              <SelectItem value="BCWITHDRAW">Blockchain Withdraw</SelectItem>
+            </SelectContent>
+          </Select>
 
-            <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger
-                className={`${
-                  isMobile ? "w-full" : "w-[180px]"
-                } bg-white dark:bg-gray-800`}
-              >
-                <SelectValue placeholder="Currency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Currencies</SelectItem>
-                <SelectItem value="BTC">Bitcoin</SelectItem>
-                <SelectItem value="ETH">Ethereum</SelectItem>
-                <SelectItem value="LTC">Litecoin</SelectItem>
-                <SelectItem value="CELO">Celo</SelectItem>
-                <SelectItem value="USD">US Dollar</SelectItem>
-                <SelectItem value="EUR">Euro</SelectItem>
-              </SelectContent>
-            </Select>
+          <Select value={currency} onValueChange={setCurrency}>
+            <SelectTrigger
+              className={`${
+                isMobile ? "w-full" : "w-[180px]"
+              } bg-white dark:bg-gray-800`}
+            >
+              <SelectValue placeholder="Currency" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Currencies</SelectItem>
+              <SelectItem value="BTC">Bitcoin</SelectItem>
+              <SelectItem value="ETH">Ethereum</SelectItem>
+              <SelectItem value="LTC">Litecoin</SelectItem>
+              <SelectItem value="CELO">Celo</SelectItem>
+              <SelectItem value="USD">US Dollar</SelectItem>
+              <SelectItem value="EUR">Euro</SelectItem>
+            </SelectContent>
+          </Select>
 
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger
-                className={`${
-                  isMobile ? "w-full" : "w-[180px]"
-                } bg-white dark:bg-gray-800`}
-              >
-                <SortAsc className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Sort By" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
-                <SelectItem value="oldest">Oldest First</SelectItem>
-                <SelectItem value="highest">Highest Amount</SelectItem>
-                <SelectItem value="lowest">Lowest Amount</SelectItem>
-              </SelectContent>
-            </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger
+              className={`${
+                isMobile ? "w-full" : "w-[180px]"
+              } bg-white dark:bg-gray-800`}
+            >
+              <SortAsc className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Sort By" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest First</SelectItem>
+              <SelectItem value="oldest">Oldest First</SelectItem>
+              <SelectItem value="highest">Highest Amount</SelectItem>
+              <SelectItem value="lowest">Lowest Amount</SelectItem>
+            </SelectContent>
+          </Select>
 
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    `${
-                      isMobile ? "w-full" : "w-[180px]"
-                    } justify-start text-left font-normal bg-white dark:bg-gray-800`,
-                    !date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={(date) => {
-                    setDate(date);
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-
-            {/* Clear filters button, full width on mobile */}
-            {(transactionType !== "all" ||
-              currency !== "all" ||
-              date ||
-              searchTerm) && (
+          <Popover>
+            <PopoverTrigger asChild>
               <Button
-                variant="outline"
-                className={`${
-                  isMobile ? "col-span-2" : ""
-                } shrink-0 bg-white dark:bg-gray-800`}
-                onClick={clearFilters}
+                variant={"outline"}
+                className={cn(
+                  `${
+                    isMobile ? "w-full" : "w-[180px]"
+                  } justify-start text-left font-normal bg-white dark:bg-gray-800`,
+                  !date && "text-muted-foreground"
+                )}
               >
-                Clear Filters
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {date ? format(date, "PPP") : <span>Pick a date</span>}
               </Button>
-            )}
-
-            {/* Search input, full width on mobile, in its own row */}
-            <div
-              className={`relative ${
-                isMobile ? "col-span-2" : "w-auto flex-1"
-              }`}
-            >
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search transactions..."
-                className="w-full pl-10 bg-white dark:bg-gray-800"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={(date) => {
+                  setDate(date);
+                }}
+                initialFocus
               />
-            </div>
-          </div>
+            </PopoverContent>
+          </Popover>
 
-          <div className="glass-effect rounded-lg p-6">
-            <Tabs
-              defaultValue="all"
-              value={status}
-              onValueChange={setStatus}
-              className="w-full"
+          {/* Clear filters button, full width on mobile */}
+          {(transactionType !== "all" ||
+            currency !== "all" ||
+            date ||
+            searchTerm) && (
+            <Button
+              variant="outline"
+              className={`${
+                isMobile ? "col-span-2" : ""
+              } shrink-0 bg-white dark:bg-gray-800`}
+              onClick={clearFilters}
             >
-              <TabsList className="grid w-full grid-cols-4 mb-6">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="pending">Pending</TabsTrigger>
-                <TabsTrigger value="completed">Completed</TabsTrigger>
-                <TabsTrigger value="failed">Failed</TabsTrigger>
-              </TabsList>
+              Clear Filters
+            </Button>
+          )}
 
-              {isLoading ? (
-                <div className="space-y-4">{renderSkeletonLoader()}</div>
-              ) : (
-                <>
-                  <TabsContent value="all" className="space-y-4">
-                    {renderTransactionList(sortedTransactions)}
-                  </TabsContent>
-
-                  <TabsContent value="pending" className="space-y-4">
-                    {renderTransactionList(pendingTransactions)}
-                  </TabsContent>
-
-                  <TabsContent value="completed" className="space-y-4">
-                    {renderTransactionList(completedTransactions)}
-                  </TabsContent>
-
-                  <TabsContent value="failed" className="space-y-4">
-                    {renderTransactionList(failedTransactions)}
-                  </TabsContent>
-                </>
-              )}
-            </Tabs>
+          {/* Search input, full width on mobile, in its own row */}
+          <div
+            className={`relative ${isMobile ? "col-span-2" : "w-auto flex-1"}`}
+          >
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search transactions..."
+              className="w-full pl-10 bg-white dark:bg-gray-800"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
+        </div>
+
+        <div className="glass-effect rounded-lg p-6">
+          <Tabs
+            defaultValue="all"
+            value={status}
+            onValueChange={setStatus}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-4 mb-6">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="pending">Pending</TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+              <TabsTrigger value="failed">Failed</TabsTrigger>
+            </TabsList>
+
+            {isLoading ? (
+              <div className="space-y-4">{renderSkeletonLoader()}</div>
+            ) : (
+              <>
+                <TabsContent value="all" className="space-y-4">
+                  {renderTransactionList(sortedTransactions)}
+                </TabsContent>
+
+                <TabsContent value="pending" className="space-y-4">
+                  {renderTransactionList(pendingTransactions)}
+                </TabsContent>
+
+                <TabsContent value="completed" className="space-y-4">
+                  {renderTransactionList(completedTransactions)}
+                </TabsContent>
+
+                <TabsContent value="failed" className="space-y-4">
+                  {renderTransactionList(failedTransactions)}
+                </TabsContent>
+              </>
+            )}
+          </Tabs>
         </div>
       </div>
     </div>

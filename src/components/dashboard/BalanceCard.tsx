@@ -33,6 +33,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getEnvironmentConfig } from "@/lib/utils";
+import ConfirmPromptDialog from "../web3/ConfirmPrompt";
+import { formatEther } from "ethers/lib/utils";
+import { useWallet } from "@/contexts/Web3ContextProvider";
 
 interface BalanceCardProps {
   showBalance: boolean;
@@ -52,16 +55,34 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
   const { wallets, selectedCrypto, selectedFiat, lastUpdated } = useAppSelector(
     (state) => state.wallet
   );
+  const { getBalance } = useWallet();
+  const { wallet } = useAppSelector((state) => state.web3);
+  const promptObj = useAppSelector((state) => state.web3.prompt);
   const [isLoading, setIsLoading] = useState(false);
+  const [web3Balance, setWeb3Balance] = useState("0.000");
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
   const [earnDialogOpen, setEarnDialogOpen] = useState(false);
+  const [confirmPromptOpen, setConfirmPromptOpen] = useState(false);
   const [selectedTimePeriod, setSelectedTimePeriod] =
     useState<TimePeriod>("24h");
+
+  useEffect(() => {
+    if (promptObj && promptObj.openDialog)
+      setConfirmPromptOpen(promptObj.openDialog);
+  }, [promptObj]);
+
+  useEffect(() => {
+    const refreshWeb3Balance = async () => {
+      const bal = formatEther(await getBalance());
+      return setWeb3Balance(bal);
+    };
+    if (wallet) refreshWeb3Balance();
+  }, [wallet]);
 
   // Fetch wallet data when component mounts or selected currencies change
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
+      // setIsLoading(true);
       try {
         await ApiService.updateDashboard({
           email: user?.email || merchant?.email || "",
@@ -154,6 +175,8 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
       return (parseFloat(wallet?.balance.availableBalance) || 0) * price;
     }
   };
+
+  const totalBalance = calculateTotalBalance();
 
   const handlePortfolioClick = () => {
     navigate("/portfolio", { state: { selectedCrypto } });
@@ -281,12 +304,52 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
             </Select>
           </div>
 
-          <div
-            className={`text-xl sm:text-2xl font-bold my-1 ${
-              !showBalance ? "blur-content" : ""
-            }`}
-          >
-            {formatPrice(calculateTotalBalance())}
+          <div className="my-1 ml-6">
+            {wallet ? (
+              totalBalance > 0 ? (
+                <div
+                  className={`text-xl sm:text-2xl font-bold flex items-center ${
+                    !showBalance ? "blur-content" : ""
+                  }`}
+                >
+                  <span>{formatPrice(totalBalance)}</span>
+                  <Badge
+                    variant="secondary"
+                    className="max-w-fit text-xs ml-2 px-2"
+                  >
+                    <span className={"text-gray-500 text-wrap break-words"}>
+                      CoinDuka Wallet
+                    </span>
+                  </Badge>
+                </div>
+              ) : null
+            ) : (
+              <div
+                className={`text-xl sm:text-2xl font-bold flex items-center ${
+                  !showBalance ? "blur-content" : ""
+                }`}
+              >
+                <span>{formatPrice(totalBalance)}</span>
+              </div>
+            )}
+
+            {wallet && (
+              <div
+                className={`text-xl sm:text-2xl font-bold flex text-wrap break-words ${
+                  !showBalance ? "blur-content" : ""
+                }`}
+              >
+                <span>{web3Balance}</span>
+                <Badge
+                  variant="secondary"
+                  className="max-w-fit text-xs ml-2 px-2"
+                >
+                  <span className={"text-gray-500 text-wrap break-words"}>
+                    {wallet?.connectorName}
+                  </span>
+                </Badge>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-1 items-center justify-between text-xs sm:text-sm text-gray-600 dark:text-gray-300">
@@ -300,7 +363,7 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
               </span>
 
               {lastUpdated && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-300">
                   • Updated{" "}
                   {new Date(lastUpdated).toLocaleTimeString([], {
                     hour: "2-digit",
@@ -423,14 +486,21 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
 
           {/* Staking Dialog */}
           <Dialog open={earnDialogOpen} onOpenChange={setEarnDialogOpen}>
-            <DialogContent className="sm:max-w-fit pt-10 animate-fade-in glass-effect">
+            <DialogContent className="sm:max-w-full pt-10 animate-fade-in glass-effect">
               <Earn
                 vaultAddress={`0x${getEnvironmentConfig().baseVaultAddress.slice(
                   2
                 )}`}
+                className="max-w-fit"
               />
             </DialogContent>
           </Dialog>
+
+          {/* Confirm prompt dialog */}
+          <ConfirmPromptDialog
+            open={confirmPromptOpen}
+            onOpenChange={setConfirmPromptOpen}
+          />
         </div>
       )}
     </GlassCard>

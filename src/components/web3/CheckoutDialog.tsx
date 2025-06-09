@@ -250,7 +250,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-fit pt-10 animate-fade-in glass-effect">
         <DialogHeader>
           <DialogTitle>Fund Wallet</DialogTitle>
           <DialogDescription>Select a method to add funds</DialogDescription>
@@ -342,17 +342,19 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
                   </FormItem>
                 )}
               />
-              <DialogFooter>
+              <DialogFooter className="flex flex-row w-full space-x-2">
                 <Button
                   onClick={() => setStep("selection")}
                   disabled={isLoading}
                   variant="outline"
+                  className="w-1/2"
                 >
                   Back
                 </Button>
                 <Button
                   type="submit"
                   disabled={isLoading || showBalanceError || showNetworkError}
+                  className="w-1/2"
                 >
                   {isLoading ? (
                     <>
@@ -427,7 +429,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
                 )}
               />
 
-              <DialogFooter>
+              <DialogFooter className="flex flex-row w-full justify-around space-x-2">
                 <Button
                   onClick={() => setStep("selection")}
                   disabled={isLoading}
