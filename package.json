@@ -63,8 +63,8 @@
     "@web3-react/core": "^6.1.9",
     "@web3-react/injected-connector": "^6.0.7",
     "@web3-react/walletlink-connector": "^6.2.14",
-    "@xmtp/browser-sdk": "^2.1.1",
-    "@xmtp/xmtp-js": "^13.0.4",
+    "@xmtp/content-type-text": "^2.0.2",
+    "@xmtp/react-sdk": "^9.0.0",
     "@yudiel/react-qr-scanner": "^2.2.1",
     "axios": "^1.7.9",
     "canvas-confetti": "^1.9.3",
@@ -101,6 +101,7 @@
     "vaul": "^0.9.3",
     "vi-fetch": "^0.8.0",
     "viem": "^2.29.2",
+    "vite-plugin-top-level-await": "^1.5.0",
     "vite-plugin-wasm": "^3.4.1",
     "vitest": "^3.1.1",
     "wagmi": "^2.15.2",
@@ -113,6 +114,7 @@
     "@types/node": "^20.11.16",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.5.2",
     "@vitejs/plugin-react-swc": "^3.9.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.9.0",
@@ -127,10 +129,5 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.1.6"
-  },
-  "overrides": {
-    "@xmtp/xmtp-js": {
-      "viem": "2.29.2"
-    }
   }
 }

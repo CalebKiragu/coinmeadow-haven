@@ -167,6 +167,23 @@ export const getEnvironmentConfig = () => {
     development: {
       currentEnv: env,
       apiUrl: "https://v8885hujef.execute-api.us-east-1.amazonaws.com/Prod/",
+      baseUrl: `http://localhost:8080/`,
+      explorerUrl: (chainName, txHash?) =>
+        chainName.includes("Base")
+          ? chainName.includes("Sepolia")
+            ? txHash
+              ? `https://sepolia.basescan.org/tx/${txHash}`
+              : `https://sepolia.basescan.org/tx/`
+            : txHash
+            ? `https://basescan.org/tx/${txHash}`
+            : `https://basescan.org/tx/`
+          : chainName.includes("Sepolia")
+          ? txHash
+            ? `https://sepolia.etherscan.io/tx/${txHash}`
+            : `https://sepolia.etherscan.io/tx/`
+          : txHash
+          ? `https://etherscan.io/tx/${txHash}`
+          : `https://etherscan.io/tx/`,
       aws: {
         s3: {
           REGION: "us-east-1",
@@ -197,6 +214,23 @@ export const getEnvironmentConfig = () => {
     staging: {
       currentEnv: env,
       apiUrl: "https://v8885hujef.execute-api.us-east-1.amazonaws.com/Prod/",
+      baseUrl: `http://localhost:8080/`,
+      explorerUrl: (chainName, txHash?) =>
+        chainName.includes("Base")
+          ? chainName.includes("Sepolia")
+            ? txHash
+              ? `https://sepolia.basescan.org/tx/${txHash}`
+              : `https://sepolia.basescan.org/tx/`
+            : txHash
+            ? `https://basescan.org/tx/${txHash}`
+            : `https://basescan.org/tx/`
+          : chainName.includes("Sepolia")
+          ? txHash
+            ? `https://sepolia.etherscan.io/tx/${txHash}`
+            : `https://sepolia.etherscan.io/tx/`
+          : txHash
+          ? `https://etherscan.io/tx/${txHash}`
+          : `https://etherscan.io/tx/`,
       aws: {
         s3: {
           REGION: "us-east-1",
@@ -227,6 +261,23 @@ export const getEnvironmentConfig = () => {
     production: {
       currentEnv: env,
       apiUrl: "https://qckp089yob.execute-api.us-east-1.amazonaws.com/Prod/",
+      baseUrl: `https://duka.pesatoken.org/`,
+      explorerUrl: (chainName, txHash?) =>
+        chainName.includes("Base")
+          ? chainName.includes("Sepolia")
+            ? txHash
+              ? `https://sepolia.basescan.org/tx/${txHash}`
+              : `https://sepolia.basescan.org/tx/`
+            : txHash
+            ? `https://basescan.org/tx/${txHash}`
+            : `https://basescan.org/tx/`
+          : chainName.includes("Sepolia")
+          ? txHash
+            ? `https://sepolia.etherscan.io/tx/${txHash}`
+            : `https://sepolia.etherscan.io/tx/`
+          : txHash
+          ? `https://etherscan.io/tx/${txHash}`
+          : `https://etherscan.io/tx/`,
       aws: {
         s3: {
           REGION: "us-east-1",

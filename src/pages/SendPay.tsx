@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, CheckCircle, XCircle } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,10 @@ import { TransactionSummary } from "@/components/send/TransactionSummary";
 import { ApiService } from "@/lib/services";
 import { TransferResponse } from "@/lib/services/transactionService";
 import { BlockchainTransfer } from "@/components/send/BlockchainTransfer";
-import { useAppSelector } from "@/lib/redux/hooks";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import AnimatedCheckmark from "@/components/ui/animated-checkmark";
+import { triggerPrompt } from "@/lib/redux/slices/web3Slice";
+import ConfirmPromptDialog from "@/components/web3/ConfirmPrompt";
 
 const SendPayContent = () => {
   const navigate = useNavigate();
@@ -30,6 +32,8 @@ const SendPayContent = () => {
   >(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const auth = useAppSelector((state: any) => state.auth);
+  const promptObj = useAppSelector((state) => state.web3.prompt);
+  const [confirmPromptOpen, setConfirmPromptOpen] = useState(false);
 
   const {
     mobileNumber,
@@ -52,6 +56,14 @@ const SendPayContent = () => {
     resetMerchantFlow,
     resetBlockchainFlow,
   } = useSendPay();
+
+  useEffect(() => {
+    if (promptObj) {
+      setConfirmPromptOpen(promptObj.openDialog);
+    } else {
+      setConfirmPromptOpen(!confirmPromptOpen);
+    }
+  }, [promptObj]);
 
   // Reset step when tab changes
   useEffect(() => {
@@ -477,11 +489,39 @@ const SendPayContent = () => {
           </div>
         )}
       </div>
+
+      {/* Confirm prompt dialog */}
+      <ConfirmPromptDialog
+        open={confirmPromptOpen}
+        onOpenChange={setConfirmPromptOpen}
+      />
     </div>
   );
 };
 
 const SendPay = () => {
+  const [params] = useSearchParams();
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    const amount = parseFloat(params.get("amount") || "");
+    const currency = params.get("currency");
+    const to = params.get("to");
+
+    console.log("PARAMS >> ", params, amount, currency, to);
+
+    if (amount && currency && to) {
+      dispatch(
+        triggerPrompt({
+          prompt: {
+            openDialog: true,
+            prompt: { type: "send", amount, currency, recipient: to },
+          },
+        })
+      );
+    }
+  }, [params]);
+
   return (
     <SendPayProvider>
       <SendPayContent />

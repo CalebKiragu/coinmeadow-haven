@@ -173,7 +173,11 @@ const Chats = ({ compact = true, showDisconnect = true }: ChatsProps) => {
               ?.slice()
               .reverse()
               .map((msg, i) => (
-                <div onClick={() => setText(msg.content)}>
+                <div
+                  onClick={() => setText(msg.content)}
+                  key={i}
+                  className="text-wrap break-words"
+                >
                   <ChatBubble
                     key={i}
                     text={msg.content}

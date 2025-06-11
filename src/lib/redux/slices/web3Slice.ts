@@ -18,7 +18,7 @@ interface Web3Wallet {
 
 interface ConfirmPrompt {
   openDialog: boolean;
-  prompt: Prompt;
+  prompt: Prompt | null;
 }
 
 interface XMTPConfig {
@@ -56,6 +56,9 @@ const web3Slice = createSlice({
     triggerPrompt(state, action: PayloadAction<{ prompt: ConfirmPrompt }>) {
       state.prompt = action.payload.prompt;
     },
+    cancelPrompt(state) {
+      state.prompt = { openDialog: false, prompt: null };
+    },
   },
 });
 
@@ -65,6 +68,7 @@ export const {
   setXMTPConfig,
   resetXMTPConfig,
   triggerPrompt,
+  cancelPrompt,
 } = web3Slice.actions;
 
 export default web3Slice.reducer;

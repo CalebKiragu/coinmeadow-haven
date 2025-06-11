@@ -67,8 +67,11 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
     useState<TimePeriod>("24h");
 
   useEffect(() => {
-    if (promptObj && promptObj.openDialog)
+    if (promptObj) {
       setConfirmPromptOpen(promptObj.openDialog);
+    } else {
+      setConfirmPromptOpen(!confirmPromptOpen);
+    }
   }, [promptObj]);
 
   useEffect(() => {

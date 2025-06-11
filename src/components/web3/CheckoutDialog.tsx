@@ -42,6 +42,7 @@ import { getEnvironmentConfig } from "@/lib/utils";
 import ChainSwitcher from "./ChainSwitcher";
 import { BigNumber } from "ethers";
 import SuccessStep from "./SuccessStep";
+import { useAccount } from "wagmi";
 
 interface CheckoutDialogProps {
   open: boolean;
@@ -92,6 +93,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
     "selection" | "coinbase" | "wallet" | "result"
   >("selection");
   const [txHash, setTxHash] = useState<string | null>(null);
+  const { chain } = useAccount();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -179,14 +181,16 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
       const amountInWei = parseEther(amountInEther);
       const balanceWei = parseEther(walletBalance);
       if (balanceWei.lt(amountInWei)) {
-        toast({ title: "Insufficient funds", variant: "destructive" });
+        toast({ title: "Insufficient balance", variant: "destructive" });
         return;
       }
       setIsLoading(true);
       const tx = await sendTransaction(depositAddress, amountInWei);
       toast({
         title: "Transaction Successful",
-        description: `TX Hash: ${tx}`,
+        description: (
+          <span className="text-wrap break-all">{`TX Hash: ${tx}`}</span>
+        ),
       });
       setTxHash(tx);
       setStep("result");
@@ -223,7 +227,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
 
         toast({
           title: "Checkout initiated",
-          description: "Please complete the payment process.",
+          description: "Please complete the payment.",
         });
         onOpenChange(false);
         if (onCheckoutComplete) {
@@ -461,18 +465,10 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
               message={"Transaction Successful"}
               subtext={"Your funds have been sent."}
               txHash={txHash}
-              explorerUrl={
-                wallet?.chain.includes("Base")
-                  ? `https://basescan.org/tx/`
-                  : `https://etherscan.io/tx/`
-              }
+              explorerUrl={getEnvironmentConfig().explorerUrl(chain?.name)}
             />
             <a
-              href={
-                wallet?.chain.includes("Base")
-                  ? `https://basescan.org/tx/${txHash}`
-                  : `https://etherscan.io/tx/${txHash}`
-              }
+              href={getEnvironmentConfig().explorerUrl(chain?.name, txHash)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-500 underline"

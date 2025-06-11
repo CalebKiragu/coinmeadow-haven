@@ -26,8 +26,6 @@ import { useToast } from "@/hooks/use-toast";
 import { BigNumber } from "ethers";
 import { ApiService } from "@/lib/services";
 import { useXMTP } from "./xmtp/useXMTP";
-// import { getEnvironmentConfig } from "@/lib/utils";
-// import { useSimulatedXmtpChat } from "./xmtp/useSimulatedXMTPChat";
 
 type WalletContextType = {
   address?: string;
@@ -52,8 +50,8 @@ type WalletContextType = {
   conversation?: any;
   startConversation: (peerAddress: string) => Promise<void>;
   resetConversation: () => void;
-  sendMessage: (text: string) => Promise<void>;
   messages: any[];
+  sendMessage: (text: string) => Promise<void>;
   isXMTPConnected: boolean;
   xmtpLoading: boolean;
 };
@@ -88,7 +86,6 @@ export const Web3WalletProvider = ({ children }: { children: ReactNode }) => {
     messages,
     isXMTPConnected,
     xmtpLoading,
-    // xmtpClient,
   } = useXMTP();
 
   const getDepositAddresses = async () => {

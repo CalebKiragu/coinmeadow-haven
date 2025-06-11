@@ -1,4 +1,4 @@
-import { Prompt } from "@/lib/redux/slices/web3Slice";
+import { cancelPrompt } from "@/lib/redux/slices/web3Slice";
 import {
   Dialog,
   DialogContent,
@@ -7,16 +7,35 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
-import { useAppSelector } from "@/lib/redux/hooks";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { useEffect, useState } from "react";
-import { formatToCamelCase } from "@/lib/utils";
+import { formatToCamelCase, getEnvironmentConfig } from "@/lib/utils";
 import { Button } from "../ui/button";
-import { Loader2 } from "lucide-react";
+import { Copy, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { parseEther } from "ethers/lib/utils";
+import { useWallet } from "@/contexts/Web3ContextProvider";
+import { useAccount } from "wagmi";
+import SuccessStep from "./SuccessStep";
 
 interface ConfirmPromptProps {
   open: boolean;
   needsPin?: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+function generatePaymentLink(
+  amount: number,
+  currency: string,
+  to: string
+): string {
+  const baseUrl = getEnvironmentConfig().baseUrl;
+  const params = new URLSearchParams({
+    amount: amount.toString(),
+    currency,
+    to,
+  });
+  return `${baseUrl}send?${params.toString()}`;
 }
 
 const ConfirmPromptDialog: React.FC<ConfirmPromptProps> = ({
@@ -25,30 +44,165 @@ const ConfirmPromptDialog: React.FC<ConfirmPromptProps> = ({
   onOpenChange,
 }) => {
   const promptObj = useAppSelector((state) => state.web3.prompt);
-  const { prompt } = promptObj;
+  const wallet = useAppSelector((state) => state.web3);
+  const dispatch = useAppDispatch();
+  const prompt = promptObj?.prompt;
   const [pin, setPin] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const { toast } = useToast();
+  const { getBalance, sendTransaction } = useWallet();
+  const { address, chain } = useAccount();
 
   const isValidPIN = /^\d{4}$/.test(pin);
+
+  const cancelTxn = () => {
+    dispatch(cancelPrompt());
+    // onOpenChange(false);
+  };
+
+  const confirmTxn = async () => {
+    if (result) {
+      // transaction was already processed and result captured
+      dispatch(cancelPrompt());
+      setResult(null);
+      return;
+    }
+
+    setIsLoading(true);
+
+    if (!wallet) {
+      toast({ title: "No wallet connected", variant: "destructive" });
+      setIsLoading(false);
+      return;
+    }
+
+    const ethOrTronRegex = /^(0x[a-fA-F0-9]{40}|T[a-zA-Z0-9]{33,34})$/; // Ethereum or Tron
+    if (prompt?.type === "request") {
+      // console.log("PROMPT >>> ", prompt);
+
+      const link = generatePaymentLink(prompt.amount, prompt.currency, address);
+      console.log(link);
+      setResult({
+        action: prompt.type,
+        link,
+        text: `Payment request processed successfully.`,
+        message: `Payment Link Generated`,
+        subtext: `Copy and share the link below to get paid!`,
+      });
+      setIsLoading(false);
+    }
+
+    if (prompt?.recipient && ethOrTronRegex.test(prompt?.recipient)) {
+      // recipient is a valid blockchain address, perform txn
+
+      try {
+        const amountInEther = prompt?.amount.toString();
+        const amountInWei = parseEther(amountInEther);
+        const balanceWei = await getBalance();
+        if (balanceWei.lt(amountInWei)) {
+          toast({ title: "Insufficient balance", variant: "destructive" });
+          return;
+        }
+        const tx = await sendTransaction(prompt?.recipient, amountInWei);
+        toast({
+          title: "Transaction Successful",
+          description: (
+            <span className="text-wrap break-all">{`TX Hash: ${tx}`}</span>
+          ),
+        });
+        setResult({
+          action: prompt.type,
+          tx,
+          text: `Sent ${prompt?.amount || "0.00"} ${prompt?.currency} to ${
+            prompt?.recipient
+          }`,
+          message: `Transaction Successful`,
+          subtext: `Your funds have been sent.`,
+        });
+      } catch (error: any) {
+        toast({
+          title: "Transaction Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleCopy = async () => {
+    if (!result) return;
+
+    try {
+      await navigator.clipboard.writeText(result.link);
+      toast({
+        title: "Link copied!",
+        description: "The payment link has been copied to your clipboard.",
+      });
+    } catch (error) {
+      console.error("Error copying to clipboard:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to copy payment link to clipboard.",
+      });
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-fit pt-10 animate-fade-in glass-effect flex flex-col items-center">
-        <DialogHeader>
-          <DialogTitle>Confirm Transaction</DialogTitle>
-          <DialogDescription className="text-xl font-semibold text-gray-800 dark:text-gray-500">
-            {needsPin
-              ? "Enter your PIN to confirm transaction"
-              : "Double-check transaction details."}
-          </DialogDescription>
-          {!needsPin && (
-            <span className="text-sm text-gray-800 dark:text-gray-500">
-              Blockchain transactions cannot be reversed!
-            </span>
-          )}
-        </DialogHeader>
+        {!result && (
+          <DialogHeader>
+            <DialogTitle>Confirm Transaction</DialogTitle>
+            <DialogDescription className="text-xl font-semibold text-gray-800 dark:text-gray-500">
+              {needsPin
+                ? "Enter your PIN to confirm transaction"
+                : "Double-check transaction details."}
+            </DialogDescription>
+            {!needsPin && (
+              <span className="text-sm text-gray-800 dark:text-gray-500">
+                Blockchain transactions cannot be reversed!
+              </span>
+            )}
+          </DialogHeader>
+        )}
 
-        {prompt ? (
+        {result ? (
+          <div className="text-center space-y-2">
+            <p className="text-green-600">{result?.text}</p>
+            <SuccessStep
+              message={result.message}
+              subtext={result.subtext}
+              txHash={result?.tx || null}
+              explorerUrl={getEnvironmentConfig().explorerUrl(chain?.name)}
+            />
+            {result?.tx ? (
+              <a
+                href={getEnvironmentConfig().explorerUrl(
+                  chain?.name,
+                  result?.tx
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 underline"
+              >
+                View on Block Explorer
+              </a>
+            ) : (
+              <div onClick={handleCopy}>
+                <span className="text-wrap break-all cursor-pointer hover:font-extrabold">
+                  {result.link}
+                </span>
+                <Button variant="ghost" className="cursor-pointer ml-2">
+                  <Copy className="h-2 w-2" />
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : prompt ? (
           <div>
             <p className="text-gray-800 dark:text-gray-500 mb-1">
               {formatToCamelCase(prompt?.type)}
@@ -105,10 +259,10 @@ const ConfirmPromptDialog: React.FC<ConfirmPromptProps> = ({
         ) : null}
 
         <DialogFooter className="flex flex-row w-full space-x-2">
-          <Button className="w-1/2" variant="outline">
+          <Button className="w-1/2" variant="outline" onClick={cancelTxn}>
             Cancel
           </Button>
-          <Button className="w-1/2" onClick={() => setIsLoading(!isLoading)}>
+          <Button className="w-1/2" onClick={confirmTxn}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -1,4 +1,4 @@
-import { DecodedMessage } from "@xmtp/browser-sdk";
+import { DecodedMessage } from "@xmtp/react-sdk";
 import { ContentTypeText } from "@xmtp/content-type-text";
 
 // Use this to generate unique IDs if needed
