@@ -1,69 +1,38 @@
-# Welcome to your Lovable project
+# Welcome to CoinDuka
 
-## Project info
+**CoinDuka by Pesa Token** is a decentralized finance (DeFi) platform built to streamline crypto payments, balance tracking, and wallet interactions for users and businesses across Africa. With a focus on accessibility and scalability, PesaToken utilizes Base and Ethereum to deliver a seamless on-chain experience.
 
-**URL**: https://lovable.dev/projects/40699cb9-c1fb-4862-9585-f0f5c5584ce3
+---
 
-## How can I edit this code?
+## 🌍 Features
 
-There are several ways of editing your application.
+- 🔗 Multi-chain wallet support (Base, Ethereum, and more)
+- 🪙 Multi-token tracking (USDC, USDT, DAI, WETH, WBTC, etc.)
+- 💸 Native + ERC-20 token balance aggregation
+- 🏦 On-ramp / off-ramp funding flows
+- 🧾 Transaction tracing & real-time wallet insights
+- 🔐 Secure wallet-based login
+- 📩 Encrypted P2P messaging (via XMTP)
+- 🛠️ Merchant tools for remittance and payments
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/40699cb9-c1fb-4862-9585-f0f5c5584ce3) and start prompting.
+## ⚙️ Tech Stack
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Frontend**: React, Vite, TypeScript
+- **Blockchain**: wagmi, viem, ethers.js
+- **Wallets**: Reown Modal, MetaMask, Trust Wallet, Coinbase Wallet, Phantom
+- **Messaging**: XMTP (optional)
+- **Notifications**: Firebase (with end-to-end encryption)
+- **Deployment**: GitHub Actions, Vercel
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🚀 Getting Started
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+git clone https://github.com/your-org/pesatoken.git
+cd pesatoken
+npm install
 npm run dev
 ```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/40699cb9-c1fb-4862-9585-f0f5c5584ce3) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
