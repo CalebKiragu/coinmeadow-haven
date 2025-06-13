@@ -166,7 +166,7 @@ const Chats = ({ compact = true, showDisconnect = true }: ChatsProps) => {
           </div>
 
           <div
-            className="min-h-[5px] max-h-[200px] overflow-y-scroll scrollbar-none flex flex-col-reverse border-dotted rounded p-2"
+            className="min-h-[5px] max-h-[200px] overflow-y-scroll scrollbar-thin flex flex-col-reverse border-dotted rounded p-2"
             ref={chatContainerRef}
           >
             {messages
@@ -187,7 +187,7 @@ const Chats = ({ compact = true, showDisconnect = true }: ChatsProps) => {
               ))}
           </div>
 
-          <div className="flex gap-2" onKeyDown={handleEnterToSend}>
+          <div className="flex gap-2 mt-2" onKeyDown={handleEnterToSend}>
             <input
               placeholder="Type a message..."
               value={text}

@@ -26,6 +26,73 @@ import { useToast } from "@/hooks/use-toast";
 import { BigNumber } from "ethers";
 import { ApiService } from "@/lib/services";
 import { useXMTP } from "./xmtp/useXMTP";
+import { Address, formatUnits, getAddress } from "viem";
+import { getEnvironmentConfig } from "@/lib/utils";
+
+export type TokenSymbol = "USDC" | "USDT" | "DAI" | "WBTC" | "WETH";
+
+export const erc20ABI = [
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+];
+
+type Token = {
+  symbol: TokenSymbol;
+  address: {
+    base?: string;
+    eth: string;
+  };
+  decimals: number;
+};
+
+export type BalancesResult = {
+  [symbol: string]: number;
+} & {
+  total: number;
+};
+
+export const SUPPORTED_WEB3 = [
+  "base",
+  "eth",
+  // "usdc",
+  // "usdt",
+  // "dai",
+  // "wbtc",
+  // "weth",
+];
+
+const ERC20_TOKENS: Token[] = [
+  {
+    symbol: "USDC",
+    address: getEnvironmentConfig().tokenAddress().usdc,
+    decimals: 6,
+  },
+  {
+    symbol: "USDT",
+    address: getEnvironmentConfig().tokenAddress().usdt,
+    decimals: 6,
+  },
+  {
+    symbol: "DAI",
+    address: getEnvironmentConfig().tokenAddress().dai,
+    decimals: 6,
+  },
+  {
+    symbol: "WBTC",
+    address: getEnvironmentConfig().tokenAddress().wbtc,
+    decimals: 6,
+  },
+  {
+    symbol: "WETH",
+    address: getEnvironmentConfig().tokenAddress().weth,
+    decimals: 6,
+  },
+];
 
 type WalletContextType = {
   address?: string;
@@ -36,9 +103,20 @@ type WalletContextType = {
   connectionType: "wagmi" | "reown" | null;
   connectors: readonly Connector[];
   connect: ReturnType<typeof useConnect>["connect"];
-  getBalance: () => Promise<any>;
+  getBalance: (
+    address: string,
+    tokenAddress?: string,
+    tokenSymbol?: TokenSymbol
+  ) => Promise<BalancesResult>;
+  getDecimals: (tokenAddress: Address) => Promise<any>;
   getGasPrice: () => Promise<any>;
   sendTransaction: (to: string, value: any) => Promise<string>;
+  sendERC20: (
+    to: string,
+    amount: bigint,
+    tokenAddress?: string,
+    tokenSymbol?: TokenSymbol
+  ) => Promise<any>;
   isPending: boolean;
   pendingConnector?: Connector;
   openReownModal: () => Promise<void>;
@@ -141,10 +219,101 @@ export const Web3WalletProvider = ({ children }: { children: ReactNode }) => {
       getDepositAddresses();
   }, [address, chainId, connector, depositAddress, previousAddresses]);
 
-  const getBalance = async () => {
+  const getBalance = async (
+    address: string,
+    tokenAddress?: string, // if undefined, fetch native balance
+    tokenSymbol?: TokenSymbol
+  ): Promise<BalancesResult> => {
+    const balances: BalancesResult = { total: 0 };
     if (!address) return;
-    const balance = await chainClient.getBalance({ address });
-    return BigNumber.from(balance.toString());
+
+    const safeWalletAddress = getAddress(address);
+    const updateNativeBalance = async () => {
+      // Native balance (ETH, Base, etc.)
+      const nativeBalance = await chainClient.getBalance({ address });
+      const nativeFloat = parseFloat(formatUnits(nativeBalance, 18));
+      const normalizedKey = chain?.name.replace(/\s+/g, "_"); // 'Base Sepolia' → 'Base_Sepolia'
+      balances[normalizedKey] = nativeFloat;
+      balances.total += nativeFloat;
+      // console.log("native >> ", balances);
+    };
+
+    if (!tokenAddress) {
+      await updateNativeBalance();
+      return balances;
+    } else if (tokenAddress === "all") {
+      await updateNativeBalance();
+
+      // Fetch ERC-20 balances
+      for (const token of ERC20_TOKENS) {
+        try {
+          const chainAddress =
+            chain.id === 1 || chain.id === 11155111
+              ? token.address.eth
+              : token.address.base;
+          // Skip if there's no address for this chain
+          if (!chainAddress) {
+            console.warn(
+              `No address for ${token.symbol} on chain ${chain.name}`
+            );
+            balances[token.symbol] = 0;
+            continue;
+          }
+
+          const safeAddress = getAddress(chainAddress);
+          // console.log(
+          //   `reading ${chain.name} ${token.symbol} >>> `,
+          //   safeAddress,
+          //   safeWalletAddress
+          // );
+
+          const balance = await chainClient.readContract({
+            address: safeAddress,
+            abi: erc20ABI,
+            functionName: "balanceOf",
+            args: [safeWalletAddress],
+          });
+
+          const tokenFloat = parseFloat(
+            formatUnits(balance as bigint, token.decimals)
+          );
+          balances[token.symbol] = tokenFloat;
+          balances.total += tokenFloat;
+        } catch (err) {
+          // TO FIX: ERC-20 contract management
+
+          // console.warn(
+          //   `Failed to fetch ${token.symbol} balance on ${chain.name}:`,
+          //   err
+          // );
+          balances[token.symbol] = 0;
+        }
+      }
+      return balances;
+    } else {
+      // ERC-20 token balance
+      const safeAddress = getAddress(tokenAddress);
+      const balance = await chainClient.readContract({
+        address: safeAddress,
+        abi: erc20ABI,
+        functionName: "balanceOf",
+        args: [safeWalletAddress],
+      });
+      const tokenFloat = parseFloat(formatUnits(balance as bigint, 6));
+      balances[tokenSymbol] = tokenFloat;
+      balances.total += tokenFloat;
+      return balances;
+    }
+  };
+
+  const getDecimals = async (tokenAddress: string) => {
+    const safeAddress = getAddress(tokenAddress);
+
+    return await chainClient.readContract({
+      address: safeAddress,
+      abi: erc20ABI,
+      functionName: "decimals",
+    });
   };
 
   const getGasPrice = async () => {
@@ -165,6 +334,28 @@ export const Web3WalletProvider = ({ children }: { children: ReactNode }) => {
       kzg: undefined,
     });
     return txHash;
+  };
+
+  const sendERC20 = async (
+    to: string,
+    amount: bigint, // in base units (e.g. 1 USDC = 1000000 if 6 decimals)
+    tokenAddress?: string,
+    tokenSymbol?: TokenSymbol
+  ) => {
+    if (!walletClient) return;
+    if (!tokenAddress && !tokenSymbol) return;
+
+    let chainAddress;
+    if (tokenSymbol)
+      chainAddress = ERC20_TOKENS.find(
+        (token) => token.symbol.toLowerCase() === tokenSymbol.toLowerCase()
+      );
+    return await walletClient.writeContract({
+      address: `0x${tokenAddress?.slice(2) || chainAddress.slice(2)}`,
+      abi: erc20ABI,
+      functionName: "transfer",
+      args: [to, amount],
+    });
   };
 
   const switchNetwork = (chainId: number, chainName: string) => {
@@ -203,8 +394,10 @@ export const Web3WalletProvider = ({ children }: { children: ReactNode }) => {
       connectors,
       connect,
       getBalance,
+      getDecimals,
       getGasPrice,
       sendTransaction,
+      sendERC20,
       isPending,
       pendingConnector: pendingConnector as unknown as Connector | undefined,
       openReownModal,
@@ -230,8 +423,10 @@ export const Web3WalletProvider = ({ children }: { children: ReactNode }) => {
       connectors,
       connect,
       getBalance,
+      getDecimals,
       getGasPrice,
       sendTransaction,
+      sendERC20,
       isPending,
       pendingConnector,
       openReownModal,

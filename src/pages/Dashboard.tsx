@@ -74,7 +74,10 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate("/", { replace: true });
+      const currentPath = location.pathname + location.search;
+      navigate(`/?returnTo=${encodeURIComponent(currentPath)}`, {
+        replace: true,
+      });
       return;
     }
 
@@ -235,13 +238,13 @@ const Dashboard = () => {
         </TabsList>
 
         <TabsContent value="wallet">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2 space-y-4">
               <BalanceCard
                 showBalance={showBalance}
                 setShowBalance={handleBalanceToggle}
               />
-              <h3 className="text-lg text-white/80 text-center">
+              <h3 className="font-extrabold text-white/80 text-center">
                 What would you like to do today?
               </h3>
               <TransactionButtons />

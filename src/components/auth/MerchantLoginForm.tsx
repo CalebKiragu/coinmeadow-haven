@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -19,10 +19,12 @@ import { ApiService } from "@/lib/services";
 import { getEnvironmentConfig } from "@/lib/utils";
 
 const MerchantLoginForm = () => {
-  const [showPin, setShowPin] = useState(false);
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
+  const [showPin, setShowPin] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [showPinReset, setShowPinReset] = useState(false);
   const [showOTP, setShowOTP] = useState(false);
   const [otpCaptured, setOtpCaptured] = useState("");
@@ -100,7 +102,7 @@ const MerchantLoginForm = () => {
         title: "Google authentication successful",
         description: "You are logged in as merchant.",
       });
-      navigate("/dashboard", { replace: true });
+      navigate(returnTo || "/dashboard", { replace: true });
     } catch (error) {
       toast({
         title: "Google Sign-In Failed",
@@ -149,7 +151,7 @@ const MerchantLoginForm = () => {
           title: "Welcome back!",
           description: "You have successfully logged in.",
         });
-        navigate("/dashboard", { replace: true });
+        navigate(returnTo || "/dashboard", { replace: true });
       } catch (error) {
         toast({
           title: "OTP Verification Failed",
@@ -166,7 +168,7 @@ const MerchantLoginForm = () => {
       title: "Welcome back!",
       description: "You have successfully logged in as a merchant.",
     });
-    navigate("/dashboard", { replace: true });
+    navigate(returnTo || "/dashboard", { replace: true });
   };
 
   if (showOTP) {

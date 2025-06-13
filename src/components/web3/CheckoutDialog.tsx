@@ -25,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -36,13 +35,14 @@ import { WalletService } from "@/lib/services/walletService";
 import { formatEther, parseEther } from "ethers/lib/utils";
 import { useAppSelector } from "@/lib/redux/hooks";
 import Web3Connector from "./Web3Connector";
-import { useWallet } from "@/contexts/Web3ContextProvider";
-import { ApiService } from "@/lib/services";
+import { BalancesResult, useWallet } from "@/contexts/Web3ContextProvider";
 import { getEnvironmentConfig } from "@/lib/utils";
 import ChainSwitcher from "./ChainSwitcher";
 import { BigNumber } from "ethers";
 import SuccessStep from "./SuccessStep";
 import { useAccount } from "wagmi";
+import { Address } from "@coinbase/onchainkit/identity";
+import { parseUnits } from "viem";
 
 interface CheckoutDialogProps {
   open: boolean;
@@ -76,6 +76,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
     sendTransaction,
     switchNetwork,
     depositAddress,
+    address,
   } = useWallet();
   const { toast } = useToast();
   const { wallet } = useAppSelector((state) => state.web3);
@@ -84,7 +85,9 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [max, setMax] = useState<string>("0.0");
   const [amountToSend, setAmountToSend] = useState<string>("0.0");
-  const [walletBalance, setWalletBalance] = useState<string>("0.0");
+  const [walletBalance, setWalletBalance] = useState<BalancesResult | null>(
+    null
+  );
   const [showBalanceError, setShowBalanceError] = useState(false);
   const [balanceErrorMessage, setBalanceErrorMessage] = useState("");
   const [showNetworkError, setShowNetworkError] = useState(false);
@@ -114,12 +117,16 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
     let balance, gasPrice, maxSendable;
     const fetchWalletBalance = async () => {
       if (wallet) {
-        balance = formatEther(await getBalance());
+        balance = await getBalance(address);
         setWalletBalance(balance);
         gasPrice = await getGasPrice();
         // maxSendable = formatEther(parseEther(balance).sub(gasPrice));
-        maxSendable = parseEther(balance).gte(gasPrice)
-          ? parseEther(balance).sub(gasPrice)
+        maxSendable = BigNumber.from(
+          parseUnits(balance?.total.toString(), 18)
+        ).gte(gasPrice)
+          ? BigNumber.from(parseUnits(balance.total.toString(), 18)).sub(
+              gasPrice
+            )
           : 0n;
 
         if (BigNumber.from(maxSendable).gt(parseEther(ethAmount || "0.0"))) {
@@ -179,7 +186,9 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
     try {
       const amountInEther = values.ethAmount;
       const amountInWei = parseEther(amountInEther);
-      const balanceWei = parseEther(walletBalance);
+      const balanceWei = BigNumber.from(
+        parseUnits(walletBalance.total.toString(), 18)
+      );
       if (balanceWei.lt(amountInWei)) {
         toast({ title: "Insufficient balance", variant: "destructive" });
         return;

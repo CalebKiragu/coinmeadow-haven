@@ -35,7 +35,8 @@ import {
 import { getEnvironmentConfig } from "@/lib/utils";
 import ConfirmPromptDialog from "../web3/ConfirmPrompt";
 import { formatEther } from "ethers/lib/utils";
-import { useWallet } from "@/contexts/Web3ContextProvider";
+import { BalancesResult, useWallet } from "@/contexts/Web3ContextProvider";
+import { useAccount } from "wagmi";
 
 interface BalanceCardProps {
   showBalance: boolean;
@@ -55,11 +56,12 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
   const { wallets, selectedCrypto, selectedFiat, lastUpdated } = useAppSelector(
     (state) => state.wallet
   );
-  const { getBalance } = useWallet();
+  const { getBalance, switchNetwork } = useWallet();
+  const { address, chain } = useAccount();
   const { wallet } = useAppSelector((state) => state.web3);
   const promptObj = useAppSelector((state) => state.web3.prompt);
   const [isLoading, setIsLoading] = useState(false);
-  const [web3Balance, setWeb3Balance] = useState("0.000");
+  const [web3Balance, setWeb3Balance] = useState<BalancesResult>(null);
   const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false);
   const [earnDialogOpen, setEarnDialogOpen] = useState(false);
   const [confirmPromptOpen, setConfirmPromptOpen] = useState(false);
@@ -68,6 +70,20 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
 
   useEffect(() => {
     if (promptObj) {
+      console.log(promptObj);
+      // switch chain to desired currency, if not already on it
+      if (promptObj?.prompt?.currency === "base")
+        if (chain?.id !== 84532 && promptObj?.prompt?.testnet) {
+          switchNetwork(84532, "Base Sepolia");
+        } else if (chain?.id !== 8453 && !promptObj?.prompt?.testnet) {
+          switchNetwork(8453, "Base Mainnet");
+        }
+      if (promptObj?.prompt?.currency === "eth")
+        if (chain?.id !== 11155111 && promptObj?.prompt?.testnet) {
+          switchNetwork(11155111, "ETH Sepolia");
+        } else if (chain?.id !== 1 && !promptObj?.prompt?.testnet) {
+          switchNetwork(1, "ETH Mainnet");
+        }
       setConfirmPromptOpen(promptObj.openDialog);
     } else {
       setConfirmPromptOpen(!confirmPromptOpen);
@@ -76,7 +92,7 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
 
   useEffect(() => {
     const refreshWeb3Balance = async () => {
-      const bal = formatEther(await getBalance());
+      const bal = await getBalance(address, "all");
       return setWeb3Balance(bal);
     };
     if (wallet) refreshWeb3Balance();
@@ -255,6 +271,13 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
               <h1 className="text-base sm:text-lg font-semibold">
                 {greeting(greetName)}
               </h1>
+
+              {merchant && merchantNo && (
+                <span className="text-sm ml-4">
+                  Merchant No: <strong>{merchantNo}</strong>
+                </span>
+              )}
+
               <div className="mt-1">
                 <IdentityDisplay compact={true} />
               </div>
@@ -267,12 +290,6 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
               {showBalance ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-
-          {merchant && merchantNo && (
-            <p className="text-xs text-muted-foreground -mt-1">
-              Merchant No: {merchantNo}
-            </p>
-          )}
 
           <h2 className="text-sm sm:text-base font-medium mt-1">
             Available Balance:
@@ -342,7 +359,7 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
                   !showBalance ? "blur-content" : ""
                 }`}
               >
-                <span>{web3Balance}</span>
+                <span>{web3Balance?.total || "0.00"}</span>
                 <Badge
                   variant="secondary"
                   className="max-w-fit text-xs ml-2 px-2"

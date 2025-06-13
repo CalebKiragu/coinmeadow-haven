@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +23,8 @@ const LoginForm = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
   const [showPinReset, setShowPinReset] = useState(false);
   const [showOTP, setShowOTP] = useState(false);
   const [otpCaptured, setOtpCaptured] = useState("");
@@ -34,9 +36,9 @@ const LoginForm = () => {
 
   const { isAuthenticated, error, otp } = useAppSelector((state) => state.auth);
 
-  if (isAuthenticated) {
-    navigate("/dashboard", { replace: true });
-  }
+  // if (isAuthenticated) {
+  //   navigate("/dashboard", { replace: true });
+  // }
 
   // Load Google Identity Services script
   useEffect(() => {
@@ -102,7 +104,8 @@ const LoginForm = () => {
         title: "Google authentication successful",
         description: "You are logged in.",
       });
-      navigate("/dashboard", { replace: true });
+
+      navigate(returnTo || "/dashboard", { replace: true });
     } catch (error) {
       toast({
         title: "Google Sign-In Failed",
@@ -152,7 +155,7 @@ const LoginForm = () => {
           title: "Welcome back!",
           description: "You have successfully logged in.",
         });
-        navigate("/dashboard", { replace: true });
+        navigate(returnTo || "/dashboard", { replace: true });
       } catch (error) {
         toast({
           title: "OTP Verification Failed",
@@ -169,7 +172,7 @@ const LoginForm = () => {
       title: "Welcome back!",
       description: "You have successfully logged in.",
     });
-    navigate("/dashboard", { replace: true });
+    navigate(returnTo || "/dashboard", { replace: true });
   };
 
   const handleBaseSignin = () => {

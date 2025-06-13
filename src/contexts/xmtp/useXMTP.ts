@@ -20,13 +20,14 @@ import { createSimulatedMessage } from "./createSimulatedMessage";
 import { extractSerializableMessage } from "./useChats";
 import { formatEther } from "ethers/lib/utils";
 import { BigNumber } from "ethers";
+import { SUPPORTED_WEB3 } from "../Web3ContextProvider";
 
 const STORAGE_KEY = "xmtp_chat_messages";
 const AGENT_ADDRESS = getEnvironmentConfig().agentAddress;
 
 export function useXMTP() {
   const { data: walletClient } = useWalletClient();
-  const { address } = useAccount();
+  const { address, chain } = useAccount();
   const { toast } = useToast();
   const dispatch = useAppDispatch();
   const chainId = useChainId();
@@ -205,29 +206,66 @@ export function useXMTP() {
 
   const sendMessage = async (text: string) => {
     if (!conversation) return;
-    let cmd;
-    if (conversation.peerAddress === AGENT_ADDRESS) cmd = parseMessage(text);
+    // let cmd;
+    // if (conversation.peerAddress === AGENT_ADDRESS) cmd = parseMessage(text);
     await conversation.send(text).catch((error) => console.log(error));
 
     if (conversation.peerAddress === AGENT_ADDRESS)
       handleAgentPrompt(conversation.peerAddress, text);
-    if (cmd)
-      dispatch(triggerPrompt({ prompt: { openDialog: true, prompt: cmd } }));
+    // if (cmd)
+    //   dispatch(triggerPrompt({ prompt: { openDialog: true, prompt: cmd } }));
   };
 
   const handleAgentPrompt = async (peer: string, content: string) => {
     const lower = content.toLowerCase();
-    let reply = `Sorry, I didn't understand that. Try "balance" or "send".`;
+    let reply = `Sorry, I didn't understand that. Try "chain", "balance" or "help".`;
 
-    if (lower.includes("balance")) {
-      reply = `Your balance is ${await fetchWalletBalance()} ETH.`;
-    } else if (lower.includes("chain id")) {
-      reply = `Active chain: ${wallet.chain}. ID: ${chainId}`;
-    } else if (lower.startsWith("send")) {
-      reply = "Transaction submitted! 🚀";
+    let cmd;
+    cmd = parseMessage(lower);
+
+    if (!cmd) return simulateAgentResponse(reply);
+
+    switch (cmd?.type) {
+      case "help":
+        reply = `Welcome to CoinBot v1:\nSupported commands:\nBalance\nRequest\nSend|Transfer|Pay`;
+        break;
+
+      case "balance":
+        reply = `Your balance is ${await fetchWalletBalance()} ETH on ${
+          chain?.name
+        } network.`;
+        // reply = `Fetching balance...`;
+        break;
+
+      case "chain":
+        reply = `Active chain: ${chain?.name}. ID: ${chainId}`;
+        break;
+
+      case "request":
+        if (!SUPPORTED_WEB3.includes(cmd.currency)) {
+          reply = `${cmd.currency.toUpperCase()} not supported yet. Try native Base or ETH`;
+          break;
+        }
+        reply = "Payment request submitted! 🌟";
+        break;
+
+      case "send":
+      case "transfer":
+      case "pay":
+        if (!SUPPORTED_WEB3.includes(cmd.currency)) {
+          reply = `${cmd.currency.toUpperCase()} not supported yet. Try native Base or ETH`;
+          break;
+        }
+        reply = "Transaction submitted! 🚀";
+        break;
+
+      default:
+        break;
     }
 
     simulateAgentResponse(reply);
+    if (SUPPORTED_WEB3.includes(cmd.currency))
+      dispatch(triggerPrompt({ prompt: { openDialog: true, prompt: cmd } }));
   };
 
   const simulateAgentResponse = (content: string) => {

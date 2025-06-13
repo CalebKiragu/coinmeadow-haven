@@ -19,6 +19,8 @@ import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import AnimatedCheckmark from "@/components/ui/animated-checkmark";
 import { triggerPrompt } from "@/lib/redux/slices/web3Slice";
 import ConfirmPromptDialog from "@/components/web3/ConfirmPrompt";
+import { useAccount } from "wagmi";
+import { useWallet } from "@/contexts/Web3ContextProvider";
 
 const SendPayContent = () => {
   const navigate = useNavigate();
@@ -34,6 +36,8 @@ const SendPayContent = () => {
   const auth = useAppSelector((state: any) => state.auth);
   const promptObj = useAppSelector((state) => state.web3.prompt);
   const [confirmPromptOpen, setConfirmPromptOpen] = useState(false);
+  const { chain } = useAccount();
+  const { switchNetwork } = useWallet();
 
   const {
     mobileNumber,
@@ -59,6 +63,20 @@ const SendPayContent = () => {
 
   useEffect(() => {
     if (promptObj) {
+      // switch chain to desired currency, if not already on it
+      if (promptObj?.prompt?.currency === "base")
+        if (chain?.id !== 84532 && promptObj?.prompt?.testnet) {
+          switchNetwork(84532, "Base Sepolia");
+        } else if (chain?.id !== 8453 && !promptObj?.prompt?.testnet) {
+          switchNetwork(8453, "Base Mainnet");
+        }
+      if (promptObj?.prompt?.currency === "eth")
+        if (chain?.id !== 11155111 && promptObj?.prompt?.testnet) {
+          switchNetwork(11155111, "ETH Sepolia");
+        } else if (chain?.id !== 1 && !promptObj?.prompt?.testnet) {
+          switchNetwork(1, "ETH Mainnet");
+        }
+
       setConfirmPromptOpen(promptObj.openDialog);
     } else {
       setConfirmPromptOpen(!confirmPromptOpen);
@@ -500,10 +518,20 @@ const SendPayContent = () => {
 };
 
 const SendPay = () => {
-  const [params] = useSearchParams();
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      const currentPath = location.pathname + location.search;
+      navigate(`/?returnTo=${encodeURIComponent(currentPath)}`, {
+        replace: true,
+      });
+      return;
+    }
+
     const amount = parseFloat(params.get("amount") || "");
     const currency = params.get("currency");
     const to = params.get("to");

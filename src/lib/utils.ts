@@ -156,6 +156,50 @@ export const aws = () => {
   };
 };
 
+class Utils {
+  static getExplorerUrl(chainName, txHash?) {
+    return chainName.includes("Base")
+      ? chainName.includes("Sepolia")
+        ? txHash
+          ? `https://sepolia.basescan.org/tx/${txHash}`
+          : `https://sepolia.basescan.org/tx/`
+        : txHash
+        ? `https://basescan.org/tx/${txHash}`
+        : `https://basescan.org/tx/`
+      : chainName.includes("Sepolia")
+      ? txHash
+        ? `https://sepolia.etherscan.io/tx/${txHash}`
+        : `https://sepolia.etherscan.io/tx/`
+      : txHash
+      ? `https://etherscan.io/tx/${txHash}`
+      : `https://etherscan.io/tx/`;
+  }
+
+  static getTokenAddress() {
+    return {
+      usdc: {
+        eth: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        base: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      },
+      usdt: {
+        eth: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      },
+      dai: {
+        eth: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        base: "0xF14F9596430931E177469715c591513308244e8F",
+      },
+      wbtc: {
+        eth: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        base: "0x6A7d8eD4d91a75D7C5b5385Ba1aFa7C985d96c01",
+      },
+      weth: {
+        eth: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        base: "0x4200000000000000000000000000000000000006",
+      },
+    };
+  }
+}
+
 /**
  * Helper to handle environment branching for different deployment environments
  */
@@ -168,22 +212,8 @@ export const getEnvironmentConfig = () => {
       currentEnv: env,
       apiUrl: "https://v8885hujef.execute-api.us-east-1.amazonaws.com/Prod/",
       baseUrl: `http://localhost:8080/`,
-      explorerUrl: (chainName, txHash?) =>
-        chainName.includes("Base")
-          ? chainName.includes("Sepolia")
-            ? txHash
-              ? `https://sepolia.basescan.org/tx/${txHash}`
-              : `https://sepolia.basescan.org/tx/`
-            : txHash
-            ? `https://basescan.org/tx/${txHash}`
-            : `https://basescan.org/tx/`
-          : chainName.includes("Sepolia")
-          ? txHash
-            ? `https://sepolia.etherscan.io/tx/${txHash}`
-            : `https://sepolia.etherscan.io/tx/`
-          : txHash
-          ? `https://etherscan.io/tx/${txHash}`
-          : `https://etherscan.io/tx/`,
+      explorerUrl: Utils.getExplorerUrl,
+      tokenAddress: Utils.getTokenAddress,
       aws: {
         s3: {
           REGION: "us-east-1",
@@ -215,22 +245,8 @@ export const getEnvironmentConfig = () => {
       currentEnv: env,
       apiUrl: "https://v8885hujef.execute-api.us-east-1.amazonaws.com/Prod/",
       baseUrl: `http://localhost:8080/`,
-      explorerUrl: (chainName, txHash?) =>
-        chainName.includes("Base")
-          ? chainName.includes("Sepolia")
-            ? txHash
-              ? `https://sepolia.basescan.org/tx/${txHash}`
-              : `https://sepolia.basescan.org/tx/`
-            : txHash
-            ? `https://basescan.org/tx/${txHash}`
-            : `https://basescan.org/tx/`
-          : chainName.includes("Sepolia")
-          ? txHash
-            ? `https://sepolia.etherscan.io/tx/${txHash}`
-            : `https://sepolia.etherscan.io/tx/`
-          : txHash
-          ? `https://etherscan.io/tx/${txHash}`
-          : `https://etherscan.io/tx/`,
+      explorerUrl: Utils.getExplorerUrl,
+      tokenAddress: Utils.getTokenAddress,
       aws: {
         s3: {
           REGION: "us-east-1",
@@ -262,22 +278,8 @@ export const getEnvironmentConfig = () => {
       currentEnv: env,
       apiUrl: "https://qckp089yob.execute-api.us-east-1.amazonaws.com/Prod/",
       baseUrl: `https://duka.pesatoken.org/`,
-      explorerUrl: (chainName, txHash?) =>
-        chainName.includes("Base")
-          ? chainName.includes("Sepolia")
-            ? txHash
-              ? `https://sepolia.basescan.org/tx/${txHash}`
-              : `https://sepolia.basescan.org/tx/`
-            : txHash
-            ? `https://basescan.org/tx/${txHash}`
-            : `https://basescan.org/tx/`
-          : chainName.includes("Sepolia")
-          ? txHash
-            ? `https://sepolia.etherscan.io/tx/${txHash}`
-            : `https://sepolia.etherscan.io/tx/`
-          : txHash
-          ? `https://etherscan.io/tx/${txHash}`
-          : `https://etherscan.io/tx/`,
+      explorerUrl: Utils.getExplorerUrl,
+      tokenAddress: Utils.getTokenAddress,
       aws: {
         s3: {
           REGION: "us-east-1",

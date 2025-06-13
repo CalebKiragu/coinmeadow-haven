@@ -76,7 +76,7 @@ const NotificationBell = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="chats" className="flex justify-center">
+          <TabsContent value="chats" className="flex justify-center p-2">
             <Chats />
           </TabsContent>
 

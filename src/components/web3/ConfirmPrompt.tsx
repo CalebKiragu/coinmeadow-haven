@@ -17,6 +17,8 @@ import { parseEther } from "ethers/lib/utils";
 import { useWallet } from "@/contexts/Web3ContextProvider";
 import { useAccount } from "wagmi";
 import SuccessStep from "./SuccessStep";
+import { BigNumber } from "ethers";
+import { parseUnits } from "viem";
 
 interface ConfirmPromptProps {
   open: boolean;
@@ -51,8 +53,8 @@ const ConfirmPromptDialog: React.FC<ConfirmPromptProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState(null);
   const { toast } = useToast();
-  const { getBalance, sendTransaction } = useWallet();
-  const { address, chain } = useAccount();
+  const { address, getBalance, sendTransaction, switchNetwork } = useWallet();
+  const { chain } = useAccount();
 
   const isValidPIN = /^\d{4}$/.test(pin);
 
@@ -71,8 +73,13 @@ const ConfirmPromptDialog: React.FC<ConfirmPromptProps> = ({
 
     setIsLoading(true);
 
-    if (!wallet) {
-      toast({ title: "No wallet connected", variant: "destructive" });
+    if (!wallet || !address) {
+      toast({
+        title: "No wallet connected",
+        description:
+          "Please connect MetaMask, Phantom or Coinbase Wallet to continue.",
+        variant: "destructive",
+      });
       setIsLoading(false);
       return;
     }
@@ -81,6 +88,8 @@ const ConfirmPromptDialog: React.FC<ConfirmPromptProps> = ({
     if (prompt?.type === "request") {
       // console.log("PROMPT >>> ", prompt);
 
+      // Use below test address
+      // 0xa08192608Fd7Fd43422B6ffd3f1845222280b2a6
       const link = generatePaymentLink(prompt.amount, prompt.currency, address);
       console.log(link);
       setResult({
@@ -97,13 +106,24 @@ const ConfirmPromptDialog: React.FC<ConfirmPromptProps> = ({
       // recipient is a valid blockchain address, perform txn
 
       try {
+        // check balance
         const amountInEther = prompt?.amount.toString();
         const amountInWei = parseEther(amountInEther);
-        const balanceWei = await getBalance();
-        if (balanceWei.lt(amountInWei)) {
-          toast({ title: "Insufficient balance", variant: "destructive" });
+        const balanceWei = await getBalance(address);
+        if (
+          BigNumber.from(parseUnits(balanceWei?.total.toString(), 18)).lt(
+            amountInWei
+          )
+        ) {
+          toast({
+            title: "Insufficient balance",
+            description: "Top up your wallet to continue.",
+            variant: "destructive",
+          });
           return;
         }
+
+        // perform transaction
         const tx = await sendTransaction(prompt?.recipient, amountInWei);
         toast({
           title: "Transaction Successful",
@@ -121,6 +141,8 @@ const ConfirmPromptDialog: React.FC<ConfirmPromptProps> = ({
           subtext: `Your funds have been sent.`,
         });
       } catch (error: any) {
+        console.log(error);
+
         toast({
           title: "Transaction Failed",
           description: error.message,
@@ -156,7 +178,11 @@ const ConfirmPromptDialog: React.FC<ConfirmPromptProps> = ({
       <DialogContent className="sm:max-w-fit pt-10 animate-fade-in glass-effect flex flex-col items-center">
         {!result && (
           <DialogHeader>
-            <DialogTitle>Confirm Transaction</DialogTitle>
+            <DialogTitle>
+              {prompt?.type === "request"
+                ? "Request Payment"
+                : "Send Transaction"}
+            </DialogTitle>
             <DialogDescription className="text-xl font-semibold text-gray-800 dark:text-gray-500">
               {needsPin
                 ? "Enter your PIN to confirm transaction"
