@@ -77,8 +77,11 @@ const SendPayContent = () => {
           switchNetwork(1, "ETH Mainnet");
         }
 
-      if (promptObj.openDialog === true && promptObj.prompt)
+      if (promptObj.openDialog === true && promptObj.prompt) {
         setConfirmPromptOpen(promptObj.openDialog);
+      } else {
+        setConfirmPromptOpen(false);
+      }
     } else {
       setConfirmPromptOpen(false);
     }
@@ -535,16 +538,22 @@ const SendPay = () => {
 
     const amount = parseFloat(params.get("amount") || "");
     const currency = params.get("currency");
+    const testnet =
+      params.get("testnet")?.toLowerCase() === "true"
+        ? true
+        : params.get("testnet")?.toLowerCase() === "false"
+        ? false
+        : undefined;
     const to = params.get("to");
 
-    console.log("PARAMS >> ", params, amount, currency, to);
+    console.log("PARAMS >> ", params, amount, currency, testnet, to);
 
     if (amount && currency && to) {
       dispatch(
         triggerPrompt({
           prompt: {
             openDialog: true,
-            prompt: { type: "send", amount, currency, recipient: to },
+            prompt: { type: "send", amount, currency, testnet, recipient: to },
           },
         })
       );

@@ -17,7 +17,12 @@ export const ChatBubble: React.FC<BubbleProps> = ({ text, fromSelf }) => {
           fromSelf ? "bg-blue-500 text-white" : "bg-gray-700"
         }`}
       >
-        {text}
+        {text?.split("\n").map((line, index) => (
+          <React.Fragment key={index}>
+            {line}
+            <br />
+          </React.Fragment>
+        ))}
       </div>
     </div>
   );

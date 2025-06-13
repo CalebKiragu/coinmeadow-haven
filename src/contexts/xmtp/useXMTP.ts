@@ -241,7 +241,7 @@ export function useXMTP() {
 
     switch (cmd?.type) {
       case "help":
-        reply = `Welcome to CoinBot v1:\nSupported commands:\nBalance\nRequest <amount> <currency> <sepolia|mainnet> from <payer> \nSend|Transfer|Pay <amount> <currency> <sepolia|mainnet> to <recipient>`;
+        reply = `Welcome to CoinBot. Sample commands:\n1. Balance | Chain\n2. Request <amount> <currency> <sepolia | mainnet> from <payer> \n3. Send | Transfer | Pay <amount> <currency> <sepolia | mainnet> to <recipient>`;
         break;
 
       case "balance":

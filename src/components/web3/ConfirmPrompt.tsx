@@ -29,12 +29,14 @@ interface ConfirmPromptProps {
 function generatePaymentLink(
   amount: number,
   currency: string,
-  to: string
+  to: string,
+  testnet?: boolean
 ): string {
   const baseUrl = getEnvironmentConfig().baseUrl;
   const params = new URLSearchParams({
     amount: amount.toString(),
     currency,
+    testnet: testnet?.toString(),
     to,
   });
   return `${baseUrl}send?${params.toString()}`;
@@ -60,6 +62,7 @@ const ConfirmPromptDialog: React.FC<ConfirmPromptProps> = ({
 
   const cancelTxn = () => {
     dispatch(cancelPrompt());
+    setResult(null);
     // onOpenChange(false);
   };
 
@@ -90,7 +93,12 @@ const ConfirmPromptDialog: React.FC<ConfirmPromptProps> = ({
 
       // Use below test address
       // 0xa08192608Fd7Fd43422B6ffd3f1845222280b2a6
-      const link = generatePaymentLink(prompt.amount, prompt.currency, address);
+      const link = generatePaymentLink(
+        prompt.amount,
+        prompt.currency,
+        address,
+        prompt.testnet
+      );
       console.log(link);
       setResult({
         action: prompt.type,
