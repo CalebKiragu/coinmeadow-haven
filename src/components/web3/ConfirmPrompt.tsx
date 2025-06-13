@@ -142,7 +142,7 @@ const ConfirmPromptDialog: React.FC<ConfirmPromptProps> = ({
         setResult({
           action: prompt.type,
           tx,
-          text: `Sent ${prompt?.amount || "0.00"} ${prompt?.currency} ${
+          text: `Sent ${prompt?.amount || "0.00"} ${prompt?.currency?.toUpperCase()} ${
             prompt?.testnet ? "SEPOLIA" : ""
           } to ${prompt?.recipient}`,
           message: `Transaction Successful`,
