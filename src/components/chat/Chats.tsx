@@ -113,15 +113,15 @@ const Chats = ({ compact = true, showDisconnect = true }: ChatsProps) => {
               >
                 Start Chat
               </Button>
-
+              <div className="flex flex-col">
+                <span className="text-sm mt-2">My Agent:</span>
+                <ConnectPeer
+                  handleStartConversation={handleStartConvo}
+                  isAgent
+                />
+              </div>
               {xmtp ? (
                 <div className="flex flex-col">
-                  <span className="text-sm mt-2">My Agent:</span>
-                  <ConnectPeer
-                    handleStartConversation={handleStartConvo}
-                    isAgent
-                  />
-
                   <span className="text-sm mt-2">Recents:</span>
                   <ConnectPeer
                     handleStartConversation={handleStartConvo}

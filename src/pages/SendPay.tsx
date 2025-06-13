@@ -77,9 +77,10 @@ const SendPayContent = () => {
           switchNetwork(1, "ETH Mainnet");
         }
 
-      setConfirmPromptOpen(promptObj.openDialog);
+      if (promptObj.openDialog === true && promptObj.prompt)
+        setConfirmPromptOpen(promptObj.openDialog);
     } else {
-      setConfirmPromptOpen(!confirmPromptOpen);
+      setConfirmPromptOpen(false);
     }
   }, [promptObj]);
 

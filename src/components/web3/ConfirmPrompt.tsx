@@ -134,9 +134,9 @@ const ConfirmPromptDialog: React.FC<ConfirmPromptProps> = ({
         setResult({
           action: prompt.type,
           tx,
-          text: `Sent ${prompt?.amount || "0.00"} ${prompt?.currency} to ${
-            prompt?.recipient
-          }`,
+          text: `Sent ${prompt?.amount || "0.00"} ${prompt?.currency} ${
+            prompt?.testnet ? "SEPOLIA" : ""
+          } to ${prompt?.recipient}`,
           message: `Transaction Successful`,
           subtext: `Your funds have been sent.`,
         });
@@ -239,7 +239,8 @@ const ConfirmPromptDialog: React.FC<ConfirmPromptProps> = ({
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 6,
                 })}{" "}
-                {prompt?.currency?.toUpperCase()}
+                {prompt?.currency?.toUpperCase()}{" "}
+                {prompt?.testnet ? "SEPOLIA" : null}
               </span>
             </p>
 

@@ -1,8 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { getEnvironmentConfig } from "../../utils";
 
 export interface Prompt {
-  amount: number;
-  currency: string;
+  amount?: number;
+  currency?: string;
+  testnet?: boolean;
   recipient?: string;
   sender?: string;
   type: string;

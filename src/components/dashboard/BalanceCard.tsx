@@ -84,9 +84,10 @@ const BalanceCard = ({ showBalance, setShowBalance }: BalanceCardProps) => {
         } else if (chain?.id !== 1 && !promptObj?.prompt?.testnet) {
           switchNetwork(1, "ETH Mainnet");
         }
-      setConfirmPromptOpen(promptObj.openDialog);
+      if (promptObj.openDialog === true && promptObj.prompt)
+        setConfirmPromptOpen(promptObj.openDialog);
     } else {
-      setConfirmPromptOpen(!confirmPromptOpen);
+      setConfirmPromptOpen(false);
     }
   }, [promptObj]);
 

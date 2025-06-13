@@ -44,6 +44,19 @@ export function useXMTP() {
   const { client, error, isLoading, initialize, disconnect } = useClient();
   // const { startConversation } = useStartConversation()
 
+  const strippedWalletClient = {
+    ...walletClient,
+    account: {
+      address: walletClient.account.address, // ensure it's a string
+    },
+    // you may also need to pass required fields explicitly
+    chain: walletClient.chain,
+    key: walletClient.key,
+    name: walletClient.name,
+    pollingInterval: walletClient.pollingInterval,
+    request: walletClient.request,
+  };
+
   const initXMTP = async () => {
     if (!walletClient) return;
     setXMTPLoading(true);
@@ -53,7 +66,7 @@ export function useXMTP() {
     try {
       console.log("starting XMTP init >> ");
       xmtp = await initialize({
-        signer: walletClient,
+        signer: strippedWalletClient as any,
         options: { env: "production" },
       });
       setIsXMTPConnected(true);
@@ -80,7 +93,7 @@ export function useXMTP() {
     // if (conversation) updateXMTPConfig();
     // console.log(conversation);
 
-    if (conversation)
+    if (conversation && conversation?.peerAddress !== AGENT_ADDRESS)
       dispatch(
         setXMTPConfig({
           xmtp: { peer: conversation?.peerAddress },
@@ -218,7 +231,7 @@ export function useXMTP() {
 
   const handleAgentPrompt = async (peer: string, content: string) => {
     const lower = content.toLowerCase();
-    let reply = `Sorry, I didn't understand that. Try "chain", "balance" or "help".`;
+    let reply = `Sorry, I didn't understand that. Type "help" for more info.`;
 
     let cmd;
     cmd = parseMessage(lower);
@@ -227,7 +240,7 @@ export function useXMTP() {
 
     switch (cmd?.type) {
       case "help":
-        reply = `Welcome to CoinBot v1:\nSupported commands:\nBalance\nRequest\nSend|Transfer|Pay`;
+        reply = `Welcome to CoinBot v1:\nSupported commands:\nBalance\nRequest <amount> <currency> <sepolia|mainnet> from <payer> \nSend|Transfer|Pay <amount> <currency> <sepolia|mainnet> to <recipient>`;
         break;
 
       case "balance":
