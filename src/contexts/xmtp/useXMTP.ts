@@ -44,22 +44,23 @@ export function useXMTP() {
   const { client, error, isLoading, initialize, disconnect } = useClient();
   // const { startConversation } = useStartConversation()
 
-  const strippedWalletClient = {
-    ...walletClient,
-    account: {
-      address: walletClient.account.address, // ensure it's a string
-    },
-    // you may also need to pass required fields explicitly
-    chain: walletClient.chain,
-    key: walletClient.key,
-    name: walletClient.name,
-    pollingInterval: walletClient.pollingInterval,
-    request: walletClient.request,
-  };
-
   const initXMTP = async () => {
     if (!walletClient) return;
     setXMTPLoading(true);
+
+    const strippedWalletClient = {
+      ...walletClient,
+      account: {
+        address: walletClient?.account?.address, // ensure it's a string
+      },
+      // you may also need to pass required fields explicitly
+      chain: walletClient?.chain,
+      key: walletClient?.key,
+      name: walletClient?.name,
+      pollingInterval: walletClient?.pollingInterval,
+      request: walletClient?.request,
+    };
+
     // const signer = getXMTPCompatibleSigner(walletClient, chainId, "EOA");
     let xmtp;
 
