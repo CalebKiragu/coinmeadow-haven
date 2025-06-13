@@ -22,10 +22,10 @@ const Account = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4">
+    <div className="min-h-screen max-w-full overflow-x-hidden bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4">
       <NavigationHeader title="Account" />
 
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-full mx-auto space-y-6">
         {/* Profile Card */}
         <GlassCard className="p-4 border border-white/10">
           <div className="flex flex-col items-center text-center space-y-4">

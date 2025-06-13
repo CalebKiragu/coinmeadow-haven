@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { QrCode } from "lucide-react";
@@ -7,7 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useSendPay } from "@/contexts/SendPayContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cryptoCurrencies, fiatCurrencies } from "@/types/currency";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -15,14 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export const MerchantPayment = ({
-  currentStep,
-}: {
-  currentStep: number;
-}) => {
+export const MerchantPayment = ({ currentStep }: { currentStep: number }) => {
   const { toast } = useToast();
-  const { 
-    merchantNumber, 
+  const {
+    merchantNumber,
     setMerchantNumber,
     merchantAmount,
     setMerchantAmount,
@@ -37,7 +32,7 @@ export const MerchantPayment = ({
     convertCryptoToFiat,
     convertFiatToCrypto,
     rates,
-    isLoading
+    isLoading,
   } = useSendPay();
 
   const [localAmount, setLocalAmount] = useState("");
@@ -62,7 +57,13 @@ export const MerchantPayment = ({
         setMerchantAmount(cryptoAmount);
       }
     }
-  }, [localAmount, isCryptoAmount, selectedCryptoCurrency, selectedFiatCurrency, rates]);
+  }, [
+    localAmount,
+    isCryptoAmount,
+    selectedCryptoCurrency,
+    selectedFiatCurrency,
+    rates,
+  ]);
 
   const handleQrScan = () => {
     toast({
@@ -79,8 +80,14 @@ export const MerchantPayment = ({
             type="text"
             placeholder="Enter 6-digit merchant number"
             value={merchantNumber}
-            onChange={(e) => setMerchantNumber(e.target.value.replace(/[^\d]/g, '').slice(0, 6))}
-            className={`pr-14 ${!isValid && merchantNumber ? 'border-red-500' : ''}`}
+            onChange={(e) =>
+              setMerchantNumber(
+                e.target.value.replace(/[^\d]/g, "").slice(0, 6)
+              )
+            }
+            className={`pr-14 ${
+              !isValid && merchantNumber ? "border-red-500" : ""
+            }`}
             required
           />
           <Button
@@ -93,20 +100,22 @@ export const MerchantPayment = ({
           </Button>
         </div>
         {!isValid && merchantNumber && (
-          <p className="text-xs text-red-500">Enter a valid 6-digit merchant number</p>
+          <p className="text-xs text-red-500">
+            Enter a valid 6-digit merchant number
+          </p>
         )}
       </div>
     );
   }
-  
+
   if (currentStep === 2) {
     return (
       <div className="space-y-4 animate-fade-in">
         {isLoading ? (
           <div className="space-y-3">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
+            <Skeleton height="h-10" width="w-full" />
+            <Skeleton height="h-10" width="w-full" />
+            <Skeleton height="h-10" width="w-full" />
           </div>
         ) : (
           <>
@@ -123,18 +132,22 @@ export const MerchantPayment = ({
                   <SelectItem value="fiat">Fiat</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               <Input
                 type="number"
-                placeholder={`Enter amount in ${isCryptoAmount ? selectedCryptoCurrency : selectedFiatCurrency}`}
+                placeholder={`Enter amount in ${
+                  isCryptoAmount ? selectedCryptoCurrency : selectedFiatCurrency
+                }`}
                 value={localAmount}
                 onChange={(e) => setLocalAmount(e.target.value)}
                 required
                 className="flex-grow"
               />
-              
+
               <Select
-                value={isCryptoAmount ? selectedCryptoCurrency : selectedFiatCurrency}
+                value={
+                  isCryptoAmount ? selectedCryptoCurrency : selectedFiatCurrency
+                }
                 onValueChange={(value) => {
                   if (isCryptoAmount) {
                     setSelectedCryptoCurrency(value);
@@ -147,36 +160,55 @@ export const MerchantPayment = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {isCryptoAmount ? 
-                    cryptoCurrencies.map((crypto) => (
-                      <SelectItem key={crypto.symbol} value={crypto.symbol}>
-                        {crypto.symbol}
-                      </SelectItem>
-                    )) : 
-                    fiatCurrencies.map((fiat) => (
-                      <SelectItem key={fiat.code} value={fiat.code}>
-                        {fiat.code}
-                      </SelectItem>
-                    ))
-                  }
+                  {isCryptoAmount
+                    ? cryptoCurrencies.map((crypto) => (
+                        <SelectItem key={crypto.symbol} value={crypto.symbol}>
+                          {crypto.symbol}
+                        </SelectItem>
+                      ))
+                    : fiatCurrencies.map((fiat) => (
+                        <SelectItem key={fiat.code} value={fiat.code}>
+                          {fiat.code}
+                        </SelectItem>
+                      ))}
                 </SelectContent>
               </Select>
             </div>
-            
+
             {localAmount && (
               <div className="text-sm bg-white/10 p-2 rounded-lg">
                 {isCryptoAmount ? (
                   <p>
-                    ≈ {convertCryptoToFiat(localAmount, selectedCryptoCurrency, selectedFiatCurrency)} {selectedFiatCurrency}
+                    ≈{" "}
+                    {convertCryptoToFiat(
+                      localAmount,
+                      selectedCryptoCurrency,
+                      selectedFiatCurrency
+                    )}{" "}
+                    {selectedFiatCurrency}
                     <span className="block text-xs text-gray-400 mt-1">
-                      1 {selectedCryptoCurrency} = {rates[`${selectedCryptoCurrency}-${selectedFiatCurrency}`]?.toFixed(2) || '0.00'} {selectedFiatCurrency}
+                      1 {selectedCryptoCurrency} ={" "}
+                      {rates[
+                        `${selectedCryptoCurrency}-${selectedFiatCurrency}`
+                      ]?.toFixed(2) || "0.00"}{" "}
+                      {selectedFiatCurrency}
                     </span>
                   </p>
                 ) : (
                   <p>
-                    ≈ {convertFiatToCrypto(localAmount, selectedCryptoCurrency, selectedFiatCurrency)} {selectedCryptoCurrency}
+                    ≈{" "}
+                    {convertFiatToCrypto(
+                      localAmount,
+                      selectedCryptoCurrency,
+                      selectedFiatCurrency
+                    )}{" "}
+                    {selectedCryptoCurrency}
                     <span className="block text-xs text-gray-400 mt-1">
-                      1 {selectedCryptoCurrency} = {rates[`${selectedCryptoCurrency}-${selectedFiatCurrency}`]?.toFixed(2) || '0.00'} {selectedFiatCurrency}
+                      1 {selectedCryptoCurrency} ={" "}
+                      {rates[
+                        `${selectedCryptoCurrency}-${selectedFiatCurrency}`
+                      ]?.toFixed(2) || "0.00"}{" "}
+                      {selectedFiatCurrency}
                     </span>
                   </p>
                 )}
@@ -187,14 +219,14 @@ export const MerchantPayment = ({
       </div>
     );
   }
-  
+
   if (currentStep === 3) {
     const fiatEquivalent = convertCryptoToFiat(
       merchantAmount,
       selectedCryptoCurrency,
       selectedFiatCurrency
     );
-    
+
     return (
       <div className="space-y-4 animate-fade-in">
         <Input

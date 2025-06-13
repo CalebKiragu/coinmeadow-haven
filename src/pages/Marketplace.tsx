@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MarketplaceFilters from "@/components/marketplace/MarketplaceFilters";
-import MarketplaceOfferCard, { Offer } from "@/components/marketplace/MarketplaceOfferCard";
+import MarketplaceOfferCard, {
+  Offer,
+} from "@/components/marketplace/MarketplaceOfferCard";
 import { NavigationHeader } from "@/components/shared/NavigationHeader";
 
 const mockOffers: Offer[] = [
@@ -58,46 +60,40 @@ const Marketplace = () => {
     });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        <NavigationHeader title="Marketplace" />
+    <div className="min-h-screen max-w-full mx-auto overflow-x-hidden bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 p-4 md:p-8">
+      <NavigationHeader title="Marketplace" />
 
-        <Tabs
-          defaultValue="buy"
-          className="w-full"
-          onValueChange={setActiveTab}
-        >
-          <TabsList className="w-full mb-6">
-            <TabsTrigger value="buy" className="flex-1">
-              Buy
-            </TabsTrigger>
-            <TabsTrigger value="sell" className="flex-1">
-              Sell
-            </TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue="buy" className="w-full" onValueChange={setActiveTab}>
+        <TabsList className="w-full mb-6">
+          <TabsTrigger value="buy" className="flex-1">
+            Buy
+          </TabsTrigger>
+          <TabsTrigger value="sell" className="flex-1">
+            Sell
+          </TabsTrigger>
+        </TabsList>
 
-          <MarketplaceFilters
-            currency={currency}
-            setCurrency={setCurrency}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            minRating={minRating}
-            setMinRating={setMinRating}
-          />
+        <MarketplaceFilters
+          currency={currency}
+          setCurrency={setCurrency}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          minRating={minRating}
+          setMinRating={setMinRating}
+        />
 
-          <TabsContent value="buy" className="space-y-4">
-            {filteredOffers.map((offer) => (
-              <MarketplaceOfferCard key={offer.id} offer={offer} />
-            ))}
-          </TabsContent>
+        <TabsContent value="buy" className="space-y-4">
+          {filteredOffers.map((offer) => (
+            <MarketplaceOfferCard key={offer.id} offer={offer} />
+          ))}
+        </TabsContent>
 
-          <TabsContent value="sell" className="space-y-4">
-            {filteredOffers.map((offer) => (
-              <MarketplaceOfferCard key={offer.id} offer={offer} />
-            ))}
-          </TabsContent>
-        </Tabs>
-      </div>
+        <TabsContent value="sell" className="space-y-4">
+          {filteredOffers.map((offer) => (
+            <MarketplaceOfferCard key={offer.id} offer={offer} />
+          ))}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

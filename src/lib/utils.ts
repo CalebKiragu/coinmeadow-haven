@@ -18,6 +18,22 @@ export const formatTimestamp = (timestamp: string): string => {
   });
 };
 
+export const formatToCamelCase = (str: string, pascalCase = true): string => {
+  const words = str
+    .toLowerCase()
+    .split(/[\s-_]+/)
+    .filter(Boolean); // remove empty parts
+
+  const formatted = words.map((word, index) => {
+    if (index === 0 && !pascalCase) {
+      return word;
+    }
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  });
+
+  return formatted.join("");
+};
+
 export const formatCryptoValue = (
   value: string | number | null | undefined
 ): string => {
@@ -140,6 +156,50 @@ export const aws = () => {
   };
 };
 
+class Utils {
+  static getExplorerUrl(chainName, txHash?) {
+    return chainName.includes("Base")
+      ? chainName.includes("Sepolia")
+        ? txHash
+          ? `https://sepolia.basescan.org/tx/${txHash}`
+          : `https://sepolia.basescan.org/tx/`
+        : txHash
+        ? `https://basescan.org/tx/${txHash}`
+        : `https://basescan.org/tx/`
+      : chainName.includes("Sepolia")
+      ? txHash
+        ? `https://sepolia.etherscan.io/tx/${txHash}`
+        : `https://sepolia.etherscan.io/tx/`
+      : txHash
+      ? `https://etherscan.io/tx/${txHash}`
+      : `https://etherscan.io/tx/`;
+  }
+
+  static getTokenAddress() {
+    return {
+      usdc: {
+        eth: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        base: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      },
+      usdt: {
+        eth: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      },
+      dai: {
+        eth: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        base: "0xF14F9596430931E177469715c591513308244e8F",
+      },
+      wbtc: {
+        eth: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        base: "0x6A7d8eD4d91a75D7C5b5385Ba1aFa7C985d96c01",
+      },
+      weth: {
+        eth: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        base: "0x4200000000000000000000000000000000000006",
+      },
+    };
+  }
+}
+
 /**
  * Helper to handle environment branching for different deployment environments
  */
@@ -151,6 +211,9 @@ export const getEnvironmentConfig = () => {
     development: {
       currentEnv: env,
       apiUrl: "https://v8885hujef.execute-api.us-east-1.amazonaws.com/Prod/",
+      baseUrl: `http://localhost:8080/`,
+      explorerUrl: Utils.getExplorerUrl,
+      tokenAddress: Utils.getTokenAddress,
       aws: {
         s3: {
           REGION: "us-east-1",
@@ -165,6 +228,7 @@ export const getEnvironmentConfig = () => {
       },
       base: baseSepolia,
       onchainkitKey: "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
+      agentAddress: "0x97143F6376CAA5647389D733D72b836444B0cf50",
       walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016",
       googleScriptSrc: "https://accounts.google.com/gsi/client",
       googleClientId:
@@ -174,13 +238,15 @@ export const getEnvironmentConfig = () => {
       baseVaultAddress: "0x7BfA7C4f149E7415b73bdeDfe609237e29CBF34A",
       ETH_RPC_URL:
         "https://eth-sepolia.g.alchemy.com/v2/8Yz1ZLNi87s0MCcIL8s6jzoiLXfLhVSK",
-
       CHAIN_ID: 11155111, // sepolia chain_id
       BASE_CHAIN_ID: 84532,
     },
     staging: {
       currentEnv: env,
       apiUrl: "https://v8885hujef.execute-api.us-east-1.amazonaws.com/Prod/",
+      baseUrl: `http://localhost:8080/`,
+      explorerUrl: Utils.getExplorerUrl,
+      tokenAddress: Utils.getTokenAddress,
       aws: {
         s3: {
           REGION: "us-east-1",
@@ -195,6 +261,7 @@ export const getEnvironmentConfig = () => {
       },
       base: baseSepolia,
       onchainkitKey: "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
+      agentAddress: "0x97143F6376CAA5647389D733D72b836444B0cf50",
       walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016",
       googleScriptSrc: "https://accounts.google.com/gsi/client",
       googleClientId:
@@ -210,6 +277,9 @@ export const getEnvironmentConfig = () => {
     production: {
       currentEnv: env,
       apiUrl: "https://qckp089yob.execute-api.us-east-1.amazonaws.com/Prod/",
+      baseUrl: `https://duka.pesatoken.org/`,
+      explorerUrl: Utils.getExplorerUrl,
+      tokenAddress: Utils.getTokenAddress,
       aws: {
         s3: {
           REGION: "us-east-1",
@@ -224,6 +294,7 @@ export const getEnvironmentConfig = () => {
       },
       base,
       onchainkitKey: "XoXmoP3ZNKEN8GhfVU2zwrkHpZb7OAOp",
+      agentAddress: "0x97143F6376CAA5647389D733D72b836444B0cf50",
       walletAddress: "0x859291D42bC0f9d3988209E3a4920a0E30D58016",
       googleScriptSrc: "https://accounts.google.com/gsi/client",
       googleClientId:

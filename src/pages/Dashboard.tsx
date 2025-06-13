@@ -15,7 +15,7 @@ import {
 import BalanceCard from "@/components/dashboard/BalanceCard";
 import TransactionButtons from "@/components/dashboard/TransactionButtons";
 import TransactionHistory from "@/components/dashboard/TransactionHistory";
-import NotificationBell from "@/components/shared/NotificationBell";
+import NotificationBell from "@/components/chat/NotificationBell";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import NotificationsPanel from "@/components/dashboard/NotificationsPanel";
 import MarketplaceOfferCard, {
@@ -74,7 +74,10 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate("/", { replace: true });
+      const currentPath = location.pathname + location.search;
+      navigate(`/?returnTo=${encodeURIComponent(currentPath)}`, {
+        replace: true,
+      });
       return;
     }
 
@@ -135,157 +138,157 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8 flex-wrap gap-2">
-          <div className="flex flex-col items-start">
-            <h1 className="text-2xl font-bold text-white">CoinDuka</h1>
-            <span className="text-sm text-white/70">
-              Your trustless crypto partner
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="hidden md:block">
-              <ThemeToggle />
-            </div>
-            <NotificationBell />
-            <Sheet>
-              <SheetTrigger asChild>
-                <button className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                  <Menu className="h-6 w-6 text-white" />
-                </button>
-              </SheetTrigger>
-              <SheetContent className="bg-white/95 dark:bg-black/95 backdrop-blur-xl border-l border-white/20">
-                <nav className="flex flex-col gap-4 mt-8">
-                  <Link
-                    to="/account"
-                    className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors"
-                  >
-                    <User className="h-5 w-5" />
-                    <span>Account</span>
-                  </Link>
-                  <Link
-                    to="/history"
-                    className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors"
-                  >
-                    <History className="h-5 w-5" />
-                    <span>History</span>
-                  </Link>
-                  <Link
-                    to="/verification"
-                    className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors"
-                  >
-                    <ShieldCheck className="h-5 w-5" />
-                    <span>Verification</span>
-                  </Link>
-                  <Link
-                    to="/settings"
-                    className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors"
-                  >
-                    <Settings className="h-5 w-5" />
-                    <span>Settings</span>
-                  </Link>
-                  <Link
-                    to="/apidocs"
-                    className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors"
-                  >
-                    <Code className="h-5 w-5" />
-                    <span>Developers</span>
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors text-red-500"
-                  >
-                    <LogOut className="h-5 w-5" />
-                    <span>Logout</span>
-                  </button>
-                </nav>
-              </SheetContent>
-            </Sheet>
-          </div>
+    <div className="min-h-screen max-w-full mx-auto overflow-x-hidden bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
+      {/* <div className="max-w-7xl mx-auto"> */}
+      <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
+        <div className="flex flex-col items-start">
+          <h1 className="text-2xl font-bold text-white">CoinDuka</h1>
+          <span className="text-sm text-white/70">
+            Your trustless crypto partner
+          </span>
         </div>
-
-        <KycBanner />
-
-        <Tabs
-          defaultValue="wallet"
-          className="w-full"
-          onValueChange={setActiveTab}
-        >
-          <TabsList className="w-full mb-6 bg-transparent border border-white/10">
-            <TabsTrigger
-              value="wallet"
-              className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/70"
-            >
-              Wallet
-            </TabsTrigger>
-            <TabsTrigger
-              value="trade"
-              disabled={true}
-              onClick={() =>
-                toast({
-                  title: "Coming soon",
-                  description: "Trade feature coming soon",
-                })
-              }
-              className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/70"
-            >
-              Trade
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="wallet">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-8">
-                <BalanceCard
-                  showBalance={showBalance}
-                  setShowBalance={handleBalanceToggle}
-                />
-                <h3 className="text-lg text-white/80 text-center">
-                  What would you like to do today?
-                </h3>
-                <TransactionButtons />
-                <TransactionHistory
-                  showBalance={showBalance}
-                  setShowBalance={handleBalanceToggle}
-                />
-              </div>
-              <div className="lg:col-span-1">
-                <NotificationsPanel />
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="trade">
-            <div className="space-y-6">
-              <div className="flex justify-between items-center flex-wrap gap-4">
-                <h2 className="text-xl font-semibold text-white">
-                  Trending Offers
-                </h2>
+        <div className="flex items-center gap-2">
+          <div className="hidden md:block">
+            <ThemeToggle />
+          </div>
+          <NotificationBell />
+          <Sheet>
+            <SheetTrigger asChild>
+              <button className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                <Menu className="h-6 w-6 text-white" />
+              </button>
+            </SheetTrigger>
+            <SheetContent className="bg-white/95 dark:bg-black/95 backdrop-blur-xl border-l border-white/20">
+              <nav className="flex flex-col gap-4 mt-8">
                 <Link
-                  to="/marketplace"
-                  className="text-dollar-light hover:text-dollar-dark transition-colors"
+                  to="/account"
+                  className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors"
                 >
-                  View All Offers
+                  <User className="h-5 w-5" />
+                  <span>Account</span>
                 </Link>
-              </div>
-              <div className="space-y-4">
-                {trendingOffers.map((offer) => (
-                  <MarketplaceOfferCard key={offer.id} offer={offer} />
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        <Button
-          onClick={() => window.open("https://wa.me/+254713278107", "_blank")}
-          className="fixed bottom-8 right-8 rounded-full p-4 bg-green-500 hover:bg-green-600 text-white shadow-lg flex items-center gap-2 animate-fade-in"
-        >
-          <Headset className="h-5 w-5" />
-          <span>Contact Support</span>
-        </Button>
+                <Link
+                  to="/history"
+                  className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <History className="h-5 w-5" />
+                  <span>History</span>
+                </Link>
+                <Link
+                  to="/verification"
+                  className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <ShieldCheck className="h-5 w-5" />
+                  <span>Verification</span>
+                </Link>
+                <Link
+                  to="/settings"
+                  className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <Settings className="h-5 w-5" />
+                  <span>Settings</span>
+                </Link>
+                <Link
+                  to="/apidocs"
+                  className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <Code className="h-5 w-5" />
+                  <span>Developers</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 p-3 hover:bg-white/10 rounded-lg transition-colors text-red-500"
+                >
+                  <LogOut className="h-5 w-5" />
+                  <span>Logout</span>
+                </button>
+              </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
+
+      <KycBanner />
+
+      <Tabs
+        defaultValue="wallet"
+        className="w-full"
+        onValueChange={setActiveTab}
+      >
+        <TabsList className="w-full mb-2 bg-transparent border border-white/10">
+          <TabsTrigger
+            value="wallet"
+            className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/70"
+          >
+            Wallet
+          </TabsTrigger>
+          <TabsTrigger
+            value="trade"
+            disabled={true}
+            onClick={() =>
+              toast({
+                title: "Coming soon",
+                description: "Trade feature coming soon",
+              })
+            }
+            className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/70"
+          >
+            Trade
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="wallet">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2 space-y-4">
+              <BalanceCard
+                showBalance={showBalance}
+                setShowBalance={handleBalanceToggle}
+              />
+              <h3 className="font-extrabold text-white/80 text-center">
+                What would you like to do today?
+              </h3>
+              <TransactionButtons />
+              <TransactionHistory
+                showBalance={showBalance}
+                setShowBalance={handleBalanceToggle}
+              />
+            </div>
+            <div className="lg:col-span-1">
+              <NotificationsPanel />
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="trade">
+          <div className="space-y-6">
+            <div className="flex justify-between items-center flex-wrap gap-4">
+              <h2 className="text-xl font-semibold text-white">
+                Trending Offers
+              </h2>
+              <Link
+                to="/marketplace"
+                className="text-dollar-light hover:text-dollar-dark transition-colors"
+              >
+                View All Offers
+              </Link>
+            </div>
+            <div className="space-y-4">
+              {trendingOffers.map((offer) => (
+                <MarketplaceOfferCard key={offer.id} offer={offer} />
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      <Button
+        onClick={() => window.open("https://wa.me/+254713278107", "_blank")}
+        className="fixed bottom-8 right-8 rounded-full p-4 bg-green-500 hover:bg-green-600 text-white shadow-lg flex items-center gap-2 animate-fade-in"
+      >
+        <Headset className="h-5 w-5" />
+        <span>Contact Support</span>
+      </Button>
+      {/* </div> */}
     </div>
   );
 };

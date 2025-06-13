@@ -25,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -36,12 +35,14 @@ import { WalletService } from "@/lib/services/walletService";
 import { formatEther, parseEther } from "ethers/lib/utils";
 import { useAppSelector } from "@/lib/redux/hooks";
 import Web3Connector from "./Web3Connector";
-import { useWallet } from "@/contexts/Web3ContextProvider";
-import { ApiService } from "@/lib/services";
+import { BalancesResult, useWallet } from "@/contexts/Web3ContextProvider";
 import { getEnvironmentConfig } from "@/lib/utils";
 import ChainSwitcher from "./ChainSwitcher";
 import { BigNumber } from "ethers";
 import SuccessStep from "./SuccessStep";
+import { useAccount } from "wagmi";
+import { Address } from "@coinbase/onchainkit/identity";
+import { parseUnits } from "viem";
 
 interface CheckoutDialogProps {
   open: boolean;
@@ -69,22 +70,24 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
   onOpenChange,
   onCheckoutComplete,
 }) => {
-  const { getBalance, getGasPrice, sendTransaction, switchNetwork } =
-    useWallet();
+  const {
+    getBalance,
+    getGasPrice,
+    sendTransaction,
+    switchNetwork,
+    depositAddress,
+    address,
+  } = useWallet();
   const { toast } = useToast();
   const { wallet } = useAppSelector((state) => state.web3);
   const user = useAppSelector((state: any) => state.auth.user);
   const merchant = useAppSelector((state: any) => state.auth.merchant);
-  const userIdentifier =
-    user?.email || user?.phone || merchant?.email || merchant?.phone || "";
-  const isMerchant = !!merchant;
-  const [depositAddress, setDepositAddress] = useState("");
-  const [previousAddresses, setPreviousAddresses] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [canSend, setCanSend] = useState(false);
   const [max, setMax] = useState<string>("0.0");
   const [amountToSend, setAmountToSend] = useState<string>("0.0");
-  const [walletBalance, setWalletBalance] = useState<string>("0.0");
+  const [walletBalance, setWalletBalance] = useState<BalancesResult | null>(
+    null
+  );
   const [showBalanceError, setShowBalanceError] = useState(false);
   const [balanceErrorMessage, setBalanceErrorMessage] = useState("");
   const [showNetworkError, setShowNetworkError] = useState(false);
@@ -93,6 +96,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
     "selection" | "coinbase" | "wallet" | "result"
   >("selection");
   const [txHash, setTxHash] = useState<string | null>(null);
+  const { chain } = useAccount();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -113,65 +117,32 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
     let balance, gasPrice, maxSendable;
     const fetchWalletBalance = async () => {
       if (wallet) {
-        balance = formatEther(await getBalance());
+        balance = await getBalance(address);
         setWalletBalance(balance);
         gasPrice = await getGasPrice();
         // maxSendable = formatEther(parseEther(balance).sub(gasPrice));
-        maxSendable = parseEther(balance).gte(gasPrice)
-          ? parseEther(balance).sub(gasPrice)
+        maxSendable = BigNumber.from(
+          parseUnits(balance?.total.toString(), 18)
+        ).gte(gasPrice)
+          ? BigNumber.from(parseUnits(balance.total.toString(), 18)).sub(
+              gasPrice
+            )
           : 0n;
 
         if (BigNumber.from(maxSendable).gt(parseEther(ethAmount || "0.0"))) {
-          setCanSend(true);
           setMax(formatEther(maxSendable));
           setBalanceErrorMessage("");
           setShowBalanceError(false);
         } else {
-          setCanSend(false);
           setMax("0.0");
           setBalanceErrorMessage("Insufficient balance");
           setShowBalanceError(true);
-        }
-
-        // console.log("====================================");
-        // console.log("max sendable >> ", formatEther(maxSendable));
-        // console.log("====================================");
-
-        // Fetch deposit address(es)
-        const addresses = await ApiService.getDepositAddresses({
-          userIdentifier,
-          currency: "ETH",
-          isMerchant,
-        });
-        // If there are previous addresses, use the first one as the current address
-        if (addresses && addresses.length > 0) {
-          setPreviousAddresses(addresses);
-          setDepositAddress(addresses[0]);
-        } else {
-          // If no previous addresses, generate a new one
-          const address = await ApiService.generateDepositAddress({
-            userIdentifier,
-            currency: "ETH",
-            isMerchant,
-            fresh: true,
-          });
-          if (address) {
-            setDepositAddress(address);
-          } else {
-            toast({
-              variant: "destructive",
-              title: "Error",
-              description:
-                "Failed to generate deposit address. Please try again later.",
-            });
-          }
         }
 
         if (
           wallet?.chain?.includes("Sepolia") &&
           getEnvironmentConfig().currentEnv === "production"
         ) {
-          setCanSend(false);
           setNetworkErrorMessage(
             `Cannot fund from ${wallet?.chain} testnet to mainnet`
           );
@@ -180,7 +151,6 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
           !wallet?.chain?.includes("Sepolia") &&
           getEnvironmentConfig().currentEnv === "development"
         ) {
-          setCanSend(false);
           setNetworkErrorMessage(
             `Cannot fund from ${wallet?.chain} mainnet to testnet`
           );
@@ -189,13 +159,11 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
           !wallet?.chain?.includes("Sepolia") &&
           getEnvironmentConfig().currentEnv !== "production"
         ) {
-          setCanSend(false);
           setNetworkErrorMessage(
             `Cannot fund from ${wallet?.chain} mainnet to testnet`
           );
           setShowNetworkError(true);
         } else {
-          setCanSend(true);
           setNetworkErrorMessage("");
           setShowNetworkError(false);
         }
@@ -218,16 +186,20 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
     try {
       const amountInEther = values.ethAmount;
       const amountInWei = parseEther(amountInEther);
-      const balanceWei = parseEther(walletBalance);
+      const balanceWei = BigNumber.from(
+        parseUnits(walletBalance.total.toString(), 18)
+      );
       if (balanceWei.lt(amountInWei)) {
-        toast({ title: "Insufficient funds", variant: "destructive" });
+        toast({ title: "Insufficient balance", variant: "destructive" });
         return;
       }
       setIsLoading(true);
       const tx = await sendTransaction(depositAddress, amountInWei);
       toast({
         title: "Transaction Successful",
-        description: `TX Hash: ${tx}`,
+        description: (
+          <span className="text-wrap break-all">{`TX Hash: ${tx}`}</span>
+        ),
       });
       setTxHash(tx);
       setStep("result");
@@ -264,7 +236,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
 
         toast({
           title: "Checkout initiated",
-          description: "Please complete the payment process.",
+          description: "Please complete the payment.",
         });
         onOpenChange(false);
         if (onCheckoutComplete) {
@@ -291,7 +263,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-fit pt-10 animate-fade-in glass-effect">
         <DialogHeader>
           <DialogTitle>Fund Wallet</DialogTitle>
           <DialogDescription>Select a method to add funds</DialogDescription>
@@ -383,17 +355,19 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
                   </FormItem>
                 )}
               />
-              <DialogFooter>
+              <DialogFooter className="flex flex-row w-full space-x-2">
                 <Button
                   onClick={() => setStep("selection")}
                   disabled={isLoading}
                   variant="outline"
+                  className="w-1/2"
                 >
                   Back
                 </Button>
                 <Button
                   type="submit"
                   disabled={isLoading || showBalanceError || showNetworkError}
+                  className="w-1/2"
                 >
                   {isLoading ? (
                     <>
@@ -468,7 +442,7 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
                 )}
               />
 
-              <DialogFooter>
+              <DialogFooter className="flex flex-row w-full justify-around space-x-2">
                 <Button
                   onClick={() => setStep("selection")}
                   disabled={isLoading}
@@ -500,18 +474,10 @@ const CheckoutDialog: React.FC<CheckoutDialogProps> = ({
               message={"Transaction Successful"}
               subtext={"Your funds have been sent."}
               txHash={txHash}
-              explorerUrl={
-                wallet?.chain.includes("Base")
-                  ? `https://basescan.org/tx/`
-                  : `https://etherscan.io/tx/`
-              }
+              explorerUrl={getEnvironmentConfig().explorerUrl(chain?.name)}
             />
             <a
-              href={
-                wallet?.chain.includes("Base")
-                  ? `https://basescan.org/tx/${txHash}`
-                  : `https://etherscan.io/tx/${txHash}`
-              }
+              href={getEnvironmentConfig().explorerUrl(chain?.name, txHash)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-500 underline"

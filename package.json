@@ -1,11 +1,11 @@
 {
   "name": "vite_react_shadcn_ts",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "NODE_OPTIONS='--max-old-space-size=4096' vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -62,6 +62,8 @@
     "@web3-react/core": "^6.1.9",
     "@web3-react/injected-connector": "^6.0.7",
     "@web3-react/walletlink-connector": "^6.2.14",
+    "@xmtp/content-type-text": "^2.0.2",
+    "@xmtp/react-sdk": "^9.0.0",
     "@yudiel/react-qr-scanner": "^2.2.1",
     "axios": "^1.7.9",
     "canvas-confetti": "^1.9.3",
@@ -93,6 +95,7 @@
     "redux-persist": "^6.0.0",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.2",
+    "tailwind-scrollbar": "^3.1.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
     "vi-fetch": "^0.8.0",
@@ -110,15 +113,18 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react-swc": "^3.9.0",
     "autoprefixer": "^10.4.20",
+    "buffer": "^6.0.3",
     "eslint": "^9.9.0",
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
     "lovable-tagger": "^1.1.7",
     "postcss": "^8.4.47",
+    "process": "^0.11.10",
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^5.1.6"
+    "vite": "^5.1.6",
+    "vite-plugin-node-polyfills": "^0.23.0"
   }
 }

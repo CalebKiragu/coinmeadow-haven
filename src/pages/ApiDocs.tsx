@@ -205,8 +205,8 @@ const ApiDocs = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen max-w-full overflow-x-hidden bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
+      <div className="max-w-full mx-auto space-y-8">
         <NavigationHeader title="API Documentation" />
 
         <Card className="bg-[#221F26]/80 border-[#0EA5E9]/20 backdrop-blur-lg">

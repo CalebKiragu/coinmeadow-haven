@@ -1,4 +1,14 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { getEnvironmentConfig } from "../../utils";
+
+export interface Prompt {
+  amount?: number;
+  currency?: string;
+  testnet?: boolean;
+  recipient?: string;
+  sender?: string;
+  type: string;
+}
 
 interface Web3Wallet {
   address: string;
@@ -8,12 +18,25 @@ interface Web3Wallet {
   connected?: boolean;
 }
 
+interface ConfirmPrompt {
+  openDialog: boolean;
+  prompt: Prompt | null;
+}
+
+interface XMTPConfig {
+  peer: string;
+}
+
 interface Web3State {
   wallet: Web3Wallet | null;
+  xmtp: XMTPConfig | null;
+  prompt: ConfirmPrompt | null;
 }
 
 const initialState: Web3State = {
   wallet: null,
+  xmtp: null,
+  prompt: null,
 };
 
 const web3Slice = createSlice({
@@ -26,8 +49,28 @@ const web3Slice = createSlice({
     resetWeb3Wallet(state) {
       state.wallet = null;
     },
+    setXMTPConfig(state, action: PayloadAction<{ xmtp: XMTPConfig }>) {
+      state.xmtp = action.payload.xmtp;
+    },
+    resetXMTPConfig(state) {
+      state.xmtp = null;
+    },
+    triggerPrompt(state, action: PayloadAction<{ prompt: ConfirmPrompt }>) {
+      state.prompt = action.payload.prompt;
+    },
+    cancelPrompt(state) {
+      state.prompt = { openDialog: false, prompt: null };
+    },
   },
 });
 
-export const { setWeb3Wallet, resetWeb3Wallet } = web3Slice.actions;
+export const {
+  setWeb3Wallet,
+  resetWeb3Wallet,
+  setXMTPConfig,
+  resetXMTPConfig,
+  triggerPrompt,
+  cancelPrompt,
+} = web3Slice.actions;
+
 export default web3Slice.reducer;

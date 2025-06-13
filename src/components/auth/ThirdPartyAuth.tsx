@@ -1,11 +1,14 @@
 import { useToast } from "@/hooks/use-toast";
+import { ApiService } from "@/lib/services";
 import { getEnvironmentConfig } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
-const ThirdPartyAuth = () => {
+const ThirdPartyAuth = ({ isMerchant = false }: { isMerchant?: boolean }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
   const [isLoading, setIsLoading] = useState(false);
   const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
 
@@ -65,16 +68,21 @@ const ThirdPartyAuth = () => {
 
       // Here you would send the token to your backend for verification
       // and further processing
-      console.log("Google Sign-In successful", credential);
+
+      const credentials = {
+        token: credential,
+        type: isMerchant ? "merchant" : "user",
+      };
+      await ApiService.googleAuth(credentials);
 
       toast({
         title: "Google authentication successful",
         description: "You are logged in.",
       });
 
-      // For now, we'll just navigate to the dashboard
-      // In a real application, you'd verify this token with your backend
-      navigate("/dashboard", { replace: true });
+      // navigate to the dashboard
+      // verify this token with backend
+      navigate(returnTo || "/dashboard", { replace: true });
     } catch (error) {
       toast({
         title: "Google Sign-In Failed",

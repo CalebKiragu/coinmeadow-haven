@@ -13,7 +13,9 @@ import { ApiService } from "@/lib/services";
 
 const MerchantSignupForm = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
   const [isLoading, setIsLoading] = useState(false);
   const [emailStep, setEmailStep] = useState(1);
   const [phoneStep, setPhoneStep] = useState(1);
@@ -27,7 +29,6 @@ const MerchantSignupForm = () => {
   const [repContact, setRepContact] = useState("");
   const [pin, setPin] = useState("");
   const [refId, setRefId] = useState(searchParams.get("refId") || "");
-  const navigate = useNavigate();
   const { otp } = useAppSelector((state) => state.auth);
 
   const handleNext = async (type: "email" | "phone") => {
@@ -97,7 +98,7 @@ const MerchantSignupForm = () => {
         title: "Account created!",
         description: "Welcome to CoinDuka Merchant.",
       });
-      navigate("/dashboard", { replace: true });
+      navigate(returnTo || "/dashboard", { replace: true });
     } catch (error) {
       toast({
         title: "Error",
@@ -208,7 +209,7 @@ const MerchantSignupForm = () => {
           <TabsContent value="phone">{renderStepContent("phone")}</TabsContent>
         </form>
       </Tabs>
-      {emailStep === 1 && phoneStep === 1 && <ThirdPartyAuth />}
+      {emailStep === 1 && phoneStep === 1 && <ThirdPartyAuth isMerchant />}
     </GlassCard>
   );
 };

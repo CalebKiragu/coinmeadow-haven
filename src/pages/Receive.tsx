@@ -67,7 +67,7 @@ const Receive = () => {
         title: "Error",
         description: "You must be logged in to generate deposit addresses",
       });
-      navigate("/login");
+      navigate("/");
     }
   }, [selectedCrypto, userIdentifier]);
 
@@ -234,7 +234,7 @@ const Receive = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
+    <div className="min-h-screen max-w-full overflow-x-hidden bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
       <NavigationHeader title="Receive" />
 
       <div
@@ -244,20 +244,20 @@ const Receive = () => {
         {isLoading ? (
           <div className="space-y-4 animate-pulse">
             <div className="space-y-2">
-              <Skeleton className="h-4 w-40" />
-              <Skeleton className="h-10 w-full" />
+              <Skeleton height="h-4" width="w-40" />
+              <Skeleton height="h-10" width="w-full" />
             </div>
 
             <div className="flex justify-center p-4 bg-white rounded-lg">
-              <Skeleton className="w-48 h-48" />
+              <Skeleton height="h-48" width="w-48" />
             </div>
 
             <div className="space-y-2">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-10 w-full" />
+              <Skeleton height="h-12" width="w-full" />
+              <Skeleton height="h-10" width="w-full" />
             </div>
 
-            <Skeleton className="h-10 w-full" />
+            <Skeleton height="h-10" width="w-full" />
           </div>
         ) : (
           <div className="space-y-6">

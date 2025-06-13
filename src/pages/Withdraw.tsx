@@ -235,10 +235,10 @@ const Withdraw = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
+    <div className="min-h-screen max-w-full mx-auto overflow-x-hidden bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
       <NavigationHeader title="Withdraw" />
 
-      <div className="max-w-md mx-auto glass-effect p-6 rounded-lg">
+      <div className="max-w-full mx-auto glass-effect p-6 rounded-lg">
         {!transactionStatus ? (
           <div className="space-y-6">
             <div className="flex justify-between mb-8">

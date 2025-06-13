@@ -41,8 +41,8 @@ const Verification = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen max-w-full overflow-x-hidden bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
+      <div className="max-w-4xl mx-auto space-y-4">
         <NavigationHeader title="Account Verification" />
 
         <div className="flex justify-between items-center">
@@ -59,7 +59,7 @@ const Verification = () => {
           </Button>
         </div>
 
-        <div className="glass-effect p-6 rounded-lg animate-fade-in">
+        <div className="glass-effect p-4 rounded-lg animate-fade-in">
           {currentStep === "form" && (
             <VerificationForm onSubmit={handleFormSubmit} />
           )}

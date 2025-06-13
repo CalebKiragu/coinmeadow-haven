@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, CheckCircle, XCircle } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -15,8 +15,12 @@ import { TransactionSummary } from "@/components/send/TransactionSummary";
 import { ApiService } from "@/lib/services";
 import { TransferResponse } from "@/lib/services/transactionService";
 import { BlockchainTransfer } from "@/components/send/BlockchainTransfer";
-import { useAppSelector } from "@/lib/redux/hooks";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import AnimatedCheckmark from "@/components/ui/animated-checkmark";
+import { triggerPrompt } from "@/lib/redux/slices/web3Slice";
+import ConfirmPromptDialog from "@/components/web3/ConfirmPrompt";
+import { useAccount } from "wagmi";
+import { useWallet } from "@/contexts/Web3ContextProvider";
 
 const SendPayContent = () => {
   const navigate = useNavigate();
@@ -30,6 +34,10 @@ const SendPayContent = () => {
   >(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const auth = useAppSelector((state: any) => state.auth);
+  const promptObj = useAppSelector((state) => state.web3.prompt);
+  const [confirmPromptOpen, setConfirmPromptOpen] = useState(false);
+  const { chain } = useAccount();
+  const { switchNetwork } = useWallet();
 
   const {
     mobileNumber,
@@ -52,6 +60,32 @@ const SendPayContent = () => {
     resetMerchantFlow,
     resetBlockchainFlow,
   } = useSendPay();
+
+  useEffect(() => {
+    if (promptObj) {
+      // switch chain to desired currency, if not already on it
+      if (promptObj?.prompt?.currency === "base")
+        if (chain?.id !== 84532 && promptObj?.prompt?.testnet) {
+          switchNetwork(84532, "Base Sepolia");
+        } else if (chain?.id !== 8453 && !promptObj?.prompt?.testnet) {
+          switchNetwork(8453, "Base Mainnet");
+        }
+      if (promptObj?.prompt?.currency === "eth")
+        if (chain?.id !== 11155111 && promptObj?.prompt?.testnet) {
+          switchNetwork(11155111, "ETH Sepolia");
+        } else if (chain?.id !== 1 && !promptObj?.prompt?.testnet) {
+          switchNetwork(1, "ETH Mainnet");
+        }
+
+      if (promptObj.openDialog === true && promptObj.prompt) {
+        setConfirmPromptOpen(promptObj.openDialog);
+      } else {
+        setConfirmPromptOpen(false);
+      }
+    } else {
+      setConfirmPromptOpen(false);
+    }
+  }, [promptObj]);
 
   // Reset step when tab changes
   useEffect(() => {
@@ -250,7 +284,7 @@ const SendPayContent = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
+    <div className="min-h-screen max-w-full overflow-x-hidden bg-gradient-to-br from-purple-800 via-fuchsia-500 to-pink-400 dark:from-purple-900 dark:via-gray-900 dark:to-black p-4 md:p-8">
       <NavigationHeader
         title={blockchainMode ? "Send to Blockchain" : "Send/Pay"}
       />
@@ -477,11 +511,55 @@ const SendPayContent = () => {
           </div>
         )}
       </div>
+
+      {/* Confirm prompt dialog */}
+      <ConfirmPromptDialog
+        open={confirmPromptOpen}
+        onOpenChange={setConfirmPromptOpen}
+      />
     </div>
   );
 };
 
 const SendPay = () => {
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      const currentPath = location.pathname + location.search;
+      navigate(`/?returnTo=${encodeURIComponent(currentPath)}`, {
+        replace: true,
+      });
+      return;
+    }
+
+    const amount = parseFloat(params.get("amount") || "");
+    const currency = params.get("currency");
+    const testnet =
+      params.get("testnet")?.toLowerCase() === "true"
+        ? true
+        : params.get("testnet")?.toLowerCase() === "false"
+        ? false
+        : undefined;
+    const to = params.get("to");
+
+    console.log("PARAMS >> ", params, amount, currency, testnet, to);
+
+    if (amount && currency && to) {
+      dispatch(
+        triggerPrompt({
+          prompt: {
+            openDialog: true,
+            prompt: { type: "send", amount, currency, testnet, recipient: to },
+          },
+        })
+      );
+    }
+  }, [params]);
+
   return (
     <SendPayProvider>
       <SendPayContent />

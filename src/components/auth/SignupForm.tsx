@@ -13,7 +13,9 @@ import { useAppSelector } from "@/lib/redux/hooks";
 
 const SignupForm = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get("returnTo");
   const [isLoading, setIsLoading] = useState(false);
   const [country, setCountry] = useState("");
   const [emailStep, setEmailStep] = useState(1);
@@ -26,7 +28,6 @@ const SignupForm = () => {
   const [emailOtp, setEmailOtp] = useState("");
   const [phoneOtp, setPhoneOtp] = useState("");
   const [activeTab, setActiveTab] = useState<"email" | "phone">("email");
-  const navigate = useNavigate();
   const [refId, setRefId] = useState(searchParams.get("refId") || "");
   const { otp } = useAppSelector((state) => state.auth);
 
@@ -96,7 +97,7 @@ const SignupForm = () => {
         title: "Account created!",
         description: "Welcome to CoinDuka.",
       });
-      navigate("/dashboard", { replace: true });
+      navigate(returnTo || "/dashboard", { replace: true });
     } catch (error) {
       toast({
         title: "Error",
