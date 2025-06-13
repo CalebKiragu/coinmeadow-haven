@@ -204,8 +204,8 @@ class Utils {
  * Helper to handle environment branching for different deployment environments
  */
 export const getEnvironmentConfig = () => {
-  // const env = import.meta.env.VITE_APP_ENV || "production";
-  const env = import.meta.env.VITE_APP_ENV || "development";
+  const env = import.meta.env.VITE_APP_ENV || "production";
+  // const env = import.meta.env.VITE_APP_ENV || "development";
 
   const configs = {
     development: {
